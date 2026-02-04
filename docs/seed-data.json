@@ -1,0 +1,114 @@
+{
+  "missions": [
+    {
+      "id": "intro-1",
+      "name": "Coleta de Ervas Medicinais",
+      "description": "Um farmacêutico local precisa de ervas raras encontradas na floresta perto da aldeia. Cuidado com os animais selvagens.",
+      "difficulty": "Fácil",
+      "requiredLevel": 1,
+      "durationSeconds": 300,
+      "ryoReward": 50,
+      "experienceReward": 100,
+      "elementExperienceReward": { "element": "Doton", "xp": 20 }
+    },
+    {
+      "id": "easy-1",
+      "name": "Ameaça Elétrica",
+      "description": "Uma enguia gigante está dando choques nos pescadores do lago. Use uma técnica Raiton para neutralizá-la.",
+      "difficulty": "Fácil",
+      "requiredLevel": 1,
+      "durationSeconds": 360,
+      "ryoReward": 60,
+      "experienceReward": 110,
+      "elementExperienceReward": { "element": "Raiton", "xp": 30 }
+    },
+    {
+      "id": "easy-6",
+      "name": "Treinamento de Taijutsu",
+      "description": "Participe de uma sessão de sparring leve para aprimorar seus reflexos e técnicas de combate corpo a corpo.",
+      "difficulty": "Fácil",
+      "requiredLevel": 1,
+      "durationSeconds": 420,
+      "ryoReward": 65,
+      "experienceReward": 112,
+      "elementExperienceReward": { "element": "Futon", "xp": 25 }
+    }
+  ],
+  "weapons": [
+    {
+        "id": "senbon",
+        "name": "Senbon",
+        "description": "Agulhas metálicas longas e finas usadas para ataques rápidos e precisos, visando pontos de pressão. Requer grande precisão.",
+        "imageUrl": "https://i.imgur.com/gOq4V99.png",
+        "type": "Ferramenta Ninja",
+        "buffs": { "taijutsu": -2, "ninjutsu": 0, "genjutsu": 0, "selo": 8, "vitalidade": 0, "inteligencia": 0 },
+        "requiredLevel": 1,
+        "price": 200
+    }
+  ],
+  "equipments": [
+    {
+        "id": "colete-genin",
+        "name": "Colete Ninja (Genin)",
+        "description": "O colete padrão para um genin. Oferece proteção básica e bolsos para ferramentas.",
+        "imageUrl": "https://i.imgur.com/example.png",
+        "type": "Peito",
+        "buffs": { "vitalidade": 5, "taijutsu": 0, "ninjutsu": 0, "genjutsu": 0, "selo": 0, "inteligencia": 0 },
+        "requiredLevel": 1,
+        "price": 300
+    }
+  ],
+  "summons": [
+     {
+        "id": "ton-ton",
+        "name": "Tonton",
+        "description": "A porquinha de estimação de Tsunade e Shizune. Apesar de pequena, tem um olfato apurado.",
+        "imageUrl": "https://i.imgur.com/9i4tfeR.png",
+        "buffs": { "taijutsu": 0, "ninjutsu": 0, "genjutsu": 0, "selo": 5, "vitalidade": 1, "inteligencia": 2 },
+        "requiredLevel": 1,
+        "price": 100
+    }
+  ],
+  "ichirakuMenu": [
+    {
+        "id": "onigiri",
+        "name": "Onigiri Simples",
+        "description": "Um lanche rápido e clássico. Ótimo para recuperar um pouco de vitalidade após um treino leve.",
+        "price": 75,
+        "healthRecovery": 150,
+        "imageUrl": "https://i.imgur.com/Gz2w3Y3.png"
+    }
+  ],
+  "bosses": [
+    {
+      "id": "pain",
+      "name": "Pain (Caminho Deva)",
+      "description": "O líder da Akatsuki e portador do Rinnegan. Seus poderes divinos podem repelir qualquer ataque e atrair a destruição.",
+      "totalHealth": 65000000,
+      "bossLevel": 100
+    }
+  ],
+  "dojutsu": [
+    {
+        "id": "Sharingan",
+        "name": "Sharingan",
+        "description": "O olho copiador, que permite ao usuário prever movimentos e copiar jutsus.",
+        "type": "base",
+        "requiredLevel": 20,
+        "requiredElementLevel": 10,
+        "stages": { "1": { "name": "Sharingan", "buffs": { "ninjutsu": 1.05, "genjutsu": 1.05 } } }
+    }
+  ],
+  "initialWorldBoss": {
+      "id": "pain",
+      "name": "Pain (Caminho Deva)",
+      "description": "O líder da Akatsuki e portador do Rinnegan. Seus poderes divinos podem repelir qualquer ataque e atrair a destruição.",
+      "totalHealth": 65000000,
+      "bossLevel": 100,
+      "currentHealth": 65000000,
+      "lastDefeatedAt": null,
+      "lastDefeatedBy": null,
+      "totalAttacks": 0,
+      "respawnAt": null
+  }
+}

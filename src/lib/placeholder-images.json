@@ -1,0 +1,1826 @@
+{
+  "characters": [
+    {
+      "id": "a",
+      "description": "A",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/A_2.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "akatsuchi",
+      "description": "Akatsuchi",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Akatsuchi.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "amado",
+      "description": "Amado",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Amado.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "anko-mitarashi",
+      "description": "Anko Mitarashi",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Anko_Mitarashi.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "ao",
+      "description": "Ao",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Ao_2.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "aoba-yamashiro",
+      "description": "Aoba Yamashiro",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Aoba_Yamashiro.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "araya",
+      "description": "Araya",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Araya_2.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "asuma-sarutobi",
+      "description": "Asuma Sarutobi",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Asuma_Sarutobi.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "asura-otsutsuki",
+      "description": "Asura Otsutsuki",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/asura.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "black-zetsu",
+      "description": "Black Zetsu",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/zetsublack.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "boro",
+      "description": "Boro",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Boro.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "boruto-uzumaki",
+      "description": "Boruto Uzumaki",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Boruto_Uzumaki.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "buntan-kurosuki",
+      "description": "Buntan Kurosuki",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Buntan_Kurosuki.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "c",
+      "description": "C",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/C.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "chiyo",
+      "description": "Chiyo",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Chiyo.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "choji-akimichi",
+      "description": "Choji Akimichi",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Choji_Akimichi_2.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "chojuro",
+      "description": "Chojuro",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Chojuro_2.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "choza-akimichi",
+      "description": "Choza Akimichi",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Choza_Akimichi.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "code",
+      "description": "Code",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Code.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "danzo-shimura",
+      "description": "Danzo Shimura",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Danzo_Shimura.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "darui",
+      "description": "Darui",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Darui_2.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "deepa",
+      "description": "Deepa",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Deepa.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "deidara",
+      "description": "Deidara",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Deidara.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "delta",
+      "description": "Delta",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Delta.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "denki-kaminarimon",
+      "description": "Denki Kaminarimon",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Denki_Kaminarimon.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "ebisu",
+      "description": "Ebisu",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Ebisu_2.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "fu",
+      "description": "Fu",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Fu.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "fugaku-uchiha",
+      "description": "Fugaku Uchiha",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Fugaku_Uchiha.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "fuu-yamanaka",
+      "description": "Fuu Yamanaka",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Fuu_Yamanaka.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "gaara",
+      "description": "Gaara",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Gaara_2.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "genma-shiranui",
+      "description": "Genma Shiranui",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Genma_Shiranui.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "guren",
+      "description": "Guren",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Guren.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "haku",
+      "description": "Haku",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Haku.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "han",
+      "description": "Han",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Han.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "hanabi-hyuga",
+      "description": "Hanabi Hyuga",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Hanabi_Hyuga_2.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "hashirama-senju",
+      "description": "Hashirama Senju",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Hashirama_Senju.jpg",
+      "imageHint": "character"
+    },
+    {
+      "id": "hayate-gekko",
+      "description": "Hayate Gekko",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/hayate.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "hidan",
+      "description": "Hidan",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Hidan.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "himawari-uzumaki",
+      "description": "Himawari Uzumaki",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Himawari_Uzumaki_2.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "hinata-hyuga",
+      "description": "Hinata Hyuga",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Hinata_Hyuga_2.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "hiruzen-sarutobi",
+      "description": "Hiruzen Sarutobi",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/hoki-taketori.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "hoki-taketori",
+      "description": "Hoki Taketori",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/hoki-taketori.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "homura-mitokado",
+      "description": "Homura Mitokado",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Homura_Mitokado_2.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "ibiki-morino",
+      "description": "Ibiki Morino",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Ibiki_Morino_2.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "ino-yamanaka",
+      "description": "Ino Yamanaka",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Ino_Yamanaka_2.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "inoichi-yamanaka",
+      "description": "Inoichi Yamanaka",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Inoichi_Yamanaka.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "inojin-yamanaka",
+      "description": "Inojin Yamanaka",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Inojin_Yamanaka.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "iruka-umino",
+      "description": "Iruka Umino",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Iruka_Umino_2.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "itachi-uchiha",
+      "description": "Itachi Uchiha",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Itachi_Uchiha.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "izumo-kamizuki",
+      "description": "Izumo Kamizuki",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Izumo_Kamizuki.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "jigen",
+      "description": "Jigen",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Jigen.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "jiraiya",
+      "description": "Jiraiya",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Jiraiya.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "jirobo",
+      "description": "Jirobo",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Jirobo.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "jugo",
+      "description": "Jugo",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Jugo_2.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "kabuto-yakushi",
+      "description": "Kabuto Yakushi",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Kabuto_Yakushi_2.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "kagura-karatachi",
+      "description": "Kagura Karatachi",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Kagura_Karatachi.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "kakashi-hatake",
+      "description": "Kakashi Hatake",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Kakashi_Hatake.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "kakuzu",
+      "description": "Kakuzu",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Kakuzu.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "kankuro",
+      "description": "Kankuro",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Kankuro_2.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "karin",
+      "description": "Karin",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Karin_2.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "kawaki",
+      "description": "Kawaki",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Kawaki.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "kiba-inuzuka",
+      "description": "Kiba Inuzuka",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Kiba_Inuzuka_2.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "kidomaru",
+      "description": "Kidomaru",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Kidomaru.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "killer-bee",
+      "description": "Killer Bee",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Killer_Bee_2.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "kimimaro",
+      "description": "Kimimaro",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Kimimaro.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "kisame-hoshigaki",
+      "description": "Kisame Hoshigaki",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Kisame_Hoshigaki.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "koharu-utatane",
+      "description": "Koharu Utatane",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Koharu_Utatane.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "koji-kashin",
+      "description": "Koji Kashin",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Koji_Kashin_2.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "konan",
+      "description": "Konan",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Konan.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "konohamaru-sarutobi",
+      "description": "Konohamaru Sarutobi",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Konohamaru_Sarutobi_2.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "kotetsu-hagane",
+      "description": "Kotetsu Hagane",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Kotetsu_Hagane.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "kurenai-yuhi",
+      "description": "Kurenai Yuhi",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Kurenai_Yuhi_2.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "kurotsuchi",
+      "description": "Kurotsuchi",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Kurotsuchi_2.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "kushina-uzumaki",
+      "description": "Kushina Uzumaki",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Kushina_Uzumaki.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "madara-uchiha",
+      "description": "Madara Uchiha",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Madara_Uchiha.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "mei-terumi",
+      "description": "Mei Terumi",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Mei_Terumi_2.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "metal-lee",
+      "description": "Metal Lee",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Metal_Lee.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "might-guy",
+      "description": "Might Guy",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Might_Guy_2.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "minato-namikaze",
+      "description": "Minato Namikaze",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Minato_Namikaze.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "mirai-sarutobi",
+      "description": "Mirai Sarutobi",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Mirai_Sarutobi_2.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "mitsuki",
+      "description": "Mitsuki",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Mitsuki_2.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "moegi-kazamatsuri",
+      "description": "Moegi Kazamatsuri",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Moegi_Kazamatsuri_2.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "momoshiki-otsutsuki",
+      "description": "Momoshiki Otsutsuki",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Momoshiki_Otsutsuki.jpg",
+      "imageHint": "character"
+    },
+    {
+      "id": "nagato",
+      "description": "Nagato",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Nagato.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "namida-suzumeno",
+      "description": "Namida Suzumeno",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Namida_Suzumeno.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "naruto-uzumaki",
+      "description": "Naruto Uzumaki",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Naruto_Uzumaki_2.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "nawaki",
+      "description": "Nawaki",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Nawaki.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "neji-hyuga",
+      "description": "Neji Hyuga",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Neji_Hyuga_2.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "obito-uchiha",
+      "description": "Obito Uchiha",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Obito_Uchiha.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "oga",
+      "description": "Oga",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Oga.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "onoki",
+      "description": "Onoki",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Onoki.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "orochimaru",
+      "description": "Orochimaru",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Orochimaru_2.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "pain",
+      "description": "Pain",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Pain.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "pakura",
+      "description": "Pakura",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Pakura.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "raido-namiashi",
+      "description": "Raido Namiashi",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Raido_Namiashi.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "rasa",
+      "description": "Rasa",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Rasa.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "rin-nohara",
+      "description": "Rin Nohara",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Rin_Nohara.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "rock-lee",
+      "description": "Rock Lee",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Rock_Lee_2.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "roshi",
+      "description": "Roshi",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Roshi.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "sai",
+      "description": "Sai",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Sai_2.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "sakon",
+      "description": "Sakon",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Sakon.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "sakura-haruno",
+      "description": "Sakura Haruno",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Sakura_Haruno_2.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "sarada-uchiha",
+      "description": "Sarada Uchiha",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Sarada_Uchiha_2.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "sasori",
+      "description": "Sasori",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Sasori.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "sasuke-uchiha",
+      "description": "Sasuke Uchiha",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Sasuke_Uchiha_2.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "sekiei",
+      "description": "Sekiei",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Sekiei.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "shibi-aburame",
+      "description": "Shibi Aburame",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Shibi_Aburame.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "shikadai-nara",
+      "description": "Shikadai Nara",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Shikadai_Nara.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "shikaku-nara",
+      "description": "Shikaku Nara",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Shikaku_Nara.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "shikamaru-nara",
+      "description": "Shikamaru Nara",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Shikamaru_Nara_2.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "shinki",
+      "description": "Shinki",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Shinki.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "shino-aburame",
+      "description": "Shino Aburame",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Shino_Aburame_2.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "shisui-uchiha",
+      "description": "Shisui Uchiha",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Shisui_Uchiha.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "shizune",
+      "description": "Shizune",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Shizune_2.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "sumire-kakei",
+      "description": "Sumire Kakei",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Sumire_Kakei_2.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "tarui",
+      "description": "Tarui",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Tarui.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "tayuya",
+      "description": "Tayuya",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Tayuya.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "temari",
+      "description": "Temari",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Temari_2.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "tenten",
+      "description": "Tenten",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Tenten_2.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "tobirama-senju",
+      "description": "Tobirama Senju",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Tobirama_Senju.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "torune-aburame",
+      "description": "Torune Aburame",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Torune_Aburame.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "tsunade",
+      "description": "Tsunade",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Tsunade.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "tsuru-itoi",
+      "description": "Tsuru Itoi",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Tsuru_Itoi.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "udon-ise",
+      "description": "Udon Ise",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Udon_Ise_2.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "ukon",
+      "description": "Ukon",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Ukon.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "utakata",
+      "description": "Utakata",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Utakata.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "victor",
+      "description": "Victor",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Victor.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "wasabi-izuno",
+      "description": "Wasabi Izuno",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Wasabi_Izuno.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "yagura-karatachi",
+      "description": "Yagura Karatachi",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Yagura_Karatachi.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "yahiko",
+      "description": "Yahiko",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Yahiko.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "yamato",
+      "description": "Yamato",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Yamato_2.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "yodo",
+      "description": "Yodo",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Yodo_2.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "yugito-nii",
+      "description": "Yugito Nii",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Yugito_Nii.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "yurui",
+      "description": "Yurui",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Yurui.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "zabuza-momochi",
+      "description": "Zabuza Momochi",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Zabuza_Momochi.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "zetsu",
+      "description": "Zetsu",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/zetsu%20(1).png",
+      "imageHint": "character"
+    }
+  ],
+  "placeholderImages": [
+    {
+      "id": "a",
+      "description": "A",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/A_2.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "akatsuchi",
+      "description": "Akatsuchi",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Akatsuchi.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "amado",
+      "description": "Amado",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Amado.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "anko-mitarashi",
+      "description": "Anko Mitarashi",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Anko_Mitarashi.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "ao",
+      "description": "Ao",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Ao_2.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "aoba-yamashiro",
+      "description": "Aoba Yamashiro",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Aoba_Yamashiro.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "araya",
+      "description": "Araya",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Araya_2.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "asuma-sarutobi",
+      "description": "Asuma Sarutobi",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Asuma_Sarutobi.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "asura-otsutsuki",
+      "description": "Asura Otsutsuki",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/asura.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "black-zetsu",
+      "description": "Black Zetsu",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/zetsublack.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "boro",
+      "description": "Boro",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Boro.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "boruto-uzumaki",
+      "description": "Boruto Uzumaki",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Boruto_Uzumaki.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "buntan-kurosuki",
+      "description": "Buntan Kurosuki",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Buntan_Kurosuki.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "c",
+      "description": "C",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/C.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "chiyo",
+      "description": "Chiyo",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Chiyo.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "choji-akimichi",
+      "description": "Choji Akimichi",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Choji_Akimichi_2.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "chojuro",
+      "description": "Chojuro",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Chojuro_2.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "choza-akimichi",
+      "description": "Choza Akimichi",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Choza_Akimichi.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "code",
+      "description": "Code",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Code.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "danzo-shimura",
+      "description": "Danzo Shimura",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Danzo_Shimura.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "darui",
+      "description": "Darui",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Darui_2.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "deepa",
+      "description": "Deepa",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Deepa.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "deidara",
+      "description": "Deidara",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Deidara.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "delta",
+      "description": "Delta",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Delta.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "denki-kaminarimon",
+      "description": "Denki Kaminarimon",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Denki_Kaminarimon.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "ebisu",
+      "description": "Ebisu",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Ebisu_2.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "fu",
+      "description": "Fu",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Fu.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "fugaku-uchiha",
+      "description": "Fugaku Uchiha",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Fugaku_Uchiha.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "fuu-yamanaka",
+      "description": "Fuu Yamanaka",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Fuu_Yamanaka.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "gaara",
+      "description": "Gaara",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Gaara_2.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "genma-shiranui",
+      "description": "Genma Shiranui",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Genma_Shiranui.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "guren",
+      "description": "Guren",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Guren.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "haku",
+      "description": "Haku",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Haku.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "han",
+      "description": "Han",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Han.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "hanabi-hyuga",
+      "description": "Hanabi Hyuga",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Hanabi_Hyuga_2.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "hashirama-senju",
+      "description": "Hashirama Senju",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Hashirama_Senju.jpg",
+      "imageHint": "character"
+    },
+    {
+      "id": "hayate-gekko",
+      "description": "Hayate Gekko",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/hayate.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "hidan",
+      "description": "Hidan",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Hidan.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "himawari-uzumaki",
+      "description": "Himawari Uzumaki",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Himawari_Uzumaki_2.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "hinata-hyuga",
+      "description": "Hinata Hyuga",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Hinata_Hyuga_2.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "hiruzen-sarutobi",
+      "description": "Hiruzen Sarutobi",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Hiruzen_Sarutobi.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "hoki-taketori",
+      "description": "Hoki Taketori",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/hoki-taketori.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "homura-mitokado",
+      "description": "Homura Mitokado",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Homura_Mitokado.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "ibiki-morino",
+      "description": "Ibiki Morino",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Ibiki_Morino_2.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "ino-yamanaka",
+      "description": "Ino Yamanaka",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Ino_Yamanaka_2.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "inoichi-yamanaka",
+      "description": "Inoichi Yamanaka",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Inoichi_Yamanaka.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "inojin-yamanaka",
+      "description": "Inojin Yamanaka",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Inojin_Yamanaka.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "iruka-umino",
+      "description": "Iruka Umino",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Iruka_Umino.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "itachi-uchiha",
+      "description": "Itachi Uchiha",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Itachi_Uchiha.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "izumo-kamizuki",
+      "description": "Izumo Kamizuki",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Izumo_Kamizuki.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "jigen",
+      "description": "Jigen",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Jigen.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "jiraiya",
+      "description": "Jiraiya",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Jiraiya.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "jirobo",
+      "description": "Jirobo",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Jirobo.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "jugo",
+      "description": "Jugo",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Jugo_2.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "kabuto-yakushi",
+      "description": "Kabuto Yakushi",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Kabuto_Yakushi_2.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "kagura-karatachi",
+      "description": "Kagura Karatachi",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Kagura_Karatachi.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "kakashi-hatake",
+      "description": "Kakashi Hatake",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Kakashi_Hatake.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "kakuzu",
+      "description": "Kakuzu",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Kakuzu.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "kankuro",
+      "description": "Kankuro",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Kankuro_2.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "karin",
+      "description": "Karin",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Karin_2.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "kawaki",
+      "description": "Kawaki",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Kawaki.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "kiba-inuzuka",
+      "description": "Kiba Inuzuka",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Kiba_Inuzuka_2.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "kidomaru",
+      "description": "Kidomaru",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Kidomaru.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "killer-bee",
+      "description": "Killer Bee",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Killer_Bee_2.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "kimimaro",
+      "description": "Kimimaro",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Kimimaro.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "kisame-hoshigaki",
+      "description": "Kisame Hoshigaki",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Kisame_Hoshigaki.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "koharu-utatane",
+      "description": "Koharu Utatane",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Koharu_Utatane.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "koji-kashin",
+      "description": "Koji Kashin",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Koji_Kashin_2.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "konan",
+      "description": "Konan",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Konan.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "konohamaru-sarutobi",
+      "description": "Konohamaru Sarutobi",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Konohamaru_Sarutobi_2.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "kotetsu-hagane",
+      "description": "Kotetsu Hagane",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Kotetsu_Hagane.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "kurenai-yuhi",
+      "description": "Kurenai Yuhi",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Kurenai_Yuhi_2.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "kurotsuchi",
+      "description": "Kurotsuchi",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Kurotsuchi_2.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "kushina-uzumaki",
+      "description": "Kushina Uzumaki",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Kushina_Uzumaki.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "madara-uchiha",
+      "description": "Madara Uchiha",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Madara_Uchiha.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "mei-terumi",
+      "description": "Mei Terumi",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Mei_Terumi_2.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "metal-lee",
+      "description": "Metal Lee",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Metal_Lee.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "might-guy",
+      "description": "Might Guy",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Might_Guy_2.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "minato-namikaze",
+      "description": "Minato Namikaze",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Minato_Namikaze.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "mirai-sarutobi",
+      "description": "Mirai Sarutobi",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Mirai_Sarutobi_2.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "mitsuki",
+      "description": "Mitsuki",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Mitsuki_2.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "moegi-kazamatsuri",
+      "description": "Moegi Kazamatsuri",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Moegi_Kazamatsuri_2.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "momoshiki-otsutsuki",
+      "description": "Momoshiki Otsutsuki",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Momoshiki_Otsutsuki.jpg",
+      "imageHint": "character"
+    },
+    {
+      "id": "nagato",
+      "description": "Nagato",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Nagato.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "namida-suzumeno",
+      "description": "Namida Suzumeno",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Namida_Suzumeno.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "naruto-uzumaki",
+      "description": "Naruto Uzumaki",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Naruto_Uzumaki_2.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "nawaki",
+      "description": "Nawaki",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Nawaki.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "neji-hyuga",
+      "description": "Neji Hyuga",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Neji_Hyuga_2.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "obito-uchiha",
+      "description": "Obito Uchiha",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Obito_Uchiha.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "oga",
+      "description": "Oga",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Oga.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "onoki",
+      "description": "Onoki",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Onoki.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "orochimaru",
+      "description": "Orochimaru",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Orochimaru_2.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "pain",
+      "description": "Pain",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Pain.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "pakura",
+      "description": "Pakura",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Pakura.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "raido-namiashi",
+      "description": "Raido Namiashi",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Raido_Namiashi.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "rasa",
+      "description": "Rasa",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Rasa.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "rin-nohara",
+      "description": "Rin Nohara",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Rin_Nohara.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "rock-lee",
+      "description": "Rock Lee",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Rock_Lee_2.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "roshi",
+      "description": "Roshi",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Roshi.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "sai",
+      "description": "Sai",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Sai_2.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "sakon",
+      "description": "Sakon",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Sakon.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "sakura-haruno",
+      "description": "Sakura Haruno",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Sakura_Haruno_2.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "sarada-uchiha",
+      "description": "Sarada Uchiha",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Sarada_Uchiha.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "sasori",
+      "description": "Sasori",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Sasori.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "sasuke-uchiha",
+      "description": "Sasuke Uchiha",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Sasuke_Uchiha_2.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "sekiei",
+      "description": "Sekiei",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Sekiei.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "shibi-aburame",
+      "description": "Shibi Aburame",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Shibi_Aburame.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "shikadai-nara",
+      "description": "Shikadai Nara",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Shikadai_Nara.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "shikaku-nara",
+      "description": "Shikaku Nara",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Shikaku_Nara.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "shikamaru-nara",
+      "description": "Shikamaru Nara",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Shikamaru_Nara_2.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "shinki",
+      "description": "Shinki",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Shinki.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "shino-aburame",
+      "description": "Shino Aburame",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Shino_Aburame_2.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "shisui-uchiha",
+      "description": "Shisui Uchiha",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Shisui_Uchiha.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "shizune",
+      "description": "Shizune",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Shizune_2.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "sumire-kakei",
+      "description": "Sumire Kakei",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Sumire_Kakei_2.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "tarui",
+      "description": "Tarui",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Tarui.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "tayuya",
+      "description": "Tayuya",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Tayuya.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "temari",
+      "description": "Temari",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Temari_2.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "tenten",
+      "description": "Tenten",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Tenten_2.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "tobirama-senju",
+      "description": "Tobirama Senju",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Tobirama_Senju.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "torune-aburame",
+      "description": "Torune Aburame",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Torune_Aburame.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "tsunade",
+      "description": "Tsunade",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Tsunade.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "tsuru-itoi",
+      "description": "Tsuru Itoi",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Tsuru_Itoi.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "udon-ise",
+      "description": "Udon Ise",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Udon_Ise_2.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "ukon",
+      "description": "Ukon",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Ukon.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "utakata",
+      "description": "Utakata",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Utakata.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "victor",
+      "description": "Victor",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Victor.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "wasabi-izuno",
+      "description": "Wasabi Izuno",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Wasabi_Izuno.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "yagura-karatachi",
+      "description": "Yagura Karatachi",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Yagura_Karatachi.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "yahiko",
+      "description": "Yahiko",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Yahiko.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "yamato",
+      "description": "Yamato",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Yamato_2.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "yodo",
+      "description": "Yodo",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Yodo_2.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "yugito-nii",
+      "description": "Yugito Nii",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Yugito_Nii.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "yurui",
+      "description": "Yurui",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Yurui.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "zabuza-momochi",
+      "description": "Zabuza Momochi",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/Zabuza_Momochi.png",
+      "imageHint": "character"
+    },
+    {
+      "id": "zetsu",
+      "description": "Zetsu",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Characters/zetsu%20(1).png",
+      "imageHint": "character"
+    }
+  ],
+  "villageImages": [
+    {
+      "id": "Akatsuki",
+      "description": "Akatsuki Village",
+      "imageUrl": "https://i.imgur.com/3Y2g6wI.png",
+      "imageHint": "akatsuki symbol"
+    },
+    {
+      "id": "Vila da Folha",
+      "description": "Leaf Village",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto/Bandanas/vila_da_folha.png",
+      "imageHint": "leaf village symbol"
+    },
+    {
+      "id": "Areia",
+      "description": "Sand Village",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto/Bandanas/vila_da_areia.png",
+      "imageHint": "sand village symbol"
+    },
+    {
+      "id": "Névoa",
+      "description": "Mist Village",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto/Bandanas/vila_da_nevoa.png",
+      "imageHint": "mist village symbol"
+    },
+    {
+      "id": "Pedra",
+      "description": "Stone Village",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto/Bandanas/vila_da_pedra.png",
+      "imageHint": "stone village symbol"
+    },
+    {
+      "id": "Nuvem",
+      "description": "Cloud Village",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto/Bandanas/vila_da_nuvem.png",
+      "imageHint": "cloud village symbol"
+    },
+    {
+      "id": "Chuva",
+      "description": "Rain Village",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto/Bandanas/vila_da_chuva.png",
+      "imageHint": "rain village symbol"
+    },
+    {
+      "id": "Som",
+      "description": "Sound Village",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto/Bandanas/vila_do_som.png",
+      "imageHint": "sound village symbol"
+    },
+    {
+      "id": "Cachoeira",
+      "description": "Waterfall Village",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto/Bandanas/vila_da_cachoeira.png",
+      "imageHint": "waterfall village symbol"
+    },
+    {
+      "id": "Redemoinho",
+      "description": "Whirlpool Village",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto/Bandanas/vila_do_redemoinho.png",
+      "imageHint": "whirlpool village symbol"
+    },
+    {
+      "id": "Grama",
+      "description": "Grass Village",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto/Bandanas/vila_da_grama.png",
+      "imageHint": "grass village symbol"
+    }
+  ],
+  "doujutsuImages": [
+    {
+      "id": "Sharingan",
+      "imageUrl": "https://i.imgur.com/0ziZPEt.gif"
+    },
+    {
+      "id": "Mangekyō Sharingan",
+      "imageUrl": "https://i.giphy.com/media/v1.Y2lkPTc5MGI3NjExYTlwZzFzeWl5ZGI5eDR4dGNpZmdudnBsc3hvbzFzaHNkZGcyY2Z6aiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/CePT9ywqtEgyQ/giphy.gif"
+    },
+    {
+      "id": "Rinnegan",
+      "imageUrl": "https://res.cloudinary.com/dqojdkhig/image/upload/v1768229250/rinegan_jiyhjw.gif"
+    },
+    {
+      "id": "Byakugan",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/naruto-players-2-0.appspot.com/o/doujutsu%2Fbyakugan.svg?alt=media&token=1df1e159-5778-4339-a9a7-47b2c04b8682"
+    },
+    {
+      "id": "Tenseigan",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/naruto-players-2-0.appspot.com/o/doujutsu%2Ftenseigan.svg?alt=media&token=b7337c76-3c2b-4228-a405-e405e3f42c2f"
+    },
+    {
+      "id": "Jōgan",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/naruto-players-2-0.appspot.com/o/doujutsu%2Fjogan.svg?alt=media&token=b7e71c99-79f9-4d6d-8848-f6a6237885b7"
+    }
+  ],
+  "summonImages": [
+    {
+      "id": "ton-ton",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto/Animais/tonton.png"
+    },
+    {
+      "id": "akamaru",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto/Animais/akamaru.png"
+    },
+    {
+      "id": "pakkun",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto/Animais/pakkun.png"
+    },
+    {
+      "id": "ninkame",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto/Animais/ninkame.png"
+    },
+    {
+      "id": "ninken",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto/Animais/Ninken__8_Caes_Ninjas.png"
+    },
+    {
+      "id": "enma",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto/Animais/Rei_Macaco_Enma.png"
+    },
+    {
+      "id": "Aoda",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto/Animais/Aoda.png"
+    },
+    {
+      "id": "manda",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto/Animais/manda.png"
+    },
+    {
+      "id": "katsuyu",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto/Animais/Katsuyu.png"
+    },
+    {
+      "id": "gamakichi",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto/Animais/Gamakichi.png"
+    },
+    {
+      "id": "gamabunta",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto/Animais/Gamabunta.png"
+    },
+    {
+      "id": "fukasaku",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto/Animais/Fukasaku___Shima.png"
+    },
+    {
+      "id": "baku",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto/Animais/Baku.png"
+    },
+    {
+      "id": "shukaku",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto/Animais/shukaku.png"
+    },
+    {
+      "id": "matatabi",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto/Animais/matatabi.png"
+    },
+    {
+      "id": "isobu",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto/Animais/Isobu.png"
+    },
+    {
+      "id": "son-goku",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto/Animais/son_goku.png"
+    },
+    {
+      "id": "kokuo",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto/Animais/Kokuo.png"
+    },
+    {
+      "id": "saiken",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto/Animais/saiken.png"
+    },
+    {
+      "id": "chomei",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto/Animais/Chomei.png"
+    },
+    {
+      "id": "gyuki",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto/Animais/Gyuki.png"
+    },
+    {
+      "id": "kurama",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto/Animais/kurama.png"
+    },
+    {
+      "id": "juubi",
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto/Animais/Jubi.png"
+    }
+  ]
+}

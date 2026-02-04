@@ -1,0 +1,14 @@
+# Settings to manage and configure a Firebase App Hosting backend.
+# https://firebase.google.com/docs/app-hosting/configure
+
+# Explicitly define the backend ID and location.
+# This forces the creation of a new backend with these settings on the next deploy after deletion.
+backend:
+  id: shinobi-arena-backend-br
+  region: southamerica-east1
+
+# Set runtime configurations for the server.
+runConfig:
+  # Increase this value if you'd like to automatically spin up
+  # more instances in response to increased traffic.
+  maxInstances: 1

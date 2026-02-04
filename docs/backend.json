@@ -1,0 +1,949 @@
+
+{
+  "entities": {
+    "Character": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Character",
+      "type": "object",
+      "description": "Represents a playable character in the Naruto Generations.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Character entity."
+        },
+        "name": {
+          "type": "string",
+          "description": "The character's name."
+        },
+        "description": {
+          "type": "string",
+          "description": "A description of the character's background and abilities."
+        },
+        "elementalAffinity": {
+          "type": "string",
+          "description": "The character's primary elemental affinity (e.g., Fire, Water, Earth, Wind, Lightning)."
+        },
+        "jutsuIds": {
+          "type": "array",
+          "description": "References to the character's available jutsu. (Relationship: Character 1:N Jutsu)",
+          "items": {
+            "type": "string"
+          }
+        },
+        "weaponIds": {
+          "type": "array",
+          "description": "References to the weapons the character has. (Relationship: Character 1:N Weapon)",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "description",
+        "elementalAffinity"
+      ]
+    },
+    "Jutsu": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Jutsu",
+      "type": "object",
+      "description": "Represents a ninja technique (jutsu) available in the game.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Jutsu entity."
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the jutsu."
+        },
+        "description": {
+          "type": "string",
+          "description": "A description of what the jutsu does."
+        },
+        "elementalType": {
+          "type": "string",
+          "description": "The elemental type of the jutsu (e.g., Fire, Water, Earth, Wind, Lightning)."
+        },
+        "damage": {
+          "type": "number",
+          "description": "The amount of damage the jutsu inflicts."
+        },
+        "characterIds": {
+          "type": "array",
+          "description": "References to the Characters who can use this jutsu. (Relationship: Jutsu 1:N Character)",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "description",
+        "elementalType",
+        "damage"
+      ]
+    },
+    "Weapon": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Weapon",
+      "type": "object",
+      "description": "Represents a weapon that a character can use.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Weapon entity."
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the weapon."
+        },
+        "description": {
+          "type": "string",
+          "description": "A description of the weapon and its abilities."
+        },
+        "type": {
+          "type": "string",
+          "description": "The type of weapon (e.g., sword, shuriken, kunai)."
+        },
+        "buffs": {
+          "type": "object",
+          "description": "A map of stat buffs and debuffs provided by the weapon.",
+          "properties": {
+            "taijutsu": {
+              "type": "number"
+            },
+            "ninjutsu": {
+              "type": "number"
+            },
+            "genjutsu": {
+              "type": "number"
+            },
+            "selo": {
+              "type": "number"
+            },
+            "vitalidade": {
+              "type": "number"
+            },
+            "inteligencia": {
+              "type": "number"
+            }
+          }
+        },
+        "requiredLevel": {
+          "type": "number",
+          "description": "The minimum character level required to wield the weapon."
+        },
+        "price": {
+          "type": "number",
+          "description": "The cost of the weapon in Ryo."
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "description",
+        "type",
+        "buffs",
+        "requiredLevel",
+        "price"
+      ]
+    },
+    "Equipment": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Equipment",
+      "type": "object",
+      "description": "Represents a piece of equipment a character can wear.",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "type": { "type": "string", "enum": ["Peito", "Pernas", "Pés", "Mãos"] },
+        "buffs": {
+          "type": "object",
+          "properties": {
+            "taijutsu": { "type": "number" },
+            "ninjutsu": { "type": "number" },
+            "genjutsu": { "type": "number" },
+            "selo": { "type": "number" },
+            "vitalidade": { "type": "number" },
+            "inteligencia": { "type": "number" }
+          }
+        },
+        "requiredLevel": { "type": "number" },
+        "price": { "type": "number" }
+      },
+      "required": ["id", "name", "description", "type", "buffs", "requiredLevel", "price"]
+    },
+    "Mission": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Mission",
+      "type": "object",
+      "description": "Represents a mission that players can undertake.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Mission entity."
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the mission."
+        },
+        "description": {
+          "type": "string",
+          "description": "A description of the mission objectives."
+        },
+        "difficulty": {
+          "type": "string",
+          "description": "The difficulty level of the mission (e.g., Easy, Medium, Hard)."
+        },
+        "requiredLevel": {
+          "type": "number",
+          "description": "The minimum character level required to start the mission."
+        },
+        "durationSeconds": {
+          "type": "number",
+          "description": "The time in seconds required to complete the mission."
+        },
+        "ryoReward": {
+          "type": "number",
+          "description": "The amount of Ryo (in-game currency) awarded for completing the mission."
+        },
+        "experienceReward": {
+          "type": "number",
+          "description": "The amount of experience points awarded to the character upon completion."
+        },
+        "elementExperienceReward": {
+          "type": "object",
+          "description": "Experience points awarded to a specific element.",
+          "properties": {
+            "element": {
+              "type": "string",
+              "enum": [
+                "Katon",
+                "Futon",
+                "Raiton",
+                "Doton",
+                "Suiton"
+              ]
+            },
+            "xp": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "element",
+            "xp"
+          ]
+        },
+        "jutsuExperienceReward": {
+          "type": "object",
+          "description": "Experience points awarded to a specific jutsu.",
+          "properties": {
+            "jutsuName": {
+              "type": "string"
+            },
+            "xp": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "jutsuName",
+            "xp"
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "description",
+        "difficulty",
+        "requiredLevel",
+        "durationSeconds",
+        "ryoReward",
+        "experienceReward"
+      ]
+    },
+    "Arena": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Arena",
+      "type": "object",
+      "description": "Represents an arena where battles take place.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Arena entity."
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the arena."
+        },
+        "description": {
+          "type": "string",
+          "description": "A description of the arena's environment and layout."
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "description"
+      ]
+    },
+    "Match": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Match",
+      "type": "object",
+      "description": "Represents a match between players or teams.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Match entity."
+        },
+        "player1CharacterId": {
+          "type": "string",
+          "description": "Reference to the Character used by player 1. (Relationship: Match 1:1 Character)"
+        },
+        "player2CharacterId": {
+          "type": "string",
+          "description": "Reference to the Character used by player 2. (Relationship: Match 1:1 Character)"
+        },
+        "arenaId": {
+          "type": "string",
+          "description": "Reference to the Arena where the match took place. (Relationship: Match 1:1 Arena)"
+        },
+        "winnerCharacterId": {
+          "type": "string",
+          "description": "Reference to the Character that won the match. (Relationship: Match 1:1 Character)"
+        },
+        "startTime": {
+          "type": "string",
+          "description": "The start time of the match.",
+          "format": "date-time"
+        },
+        "endTime": {
+          "type": "string",
+          "description": "The end time of the match.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "player1CharacterId",
+        "player2CharacterId",
+        "arenaId",
+        "winnerCharacterId",
+        "startTime",
+        "endTime"
+      ]
+    },
+    "Summon": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Summon",
+      "type": "object",
+      "description": "Represents a summonable animal or creature.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Summon entity."
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the summon."
+        },
+        "description": {
+          "type": "string",
+          "description": "A description of the summon."
+        },
+        "buffs": {
+          "type": "object",
+          "description": "A map of stat buffs provided by the summon.",
+          "properties": {
+            "taijutsu": { "type": "number" },
+            "ninjutsu": { "type": "number" },
+            "genjutsu": { "type": "number" },
+            "selo": { "type": "number" },
+            "vitalidade": { "type": "number" },
+            "inteligencia": { "type": "number" }
+          }
+        },
+        "requiredLevel": {
+          "type": "number",
+          "description": "The minimum character level required to form a contract."
+        },
+        "price": {
+          "type": "number",
+          "description": "The cost in Ryo to form the contract."
+        }
+      },
+      "required": ["id", "name", "description", "buffs", "requiredLevel", "price"]
+    },
+    "UserProfile": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "User Profile",
+      "type": "object",
+      "description": "Represents a user's profile, including their character stats and progress.",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "The character's name."
+        },
+        "avatarUrl": {
+          "type": "string",
+          "description": "URL for the character's avatar image."
+        },
+        "village": {
+          "type": "string",
+          "description": "The character's home village."
+        },
+        "level": {
+          "type": "number",
+          "description": "The character's current level."
+        },
+        "experience": {
+          "type": "number",
+          "description": "The character's current experience points."
+        },
+        "maxExperience": {
+          "type": "number",
+          "description": "The experience points required for the next level."
+        },
+        "statPoints": {
+          "type": "number",
+          "description": "Points available to distribute to stats."
+        },
+        "vitality": {
+          "type": "number",
+          "description": "Base vitality stat, used to calculate max health."
+        },
+        "taijutsu": {
+          "type": "number"
+        },
+        "ninjutsu": {
+          "type": "number"
+        },
+        "genjutsu": {
+          "type": "number"
+        },
+        "intelligence": {
+          "type": "number"
+        },
+        "selo": {
+          "type": "number"
+        },
+        "currentHealth": {
+          "type": "number",
+          "description": "The character's current health points."
+        },
+        "maxHealth": {
+          "type": "number",
+          "description": "The character's maximum health points, calculated from stats."
+        },
+        "currentChakra": {
+          "type": "number",
+          "description": "The character's current chakra points."
+        },
+        "maxChakra": {
+          "type": "number",
+          "description": "The character's maximum chakra points, calculated from stats."
+        },
+        "ryo": {
+            "type": "number",
+            "description": "The amount of Ryo (in-game currency) the user has."
+        },
+        "clanId": {
+          "type": "string",
+          "description": "The ID of the clan the user belongs to."
+        },
+        "clanName": {
+            "type": "string",
+            "description": "The name of the clan the user belongs to."
+        },
+        "pendingClanRequest": {
+          "type": "string",
+          "description": "The ID of the clan the user has a pending join request for."
+        },
+        "inventory": {
+            "type": "object",
+            "description": "A map of consumable item IDs to their quantities.",
+            "additionalProperties": {
+                "type": "number"
+            }
+        },
+        "weaponId": {
+            "type": "string",
+            "description": "The ID of the weapon currently equipped by the user."
+        },
+        "summonId": {
+            "type": "string",
+            "description": "The ID of the summon the user has a contract with."
+        },
+        "chestId": { "type": "string", "description": "The ID of the equipped chest armor." },
+        "legsId": { "type": "string", "description": "The ID of the equipped leg armor." },
+        "feetId": { "type": "string", "description": "The ID of the equipped feet armor." },
+        "handsId": { "type": "string", "description": "The ID of the equipped hand armor." },
+        "ownedEquipmentIds": {
+          "type": "array",
+          "description": "A list of equipment IDs that the user owns.",
+          "items": { "type": "string" }
+        },
+        "elementLevels": {
+          "type": "object",
+          "description": "A map of element names to their current level.",
+          "additionalProperties": {
+            "type": "number"
+          }
+        },
+        "elementExperience": {
+          "type": "object",
+          "description": "A map of element names to their current experience points.",
+          "additionalProperties": {
+            "type": "number"
+          }
+        },
+        "jutsus": {
+          "type": "object",
+          "description": "A map of learned jutsus and their levels.",
+          "additionalProperties": {
+            "type": "number"
+          }
+        },
+        "jutsuExperience": {
+          "type": "object",
+          "description": "A map of learned jutsus and their experience points.",
+          "additionalProperties": {
+            "type": "number"
+          }
+        },
+        "activeMission": {
+          "type": "object",
+          "description": "The mission the user is currently on.",
+          "properties": {
+            "missionId": {
+              "type": "string"
+            },
+            "startTime": {
+              "type": "number",
+              "description": "Timestamp (ms) when the mission was started."
+            },
+            "endTime": {
+              "type": "number",
+              "description": "Timestamp (ms) when the mission is expected to end."
+            }
+          }
+        },
+        "dailyMissionState": {
+          "type": "object",
+          "description": "Stores the state of the user's daily missions.",
+          "properties": {
+            "nextReset": {
+              "type": "number",
+              "description": "Timestamp (ms) for the next mission rotation."
+            },
+            "missions": {
+              "type": "array",
+              "description": "List of the current 10 daily mission objects (id and difficulty).",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "difficulty": {
+                    "type": "string"
+                  }
+                }
+              }
+            },
+            "completedMissionIds": {
+              "type": "array",
+              "description": "List of daily mission IDs completed in the current rotation.",
+              "items": {
+                "type": "string"
+              }
+            },
+            "hasRefreshed": {
+              "type": "boolean",
+              "description": "Whether the user has used their manual refresh for the current cycle."
+            }
+          }
+        },
+        "lastBossAttack": {
+          "type": "number",
+          "description": "Timestamp (ms) of the user's last attack on the world boss."
+        },
+        "bossDamage": {
+          "type": "object",
+          "description": "A map of boss IDs to the total damage dealt by the user.",
+          "additionalProperties": {
+            "type": "number"
+          }
+        },
+        "dailyHuntTimeUsed": {
+          "type": "number",
+          "description": "The number of seconds the user has spent on timed hunts in the current day."
+        },
+        "activeHunt": {
+          "type": "object",
+          "description": "The timed hunt the user is currently on.",
+          "properties": {
+            "startTime": {
+              "type": "number",
+              "description": "Timestamp (ms) when the hunt was started."
+            },
+            "endTime": {
+              "type": "number",
+              "description": "Timestamp (ms) when the hunt is expected to end."
+            },
+            "duration": {
+              "type": "number",
+              "description": "Duration of the hunt in seconds."
+            }
+          }
+        },
+        "cursedSeal": {
+          "type": "object",
+          "description": "State of the user's Cursed Seal.",
+          "properties": {
+            "level": {
+              "type": "number",
+              "description": "0 if not obtained, 1 for level 1, 2 for level 2."
+            },
+            "isActive": {
+              "type": "boolean",
+              "description": "Whether the cursed seal is currently active."
+            },
+            "activationTime": {
+              "type": "number",
+              "description": "Timestamp (ms) when the seal was last activated."
+            },
+            "cooldownUntil": {
+              "type": "number",
+              "description": "Timestamp (ms) until the seal can be activated again."
+            }
+          }
+        },
+        "doujutsu": {
+          "type": "object",
+          "description": "State of the user's Dōjutsu.",
+          "properties": {
+            "type": {
+              "type": "string",
+              "description": "The type of dōjutsu (e.g., Sharingan, Byakugan). Null if not obtained.",
+              "enum": [
+                "Sharingan",
+                "Mangekyō Sharingan",
+                "Eternal Mangekyō",
+                "Rinnegan",
+                "Rinne Sharingan",
+                "Byakugan",
+                "Tenseigan",
+                "Jōgan"
+              ]
+            },
+            "stage": {
+              "type": "number",
+              "description": "The current stage of the dōjutsu (e.g., number of tomoe for Sharingan)."
+            },
+            "isActive": {
+              "type": "boolean",
+              "description": "Whether the dōjutsu is currently active."
+            }
+          }
+        }
+      },
+      "required": [
+        "name",
+        "avatarUrl",
+        "village",
+        "level",
+        "experience",
+        "maxExperience",
+        "statPoints",
+        "vitality",
+        "taijutsu",
+        "ninjutsu",
+        "genjutsu",
+        "intelligence",
+        "selo",
+        "currentHealth",
+        "maxHealth",
+        "currentChakra",
+        "maxChakra",
+        "ryo",
+        "elementLevels",
+        "elementExperience",
+        "jutsus",
+        "jutsuExperience"
+      ]
+    },
+    "WorldBoss": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "World Boss",
+      "type": "object",
+      "description": "Represents the global raid boss for all players.",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "totalHealth": {
+          "type": "number"
+        },
+        "currentHealth": {
+          "type": "number"
+        },
+        "bossLevel": {
+          "type": "number"
+        },
+        "lastDefeatedAt": {
+          "type": "number",
+          "description": "Timestamp (ms) of when the boss was last defeated."
+        },
+        "lastDefeatedBy": {
+          "type": "string",
+          "description": "Name of the player who dealt the final blow."
+        },
+        "totalAttacks": {
+          "type": "number",
+          "description": "Total number of attacks received in the current cycle."
+        },
+        "respawnAt": {
+          "type": "number",
+          "description": "Timestamp (ms) when the boss will respawn."
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "totalHealth",
+        "currentHealth"
+      ]
+    },
+    "Clan": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Clan",
+      "type": "object",
+      "description": "Represents a player-created clan.",
+      "properties": {
+        "name": { "type": "string" },
+        "tag": { "type": "string" },
+        "description": { "type": "string" },
+        "village": { "type": "string" },
+        "leaderId": { "type": "string" },
+        "leaderName": { "type": "string" }
+      },
+      "required": ["name", "tag", "description", "village", "leaderId", "leaderName"]
+    },
+    "ClanMember": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Clan Member",
+      "type": "object",
+      "description": "Represents a member within a clan.",
+      "properties": {
+        "name": { "type": "string" },
+        "level": { "type": "number" },
+        "role": { "type": "string", "enum": ["Líder", "Conselheiro", "Membro"] }
+      },
+      "required": ["name", "level", "role"]
+    },
+    "JoinRequest": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "title": "Clan Join Request",
+        "type": "object",
+        "description": "Represents a user's request to join a clan.",
+        "properties": {
+            "userId": { "type": "string" },
+            "userName": { "type": "string" },
+            "userLevel": { "type": "number" }
+        },
+        "required": ["userId", "userName", "userLevel"]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/characters/{characterId}",
+        "definition": {
+          "entityName": "Character",
+          "schema": {
+            "$ref": "#/backend/entities/Character"
+          },
+          "description": "Stores character data.",
+          "params": [
+            {
+              "name": "characterId",
+              "description": "Unique identifier for the character."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/jutsu/{jutsuId}",
+        "definition": {
+          "entityName": "Jutsu",
+          "schema": {
+            "$ref": "#/backend/entities/Jutsu"
+          },
+          "description": "Stores jutsu data.",
+          "params": [
+            {
+              "name": "jutsuId",
+              "description": "Unique identifier for the jutsu."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/weapons/{weaponId}",
+        "definition": {
+          "entityName": "Weapon",
+          "schema": {
+            "$ref": "#/backend/entities/Weapon"
+          },
+          "description": "Stores weapon data.",
+          "params": [
+            {
+              "name": "weaponId",
+              "description": "Unique identifier for the weapon."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/equipments/{equipmentId}",
+        "definition": {
+          "entityName": "Equipment",
+          "schema": { "$ref": "#/backend/entities/Equipment" },
+          "description": "Stores equipment data."
+        }
+      },
+       {
+        "path": "/summons/{summonId}",
+        "definition": {
+          "entityName": "Summon",
+          "schema": { "$ref": "#/backend/entities/Summon" },
+          "description": "Stores summon data."
+        }
+      },
+      {
+        "path": "/missions/{missionId}",
+        "definition": {
+          "entityName": "Mission",
+          "schema": {
+            "$ref": "#/backend/entities/Mission"
+          },
+          "description": "Stores mission data.",
+          "params": [
+            {
+              "name": "missionId",
+              "description": "Unique identifier for the mission."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/arenas/{arenaId}",
+        "definition": {
+          "entityName": "Arena",
+          "schema": {
+            "$ref": "#/backend/entities/Arena"
+          },
+          "description": "Stores arena data.",
+          "params": [
+            {
+              "name": "arenaId",
+              "description": "Unique identifier for the arena."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/matches/{matchId}",
+        "definition": {
+          "entityName": "Match",
+          "schema": {
+            "$ref": "#/backend/entities/Match"
+          },
+          "description": "Stores match data.",
+          "params": [
+            {
+              "name": "matchId",
+              "description": "Unique identifier for the match."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}",
+        "definition": {
+          "entityName": "UserProfile",
+          "schema": {
+            "$ref": "#/backend/entities/UserProfile"
+          },
+          "description": "Stores user profile and character data.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "Unique identifier for the user, matches Auth UID."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/worldBosses/{bossId}",
+        "definition": {
+          "entityName": "WorldBoss",
+          "schema": {
+            "$ref": "#/backend/entities/WorldBoss"
+          },
+          "description": "Stores the current state of the global world boss.",
+          "params": [
+            {
+              "name": "bossId",
+              "description": "The ID of the world boss, typically a singleton like 'current'."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/clans/{clanId}",
+        "definition": {
+          "entityName": "Clan",
+          "schema": { "$ref": "#/backend/entities/Clan" },
+          "description": "Stores data for all clans."
+        }
+      },
+      {
+        "path": "/clans/{clanId}/members/{userId}",
+        "definition": {
+            "entityName": "ClanMember",
+            "schema": { "$ref": "#/backend/entities/ClanMember" },
+            "description": "Stores a list of members for a specific clan."
+        }
+      },
+      {
+        "path": "/clans/{clanId}/joinRequests/{userId}",
+        "definition": {
+            "entityName": "JoinRequest",
+            "schema": { "$ref": "#/backend/entities/JoinRequest" },
+            "description": "Stores pending join requests for a clan."
+        }
+      }
+    ],
+    "reasoning": "The Firestore data structure is designed to support the Naruto Generations game, focusing on characters, jutsu, weapons, missions, arenas, and matches. It prioritizes a flat structure to avoid complex queries and maintain data integrity. Since there are no user-specific data or collaborative data requirements specified, we can use a simple top-level collection structure.\n\n**Authorization Independence:** This design avoids hierarchical dependencies. There is no reliance on parent documents for authorization. All collections are treated as independently.\n\n**QAPs (Rules are not Filters):** The structure supports secure `list` operations by segregating different data types into distinct collections. Each collection can have its own security rules tailored to its data.\n\n**Explanation of Collections:**\n*   `/characters`: Stores character data.\n*   `/jutsu`: Stores jutsu data.\n*   `/weapons`: Stores weapon data.\n*   `/missions`: Stores mission data.\n*   `/arenas`: Stores arena data.\n*   `/matches`: Stores match data.\n*   `/users`: Stores user profile data.\n*   `/worldBosses`: Stores the state of the global raid boss."
+  }
+}

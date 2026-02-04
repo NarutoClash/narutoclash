@@ -1,0 +1,527 @@
+/**
+ * Dados das Missões de Clã
+ * Adicione novas missões aqui facilmente
+ */
+
+export type ClanMissionData = {
+    id: string;
+    title: string;
+    description: string;
+    xp_reward: number;
+    chakra_cost: number;
+    difficulty: 'Fácil' | 'Média' | 'Difícil' | 'Extrema';
+    duration_hours: number;
+    requirements: { min_level: number; min_clan_level: number };
+  };
+  
+  export const CLAN_MISSIONS: ClanMissionData[] = [
+    // ===== MISSÕES FÁCEIS ===== (1-2 horas) - Nível de Clã 1
+    {
+      id: 'patrulha-vila',
+      title: 'Patrulha na Vila',
+      description: 'Realize uma patrulha de rotina pela vila.',
+      xp_reward: 50,
+      chakra_cost: 20,
+      difficulty: 'Fácil',
+      duration_hours: 1,
+      requirements: { min_level: 1, min_clan_level: 1 },
+    },
+    {
+      id: 'entregar-carta',
+      title: 'Entrega de Carta',
+      description: 'Entregue uma carta importante para um aliado.',
+      xp_reward: 60,
+      chakra_cost: 15,
+      difficulty: 'Fácil',
+      duration_hours: 1,
+      requirements: { min_level: 1, min_clan_level: 1 },
+    },
+    {
+      id: 'coletar-ervas',
+      title: 'Coletar Ervas Medicinais',
+      description: 'Colete ervas raras na floresta próxima.',
+      xp_reward: 70,
+      chakra_cost: 25,
+      difficulty: 'Fácil',
+      duration_hours: 2,
+      requirements: { min_level: 1, min_clan_level: 1 },
+    },
+    {
+      id: 'treino-recrutas',
+      title: 'Treinar Recrutas',
+      description: 'Ajude os novos ninjas a aprimorarem suas habilidades.',
+      xp_reward: 65,
+      chakra_cost: 30,
+      difficulty: 'Fácil',
+      duration_hours: 2,
+      requirements: { min_level: 1, min_clan_level: 1 },
+    },
+    {
+      id: 'reparar-equipamentos',
+      title: 'Reparar Equipamentos',
+      description: 'Conserte ferramentas e armas danificadas.',
+      xp_reward: 55,
+      chakra_cost: 20,
+      difficulty: 'Fácil',
+      duration_hours: 1,
+      requirements: { min_level: 1, min_clan_level: 1 },
+    },
+    {
+      id: 'vigiar-portao',
+      title: 'Vigiar Portão Principal',
+      description: 'Mantenha vigilância no portão de entrada da vila.',
+      xp_reward: 45,
+      chakra_cost: 15,
+      difficulty: 'Fácil',
+      duration_hours: 1,
+      requirements: { min_level: 1, min_clan_level: 1 },
+    },
+    {
+      id: 'limpar-dojo',
+      title: 'Limpar Dojo de Treinamento',
+      description: 'Organize e limpe o dojo para os próximos treinos.',
+      xp_reward: 40,
+      chakra_cost: 10,
+      difficulty: 'Fácil',
+      duration_hours: 1,
+      requirements: { min_level: 1, min_clan_level: 1 },
+    },
+    {
+      id: 'procurar-gato',
+      title: 'Procurar Gato Perdido',
+      description: 'Encontre o gato de estimação de um nobre local.',
+      xp_reward: 55,
+      chakra_cost: 20,
+      difficulty: 'Fácil',
+      duration_hours: 2,
+      requirements: { min_level: 1, min_clan_level: 1 },
+    },
+    {
+      id: 'coletar-lenha',
+      title: 'Coletar Lenha',
+      description: 'Reúna lenha para o aquecimento da vila.',
+      xp_reward: 50,
+      chakra_cost: 15,
+      difficulty: 'Fácil',
+      duration_hours: 1,
+      requirements: { min_level: 1, min_clan_level: 1 },
+    },
+    {
+      id: 'ajudar-fazendeiro',
+      title: 'Ajudar Fazendeiro',
+      description: 'Auxilie um fazendeiro com sua colheita.',
+      xp_reward: 60,
+      chakra_cost: 25,
+      difficulty: 'Fácil',
+      duration_hours: 2,
+      requirements: { min_level: 1, min_clan_level: 1 },
+    },
+    {
+      id: 'organizar-arquivo',
+      title: 'Organizar Arquivos da Vila',
+      description: 'Organize documentos antigos na biblioteca.',
+      xp_reward: 45,
+      chakra_cost: 10,
+      difficulty: 'Fácil',
+      duration_hours: 1,
+      requirements: { min_level: 1, min_clan_level: 1 },
+    },
+    {
+      id: 'distribuir-suprimentos',
+      title: 'Distribuir Suprimentos',
+      description: 'Entregue suprimentos básicos para os cidadãos.',
+      xp_reward: 55,
+      chakra_cost: 20,
+      difficulty: 'Fácil',
+      duration_hours: 1,
+      requirements: { min_level: 1, min_clan_level: 1 },
+    },
+  
+    // ===== MISSÕES MÉDIAS ===== (3-4 horas) - Nível de Clã 1-2
+    {
+      id: 'escoltar-mercador',
+      title: 'Escoltar Mercador',
+      description: 'Proteja um mercador durante sua jornada.',
+      xp_reward: 120,
+      chakra_cost: 40,
+      difficulty: 'Média',
+      duration_hours: 3,
+      requirements: { min_level: 5, min_clan_level: 1 },
+    },
+    {
+      id: 'investigar-bandidos',
+      title: 'Investigar Bandidos',
+      description: 'Investigue relatos de bandidos na região.',
+      xp_reward: 130,
+      chakra_cost: 45,
+      difficulty: 'Média',
+      duration_hours: 3,
+      requirements: { min_level: 5, min_clan_level: 1 },
+    },
+    {
+      id: 'recuperar-artefato',
+      title: 'Recuperar Artefato',
+      description: 'Recupere um artefato roubado de uma caverna.',
+      xp_reward: 150,
+      chakra_cost: 50,
+      difficulty: 'Média',
+      duration_hours: 4,
+      requirements: { min_level: 5, min_clan_level: 2 },
+    },
+    {
+      id: 'capturar-desertor',
+      title: 'Capturar Desertor',
+      description: 'Capture um ninja desertor de baixo nível.',
+      xp_reward: 140,
+      chakra_cost: 55,
+      difficulty: 'Média',
+      duration_hours: 4,
+      requirements: { min_level: 5, min_clan_level: 2 },
+    },
+    {
+      id: 'espionar-inimigos',
+      title: 'Espionar Inimigos',
+      description: 'Colete informações sobre atividades inimigas.',
+      xp_reward: 135,
+      chakra_cost: 50,
+      difficulty: 'Média',
+      duration_hours: 3,
+      requirements: { min_level: 5, min_clan_level: 1 },
+    },
+    {
+      id: 'cacar-animal-raro',
+      title: 'Caçar Animal Raro',
+      description: 'Capture um animal raro para estudo.',
+      xp_reward: 90,
+      chakra_cost: 35,
+      difficulty: 'Média',
+      duration_hours: 3,
+      requirements: { min_level: 5, min_clan_level: 1 },
+    },
+    {
+      id: 'desativar-armadilhas',
+      title: 'Desativar Armadilhas',
+      description: 'Desative armadilhas perigosas em uma área.',
+      xp_reward: 110,
+      chakra_cost: 40,
+      difficulty: 'Média',
+      duration_hours: 3,
+      requirements: { min_level: 5, min_clan_level: 1 },
+    },
+    {
+      id: 'proteger-transporte',
+      title: 'Proteger Transporte de Suprimentos',
+      description: 'Escolte um comboio de suprimentos importante.',
+      xp_reward: 100,
+      chakra_cost: 40,
+      difficulty: 'Média',
+      duration_hours: 4,
+      requirements: { min_level: 5, min_clan_level: 1 },
+    },
+    {
+      id: 'mapear-territorio',
+      title: 'Mapear Território Desconhecido',
+      description: 'Explore e mapeie uma região inexplorada.',
+      xp_reward: 125,
+      chakra_cost: 45,
+      difficulty: 'Média',
+      duration_hours: 3,
+      requirements: { min_level: 5, min_clan_level: 1 },
+    },
+    {
+      id: 'treinar-genin',
+      title: 'Treinar Equipe Genin',
+      description: 'Ensine técnicas básicas para jovens ninjas.',
+      xp_reward: 115,
+      chakra_cost: 40,
+      difficulty: 'Média',
+      duration_hours: 3,
+      requirements: { min_level: 5, min_clan_level: 1 },
+    },
+    {
+      id: 'investigar-ruinas',
+      title: 'Investigar Ruínas Antigas',
+      description: 'Explore ruínas em busca de segredos perdidos.',
+      xp_reward: 145,
+      chakra_cost: 50,
+      difficulty: 'Média',
+      duration_hours: 4,
+      requirements: { min_level: 5, min_clan_level: 2 },
+    },
+    {
+      id: 'eliminar-yokai',
+      title: 'Eliminar Yokai Menor',
+      description: 'Derrote criaturas sobrenaturais que assustam aldeões.',
+      xp_reward: 130,
+      chakra_cost: 45,
+      difficulty: 'Média',
+      duration_hours: 3,
+      requirements: { min_level: 5, min_clan_level: 1 },
+    },
+    {
+      id: 'coletar-minerios',
+      title: 'Coletar Minérios Raros',
+      description: 'Mine minérios valiosos em cavernas perigosas.',
+      xp_reward: 120,
+      chakra_cost: 40,
+      difficulty: 'Média',
+      duration_hours: 3,
+      requirements: { min_level: 5, min_clan_level: 1 },
+    },
+    {
+      id: 'testar-armas',
+      title: 'Testar Novas Armas',
+      description: 'Teste equipamentos desenvolvidos pelo ferreiro da vila.',
+      xp_reward: 110,
+      chakra_cost: 35,
+      difficulty: 'Média',
+      duration_hours: 3,
+      requirements: { min_level: 5, min_clan_level: 1 },
+    },
+  
+    // ===== MISSÕES DIFÍCEIS ===== (5-6 horas) - Nível de Clã 3-5
+    {
+      id: 'eliminar-nuke-nin',
+      title: 'Eliminar Nuke-nin',
+      description: 'Derrote um ninja renegado perigoso.',
+      xp_reward: 250,
+      chakra_cost: 80,
+      difficulty: 'Difícil',
+      duration_hours: 5,
+      requirements: { min_level: 10, min_clan_level: 3 },
+    },
+    {
+      id: 'proteger-diplomata',
+      title: 'Proteger Diplomata',
+      description: 'Escolte um diplomata importante em território hostil.',
+      xp_reward: 270,
+      chakra_cost: 85,
+      difficulty: 'Difícil',
+      duration_hours: 6,
+      requirements: { min_level: 10, min_clan_level: 3 },
+    },
+    {
+      id: 'invadir-base-inimiga',
+      title: 'Invadir Base Inimiga',
+      description: 'Infiltre-se em uma base inimiga e sabote suas operações.',
+      xp_reward: 300,
+      chakra_cost: 90,
+      difficulty: 'Difícil',
+      duration_hours: 6,
+      requirements: { min_level: 10, min_clan_level: 5 },
+    },
+    {
+      id: 'resgatar-refem',
+      title: 'Resgatar Refém',
+      description: 'Resgate um aliado capturado por inimigos.',
+      xp_reward: 280,
+      chakra_cost: 85,
+      difficulty: 'Difícil',
+      duration_hours: 5,
+      requirements: { min_level: 10, min_clan_level: 4 },
+    },
+    {
+      id: 'defender-fronteira',
+      title: 'Defender Fronteira',
+      description: 'Defenda a fronteira da vila contra invasores.',
+      xp_reward: 260,
+      chakra_cost: 75,
+      difficulty: 'Difícil',
+      duration_hours: 5,
+      requirements: { min_level: 10, min_clan_level: 3 },
+    },
+    {
+      id: 'interrogar-prisioneiro',
+      title: 'Interrogar Prisioneiro',
+      description: 'Extraia informações valiosas de um prisioneiro.',
+      xp_reward: 160,
+      chakra_cost: 60,
+      difficulty: 'Difícil',
+      duration_hours: 4,
+      requirements: { min_level: 10, min_clan_level: 3 },
+    },
+    {
+      id: 'limpar-monstros',
+      title: 'Limpar Infestação de Monstros',
+      description: 'Elimine criaturas perigosas de uma área.',
+      xp_reward: 180,
+      chakra_cost: 70,
+      difficulty: 'Difícil',
+      duration_hours: 5,
+      requirements: { min_level: 10, min_clan_level: 3 },
+    },
+    {
+      id: 'destruir-arsenal',
+      title: 'Destruir Arsenal Inimigo',
+      description: 'Sabote o arsenal de um grupo hostil.',
+      xp_reward: 290,
+      chakra_cost: 85,
+      difficulty: 'Difícil',
+      duration_hours: 6,
+      requirements: { min_level: 10, min_clan_level: 4 },
+    },
+    {
+      id: 'cacar-bijuu-menor',
+      title: 'Caçar Bijū Menor',
+      description: 'Rastreie e enfraqueca uma criatura de chakra selvagem.',
+      xp_reward: 320,
+      chakra_cost: 95,
+      difficulty: 'Difícil',
+      duration_hours: 6,
+      requirements: { min_level: 10, min_clan_level: 5 },
+    },
+    {
+      id: 'recuperar-pergaminho-antigo',
+      title: 'Recuperar Pergaminho Antigo',
+      description: 'Recupere um pergaminho de técnicas perdidas.',
+      xp_reward: 275,
+      chakra_cost: 80,
+      difficulty: 'Difícil',
+      duration_hours: 5,
+      requirements: { min_level: 10, min_clan_level: 4 },
+    },
+    {
+      id: 'enfrentar-chunin-renegados',
+      title: 'Enfrentar Chunin Renegados',
+      description: 'Derrote um grupo de chunin que abandonaram a vila.',
+      xp_reward: 265,
+      chakra_cost: 75,
+      difficulty: 'Difícil',
+      duration_hours: 5,
+      requirements: { min_level: 10, min_clan_level: 3 },
+    },
+  
+    // ===== MISSÕES EXTREMAS ===== (8-15 horas) - Nível de Clã 7-10
+    {
+      id: 'assassinar-alvo',
+      title: 'Assassinar Alvo de Alto Risco',
+      description: 'Elimine um alvo de extrema importância estratégica.',
+      xp_reward: 500,
+      chakra_cost: 150,
+      difficulty: 'Extrema',
+      duration_hours: 10,
+      requirements: { min_level: 20, min_clan_level: 7 },
+    },
+    {
+      id: 'roubar-pergaminho',
+      title: 'Roubar Pergaminho Proibido',
+      description: 'Infiltre-se em uma vila inimiga e roube um pergaminho secreto.',
+      xp_reward: 550,
+      chakra_cost: 160,
+      difficulty: 'Extrema',
+      duration_hours: 12,
+      requirements: { min_level: 20, min_clan_level: 8 },
+    },
+    {
+      id: 'destruir-instalacao',
+      title: 'Destruir Instalação Militar',
+      description: 'Destrua completamente uma instalação militar inimiga.',
+      xp_reward: 600,
+      chakra_cost: 170,
+      difficulty: 'Extrema',
+      duration_hours: 12,
+      requirements: { min_level: 20, min_clan_level: 9 },
+    },
+    {
+      id: 'capturar-bijuu',
+      title: 'Capturar Bijū Selvagem',
+      description: 'Localize e capture uma Bijū selvagem.',
+      xp_reward: 700,
+      chakra_cost: 200,
+      difficulty: 'Extrema',
+      duration_hours: 15,
+      requirements: { min_level: 20, min_clan_level: 10 },
+    },
+    {
+      id: 'enfrentar-kage',
+      title: 'Enfrentar Kage Renegado',
+      description: 'Confronte um Kage que se tornou uma ameaça.',
+      xp_reward: 800,
+      chakra_cost: 220,
+      difficulty: 'Extrema',
+      duration_hours: 15,
+      requirements: { min_level: 20, min_clan_level: 10 },
+    },
+    {
+      id: 'invadir-fortaleza',
+      title: 'Invadir Fortaleza Inimiga',
+      description: 'Penetre nas defesas de uma fortaleza altamente protegida.',
+      xp_reward: 650,
+      chakra_cost: 180,
+      difficulty: 'Extrema',
+      duration_hours: 12,
+      requirements: { min_level: 20, min_clan_level: 9 },
+    },
+    {
+      id: 'selar-demonio',
+      title: 'Selar Demônio Ancestral',
+      description: 'Realize um ritual complexo para selar um demônio poderoso.',
+      xp_reward: 750,
+      chakra_cost: 210,
+      difficulty: 'Extrema',
+      duration_hours: 15,
+      requirements: { min_level: 20, min_clan_level: 10 },
+    },
+    {
+      id: 'recuperar-reliquias',
+      title: 'Recuperar Relíquias Sagradas',
+      description: 'Recupere artefatos lendários de um templo amaldiçoado.',
+      xp_reward: 580,
+      chakra_cost: 165,
+      difficulty: 'Extrema',
+      duration_hours: 10,
+      requirements: { min_level: 20, min_clan_level: 8 },
+    },
+    {
+      id: 'derrotar-organizacao',
+      title: 'Derrotar Organização Criminosa',
+      description: 'Desmantele completamente uma organização criminosa poderosa.',
+      xp_reward: 720,
+      chakra_cost: 195,
+      difficulty: 'Extrema',
+      duration_hours: 15,
+      requirements: { min_level: 20, min_clan_level: 10 },
+    },
+    {
+      id: 'proteger-cerimonia',
+      title: 'Proteger Cerimônia do Kage',
+      description: 'Garanta segurança máxima durante evento diplomático crítico.',
+      xp_reward: 620,
+      chakra_cost: 175,
+      difficulty: 'Extrema',
+      duration_hours: 12,
+      requirements: { min_level: 20, min_clan_level: 8 },
+    },
+  ];
+  
+  /**
+   * Retorna missões aleatórias (padrão: 3)
+   */
+  export function getRandomMissions(count: number = 3): ClanMissionData[] {
+    const shuffled = [...CLAN_MISSIONS].sort(() => Math.random() - 0.5);
+    return shuffled.slice(0, count);
+  }
+  
+  /**
+   * Retorna uma missão específica por ID
+   */
+  export function getMissionById(id: string): ClanMissionData | undefined {
+    return CLAN_MISSIONS.find(m => m.id === id);
+  }
+  
+  /**
+   * Retorna missões filtradas por dificuldade
+   */
+  export function getMissionsByDifficulty(difficulty: 'Fácil' | 'Média' | 'Difícil' | 'Extrema'): ClanMissionData[] {
+    return CLAN_MISSIONS.filter(m => m.difficulty === difficulty);
+  }
+  
+  /**
+   * Retorna missões que o jogador pode fazer (baseado no nível)
+   */
+  export function getAvailableMissionsForPlayer(playerLevel: number, clanLevel: number): ClanMissionData[] {
+    return CLAN_MISSIONS.filter(m => 
+      m.requirements.min_level <= playerLevel && 
+      m.requirements.min_clan_level <= clanLevel
+    );
+  }
