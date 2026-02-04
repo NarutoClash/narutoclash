@@ -73,7 +73,7 @@ export default function ProfilePage() {
   const [profile, setProfile] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Verificar se é o próprio perfil
+  // ✅ Verificar se é o próprio perfil
   const isOwnProfile = user?.id === profileId;
 
   // Hook para buscar o rank do jogador (incluindo verificação de Kage)
@@ -90,6 +90,7 @@ export default function ProfilePage() {
 
       setIsLoading(true);
       try {
+        // ✅ Sempre busca os dados públicos do perfil
         const { data, error } = await supabase
           .from('profiles')
           .select('*')
@@ -98,6 +99,10 @@ export default function ProfilePage() {
 
         if (error) throw error;
         setProfile(data);
+
+        // ⚠️ REMOVIDO: Não busca dados premium de outros jogadores
+        // O hook usePremiumStatus só é chamado no layout para o usuário logado
+        
       } catch (error) {
         console.error('Erro ao carregar perfil:', error);
       } finally {
@@ -191,7 +196,7 @@ export default function ProfilePage() {
                       variant={isKage ? "default" : "secondary"} 
                       className={cn(
                         "text-md font-semibold",
-                        isKage && "bg-gradient-to-r from-amber-400 to-amber-600 text-white"
+                        isKage && "bg-gradient-to-r from-yellow-400 to-amber-600 text-white shadow-lg"
                       )}
                     >
                       {isKage && <Crown className="h-3 w-3 mr-1" />}
@@ -200,52 +205,62 @@ export default function ProfilePage() {
                   )}
                 </div>
 
-                <div className="mt-4">
-                  <ProgressBarStat
-                    label="Experiência"
-                    value={profile.experience || 0}
-                    max={profile.max_experience || 1000}
-                  />
-                </div>
+                {/* Bio - Só edita se for próprio perfil */}
+                {isOwnProfile ? (
+                  <div className="mt-4">
+                    <BioEditor userId={user!.id} initialBio={profile.bio || ''} />
+                  </div>
+                ) : (
+                  profile.bio && (
+                    <div className="mt-4 p-3 bg-muted/30 rounded-md border">
+                      <p className="text-sm text-muted-foreground italic">{profile.bio}</p>
+                    </div>
+                  )
+                )}
               </div>
             </div>
           </CardHeader>
 
-          <CardContent className="p-6 space-y-8">
-            {/* ✨ NOVA SEÇÃO: BIO CUSTOMIZÁVEL */}
-            <BioEditor
-              profileId={profileId}
-              initialContent={profile.bio_content}
-              isOwner={isOwnProfile}
-            />
-
-            {/* Stats de Vida e Chakra */}
-            {calculatedStats && (
+          <CardContent className="space-y-8 pt-6">
+            {/* Barras de Progresso */}
+            {profile.level < 100 && (
               <div className="space-y-4">
-                <h3 className="text-lg font-semibold border-b pb-2">Recursos</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <h3 className="text-lg font-semibold border-b pb-2">Progresso</h3>
+                <div className="space-y-3">
                   <ProgressBarStat
-                    label="Vida"
-                    value={profile.current_health || calculatedStats.maxHealth}
-                    max={calculatedStats.maxHealth}
-                    className="[&>div]:bg-red-500"
+                    label="Experiência"
+                    value={profile.xp}
+                    max={profile.xp_for_next_level}
+                    className="[&>div]:bg-gradient-to-r [&>div]:from-blue-500 [&>div]:to-cyan-500"
+                  />
+                  <ProgressBarStat
+                    label="HP"
+                    value={calculatedStats.currentHP}
+                    max={calculatedStats.finalHP}
+                    className="[&>div]:bg-gradient-to-r [&>div]:from-red-500 [&>div]:to-rose-500"
                   />
                   <ProgressBarStat
                     label="Chakra"
-                    value={profile.current_chakra || calculatedStats.maxChakra}
-                    max={calculatedStats.maxChakra}
-                    className="[&>div]:bg-blue-500"
+                    value={calculatedStats.currentChakra}
+                    max={calculatedStats.finalChakra}
+                    className="[&>div]:bg-gradient-to-r [&>div]:from-purple-500 [&>div]:to-violet-500"
+                  />
+                  <ProgressBarStat
+                    label="Stamina"
+                    value={calculatedStats.currentStamina}
+                    max={calculatedStats.finalStamina}
+                    className="[&>div]:bg-gradient-to-r [&>div]:from-green-500 [&>div]:to-emerald-500"
                   />
                 </div>
               </div>
             )}
 
-            {/* Atributos */}
-            {calculatedStats && (
+            {/* Grid de Stats */}
+            {(profile.strength > 0 || profile.intelligence > 0 || profile.taijutsu > 0) && (
               <div className="space-y-4">
                 <h3 className="text-lg font-semibold border-b pb-2">Atributos</h3>
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
-                  <StatDisplay label="Vitalidade" value={calculatedStats.finalVitality} />
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                  <StatDisplay label="Força" value={calculatedStats.finalStrength} />
                   <StatDisplay label="Inteligência" value={calculatedStats.finalIntelligence} />
                   <StatDisplay label="Taijutsu" value={calculatedStats.finalTaijutsu} />
                   <StatDisplay label="Ninjutsu" value={calculatedStats.finalNinjutsu} />
