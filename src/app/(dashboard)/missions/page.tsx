@@ -42,26 +42,10 @@ const formatDuration = (totalSeconds: number) => {
     return parts.join(' ') || '0s';
 };
 
-const getElementJutsuLevelFromXp = (xp: number, maxLevel: number, baseCost = 100, factor = 1.5) => {
-    let level = 0;
-    let requiredXp = 0;
-    while (level < maxLevel) {
-        requiredXp += Math.floor(baseCost * Math.pow(factor, level));
-        if (xp >= requiredXp) {
-            level++;
-        } else {
-            break;
-        }
-    }
-    return level;
-};
-
-
 const MissionCard = ({ mission, userProfile, onAccept, isDisabled, isDaily = false }: { mission: Mission; userProfile: any; onAccept: (mission: Mission) => void; isDisabled: boolean, isDaily?: boolean }) => {
     const isLevelSufficient = userProfile.level >= mission.requiredLevel;
     const isCompleted = isDaily && userProfile.daily_mission_state?.completedMissionIds?.includes(mission.id);
     
-    // ✅ ADICIONE ESTAS LINHAS
     const hasEnoughChakra = (userProfile.current_chakra || 0) >= (mission.chakraCost || 0);
     const canAccept = !isDisabled && isLevelSufficient && !isCompleted && hasEnoughChakra;
 
@@ -72,7 +56,6 @@ const MissionCard = ({ mission, userProfile, onAccept, isDisabled, isDaily = fal
             <p className="text-white font-bold text-lg">Requer Nível {mission.requiredLevel}</p>
         </div>
     )}
-    {/* ✅ ADICIONE ESTE BLOCO */}
     {!isCompleted && isLevelSufficient && !hasEnoughChakra && (
         <div className="absolute inset-0 bg-blue-900/40 rounded-lg z-10 flex items-center justify-center">
             <p className="text-white font-bold text-lg">Chakra Insuficiente</p>
@@ -89,7 +72,6 @@ const MissionCard = ({ mission, userProfile, onAccept, isDisabled, isDaily = fal
             <div className="flex flex-col gap-2">
     <h4 className="font-semibold text-sm flex items-center gap-2"><Star className="h-4 w-4 text-yellow-400" /> Requisitos</h4>
     <p className="text-sm text-muted-foreground ml-6">Nível Mínimo: {mission.requiredLevel}</p>
-    {/* ✅ ADICIONE ESTA LINHA */}
     <p className="text-sm text-muted-foreground ml-6 flex items-center gap-1">
         <span className="text-blue-400">⚡</span> Chakra: {mission.chakraCost}
     </p>
@@ -139,7 +121,6 @@ const generateNewMissions = (rngSeed: string): {id: string, difficulty: string}[
     const newMissions: {id: string, difficulty: string}[] = [];
     const usedIds = new Set<string>();
 
-    // 1. Garantir uma missão de nível 1
     const levelOneMissions = missionsData.filter(m => m.requiredLevel === 1);
     if (levelOneMissions.length > 0) {
         const firstMission = levelOneMissions[Math.floor(rng() * levelOneMissions.length)];
@@ -147,7 +128,6 @@ const generateNewMissions = (rngSeed: string): {id: string, difficulty: string}[
         usedIds.add(firstMission.id);
     }
 
-    // 2. Definir a distribuição para as 14 missões restantes
     const missionsByDifficulty = {
         'Fácil': missionsData.filter(m => m.difficulty === 'Fácil'),
         'Média': missionsData.filter(m => m.difficulty === 'Média'),
@@ -155,7 +135,6 @@ const generateNewMissions = (rngSeed: string): {id: string, difficulty: string}[
         'Heróica': missionsData.filter(m => m.difficulty === 'Heróica'),
     };
 
-    // Distribuição para 15 missões: 5 Fácil, 4 Média, 3 Difícil, 3 Heróica
     const missionDistribution = [
         'Fácil', 'Fácil', 'Fácil', 'Fácil',
         'Média', 'Média', 'Média', 'Média',
@@ -163,7 +142,6 @@ const generateNewMissions = (rngSeed: string): {id: string, difficulty: string}[
         'Heróica', 'Heróica', 'Heróica'
     ];
     
-    // 3. Preencher as missões restantes
     while (newMissions.length < 15 && missionDistribution.length > 0) {
         const difficultyIndex = Math.floor(rng() * missionDistribution.length);
         const difficulty = missionDistribution.splice(difficultyIndex, 1)[0];
@@ -182,7 +160,6 @@ const generateNewMissions = (rngSeed: string): {id: string, difficulty: string}[
     return newMissions;
 }
 
-// 🆕 Hook para buscar boosts ativos
 const useActiveBoosts = (supabase: any, userId: string | undefined) => {
     const [activeBoosts, setActiveBoosts] = useState<any[] | null>(null);
     
@@ -205,7 +182,7 @@ const useActiveBoosts = (supabase: any, userId: string | undefined) => {
     
     return activeBoosts;
   };
-  // 🆕 Função para calcular multiplicadores de bônus
+
 const getBoostMultipliers = (activeBoosts: any[] | null) => {
     let xpMultiplier = 1;
     let ryoMultiplier = 1;
@@ -223,12 +200,12 @@ const getBoostMultipliers = (activeBoosts: any[] | null) => {
     
     return { xpMultiplier, ryoMultiplier };
   };
-  export default function MissionsPage() {
+
+export default function MissionsPage() {
     const { user, supabase } = useSupabase();
     const { toast } = useToast();
 
-// 🆕 ADICIONAR AQUI
-const { isActive: isPremium, isLoading: isPremiumLoading } = usePremiumStatus(supabase, user?.id);
+    const { isActive: isPremium, isLoading: isPremiumLoading } = usePremiumStatus(supabase, user?.id);
 
     const userProfileRef = useMemoSupabase(() => {
         if (!user) return null;
@@ -237,7 +214,6 @@ const { isActive: isPremium, isLoading: isPremiumLoading } = usePremiumStatus(su
 
     const { data: userProfile, isLoading } = useDoc(userProfileRef);
     
-    // 🆕 Hook para buscar boosts ativos
     const activeBoosts = useActiveBoosts(supabase, user?.id);
 
 const [localActiveMission, setLocalActiveMission] = useState<{
@@ -326,7 +302,7 @@ useEffect(() => {
                     nextReset: nextResetTimestamp,
                     missions: finalMissions,
                     completedMissionIds: activeDailyMission ? userProfile.daily_mission_state.completedMissionIds : [],
-                    refreshesUsed: 0 // ✅ MUDANÇA
+                    refreshesUsed: 0
                 }
             }, supabase);
             currentMissions = finalMissions;
@@ -342,7 +318,6 @@ useEffect(() => {
     const handleAcceptMission = async (mission: Mission) => {
         if (!userProfileRef || userProfile?.active_mission || userProfile?.active_hunt || !supabase) return;
       
-        // ✅ NOVA VERIFICAÇÃO DE CHAKRA
         const chakraCost = mission.chakraCost || 0;
         const currentChakra = userProfile.current_chakra || 0;
         
@@ -365,7 +340,7 @@ useEffect(() => {
             .from('profiles')
             .update({
               active_mission: { missionId: mission.id, startTime, endTime },
-              current_chakra: currentChakra - chakraCost // ✅ DESCONTA O CHAKRA
+              current_chakra: currentChakra - chakraCost
             })
             .eq('id', userProfileRef.id);
       
@@ -383,7 +358,7 @@ useEffect(() => {
       
           toast({
             title: "Missão Aceita!",
-            description: `Você começou a missão: ${mission.name}. Chakra usado: ${chakraCost}.`, // ✅ MOSTRA CHAKRA USADO
+            description: `Você começou a missão: ${mission.name}. Chakra usado: ${chakraCost}.`,
           });
         } catch (error) {
           setLocalActiveMission(null);
@@ -395,6 +370,7 @@ useEffect(() => {
           });
         }
     };
+
     const handleCancelMission = async () => {
         if (!userProfileRef || !userProfile || !supabase) return;
         
@@ -456,10 +432,21 @@ useEffect(() => {
         };
     
         const handleCompleteMission = async () => {
-            if (!userProfile || !activeMissionDetails || !userProfileRef || !supabase) return;
+            if (!userProfile || !activeMissionDetails || !userProfileRef || !supabase) {
+                console.error('❌ FALTAM DADOS:', { 
+                    userProfile: !!userProfile, 
+                    activeMissionDetails: !!activeMissionDetails, 
+                    userProfileRef: !!userProfileRef, 
+                    supabase: !!supabase 
+                });
+                return;
+            }
+        
+            console.log('🚀 INICIANDO CONCLUSÃO DA MISSÃO');
+            console.log('📋 Missão:', activeMissionDetails.name);
+            console.log('👤 User ID:', userProfileRef.id);
         
             try {
-                // 🆕 BUSCAR BOOSTS ATIVOS
                 const { data: activeBoosts } = await supabase
                     .from('user_premium_inventory')
                     .select('*')
@@ -467,7 +454,6 @@ useEffect(() => {
                     .in('item_type', ['xp_boost', 'ryo_boost'])
                     .gte('expires_at', new Date().toISOString());
         
-                // 🆕 CALCULAR MULTIPLICADORES
                 let xpMultiplier = 1;
                 let ryoMultiplier = 1;
         
@@ -482,7 +468,6 @@ useEffect(() => {
                     });
                 }
         
-                // 🆕 APLICAR BÔNUS
                 const baseRyo = activeMissionDetails.ryoReward;
                 const baseXP = activeMissionDetails.experienceReward;
                 
@@ -494,11 +479,14 @@ useEffect(() => {
         
                 const updatePayload: any = {
                     active_mission: null,
-                    ryo: (userProfile.ryo || 0) + finalRyo, // ✅ Usa valor com bônus
-                    experience: (userProfile.experience || 0) + finalXP, // ✅ Usa valor com bônus
+                    ryo: (userProfile.ryo || 0) + finalRyo,
+                    experience: (userProfile.experience || 0) + finalXP,
                 };
         
-                const newExperience = (userProfile.experience || 0) + finalXP; // ✅ Usa valor com bônus
+                console.log('💰 Ryo atual:', userProfile.ryo, '→', updatePayload.ryo);
+                console.log('⭐ XP atual:', userProfile.experience, '→', updatePayload.experience);
+        
+                const newExperience = (userProfile.experience || 0) + finalXP;
                 const { level: newLevel } = getLevelFromXp(newExperience);
                 
                 if(newLevel > userProfile.level) {
@@ -509,55 +497,83 @@ useEffect(() => {
                     updatePayload.level = newLevel;
                     updatePayload.max_experience = newMaxExperience;
                     updatePayload.stat_points = newStatPoints;
+                    
+                    console.log('🎉 SUBIU DE NÍVEL!', userProfile.level, '→', newLevel);
                 }
-                
-                // ✅ Processar elementExperienceReward
+        
+                // ✅ PROCESSAR ELEMENT XP - CORRIGIDO
                 if (activeMissionDetails.elementExperienceReward) {
                     const { element, xp } = activeMissionDetails.elementExperienceReward;
+                    
+                    console.log('');
+                    console.log('🔥 ==========================================');
+                    console.log('🔥 PROCESSANDO XP DE ELEMENTO');
+                    console.log('🔥 ==========================================');
+                    console.log('🔥 Elemento:', element);
+                    console.log('🔥 XP da missão:', xp);
                     
                     const currentElementExperience = userProfile.element_experience || {};
                     const currentElementXp = currentElementExperience[element] || 0;
                     const newElementXp = currentElementXp + xp;
                     
+                    console.log('📊 XP Antigo:', currentElementXp);
+                    console.log('📊 XP Novo:', newElementXp);
+                    
                     updatePayload.element_experience = {
                         ...currentElementExperience,
                         [element]: newElementXp,
                     };
-        
-                    const newElementLevel = getElementJutsuLevelFromXp(newElementXp, 10);
-                    const currentElementLevels = userProfile.element_levels || {};
                     
-                    if (newElementLevel > (currentElementLevels[element] || 0)) {
-                        updatePayload.element_levels = {
-                            ...currentElementLevels,
-                            [element]: newElementLevel,
-                        };
+                    console.log('✅ element_experience atualizado:', JSON.stringify(updatePayload.element_experience));
+        
+                    // 🔥 CALCULAR NÍVEL DO ELEMENTO CORRETAMENTE
+                    const { level: newElementLevel } = getLevelFromXp(newElementXp, 10, 100, 1.5);
+                    const currentElementLevels = userProfile.element_levels || {};
+                    const oldElementLevel = currentElementLevels[element] || 0;
+                    
+                    console.log('⬆️ Nível Antigo:', oldElementLevel);
+                    console.log('⬆️ Nível Novo:', newElementLevel);
+                    
+                    updatePayload.element_levels = {
+                        ...currentElementLevels,
+                        [element]: newElementLevel,
+                    };
+                    
+                    console.log('✅ element_levels atualizado:', JSON.stringify(updatePayload.element_levels));
+                    
+                    if (newElementLevel > oldElementLevel) {
+                        console.log('🎉 SUBIU DE NÍVEL EM', element, '!', oldElementLevel, '→', newElementLevel);
                     }
+                    console.log('🔥 ==========================================');
+                    console.log('');
                 }
         
-                // ✅ Processar jutsuExperienceReward
+                // ✅ PROCESSAR JUTSU XP - CORRIGIDO
                 if (activeMissionDetails.jutsuExperienceReward) {
                     const { jutsuName, xp } = activeMissionDetails.jutsuExperienceReward;
                     const jutsuLevel = userProfile.jutsus?.[jutsuName] || 0;
+                    
                     if (jutsuLevel > 0) {
                         const currentJutsuXp = userProfile.jutsu_experience?.[jutsuName] || 0;
                         const newJutsuXp = currentJutsuXp + xp;
                         
-                        const currentJutsuExperience = userProfile.jutsu_experience || {};
-                        
                         updatePayload.jutsu_experience = {
-                            ...currentJutsuExperience,
+                            ...(userProfile.jutsu_experience || {}),
                             [jutsuName]: newJutsuXp,
                         };
         
-                        const newJutsuLevel = getElementJutsuLevelFromXp(newJutsuXp, 25, 120, 1.4);
-                        const currentJutsus = userProfile.jutsus || {};
+                        const { level: newJutsuLevel } = getLevelFromXp(newJutsuXp, 25, 120, 1.4);
+                        
+                        console.log('🥷 === JUTSU:', jutsuName, '===');
+                        console.log('📊 XP:', currentJutsuXp, '→', newJutsuXp);
+                        console.log('⬆️ Nível:', jutsuLevel, '→', newJutsuLevel);
                         
                         if (newJutsuLevel > jutsuLevel) {
                             updatePayload.jutsus = {
-                                ...currentJutsus,
+                                ...(userProfile.jutsus || {}),
                                 [jutsuName]: newJutsuLevel,
                             };
+                            console.log('🎉 SUBIU DE NÍVEL EM', jutsuName, '!');
                         }
                     }
                 }
@@ -568,22 +584,44 @@ useEffect(() => {
                     completedMissionIds: completedIds,
                 };
         
+                console.log('');
+                console.log('💾 ==========================================');
+                console.log('💾 PAYLOAD FINAL QUE SERÁ ENVIADO AO BANCO');
+                console.log('💾 ==========================================');
+                console.log(JSON.stringify(updatePayload, null, 2));
+                console.log('💾 ==========================================');
+                console.log('');
+        
                 setLocalActiveMission(null);
         
-                const { error } = await supabase
+                console.log('📤 ENVIANDO PARA O BANCO...');
+                
+                const { data, error } = await supabase
                     .from('profiles')
                     .update(updatePayload)
-                    .eq('id', userProfileRef.id);
+                    .eq('id', userProfileRef.id)
+                    .select();
         
                 if (error) {
-                    console.error('🔴 Erro ao salvar:', error);
+                    console.error('🔴 ==========================================');
+                    console.error('🔴 ERRO AO SALVAR NO BANCO');
+                    console.error('🔴 ==========================================');
+                    console.error('🔴 Erro:', error);
+                    console.error('🔴 Mensagem:', error.message);
+                    console.error('🔴 ==========================================');
+                    
                     if (activeMission) {
                         setLocalActiveMission(activeMission as any);
                     }
                     throw error;
                 }
         
-                // 🆕 MENSAGEM COM BÔNUS
+                console.log('✅ ==========================================');
+                console.log('✅ SUCESSO! DADOS SALVOS NO BANCO');
+                console.log('✅ ==========================================');
+                console.log('✅ Dados retornados:', data);
+                console.log('✅ ==========================================');
+        
                 let message = `Você completou "${activeMissionDetails.name}"!`;
                 
                 if (bonusRyo > 0 || bonusXP > 0) {
@@ -604,7 +642,7 @@ useEffect(() => {
                 }, 2000);
         
             } catch (error) {
-                console.error("Error completing mission:", error);
+                console.error('🔴 ERRO INESPERADO:', error);
                 toast({ variant: "destructive", title: "Erro ao completar missão" });
             }
         };
@@ -659,7 +697,6 @@ useEffect(() => {
                             <Progress value={progress} />
                         </div>
                         
-                        {/* 🆕 SEÇÃO DE RECOMPENSAS */}
                         <div className="rounded-lg border bg-muted/20 p-4 space-y-3">
                           <h4 className="font-semibold text-sm flex items-center gap-2">
                             <Award className="h-4 w-4 text-amber-500" />
@@ -732,7 +769,6 @@ useEffect(() => {
         )
     }
 
-    // 🆕 MODIFICAR LÓGICA DE REFRESH
 const refreshesUsed = userProfile?.daily_mission_state?.refreshesUsed || 0;
 const maxRefreshes = isPremium ? 3 : 1;
 const canRefresh = refreshesUsed < maxRefreshes;

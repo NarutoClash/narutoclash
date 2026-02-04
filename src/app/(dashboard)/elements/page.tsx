@@ -12,10 +12,10 @@ import {
   CardContent,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Flame, Wind, Zap, Mountain, Waves, ScrollText, GraduationCap, Lock, Sparkles, Loader2 } from 'lucide-react'; // ✅ ADICIONAR Loader2
+import { Flame, Wind, Zap, Mountain, Waves, ScrollText, GraduationCap, Lock, Sparkles, Loader2 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useSupabase, useMemoSupabase, useCollection } from '@/supabase'; // ✅ ADICIONAR useCollection
+import { useSupabase, useMemoSupabase, useCollection } from '@/supabase';
 import { useDoc } from '@/supabase/hooks/use-doc';
 import { updateDocumentNonBlocking } from '@/supabase/non-blocking-updates';
 import { useToast } from '@/hooks/use-toast';
@@ -23,19 +23,8 @@ import { Separator } from '@/components/ui/separator';
 import { Progress } from '@/components/ui/progress';
 import { usePremiumStatus } from '@/hooks/use-premium-status';
 import { getMaxJutsusPerElement, getLockedJutsus, MAX_JUTSUS_FREE, MAX_JUTSUS_PREMIUM } from '@/lib/jutsu-limits';
-import type { Jutsu } from '@/lib/jutsus-data'; // ✅ IMPORTAR TIPO
-import { defaultJutsuImage } from '@/lib/jutsus-data'; // ✅ IMPORTAR IMAGEM PADRÃO
-
-// ✅ REMOVER ESTE BLOCO COMPLETAMENTE:
-/*
-type Jutsu = {
-  name: string;
-  element: string;
-  requiredLevel: number;
-};
-*/
-
-
+import type { Jutsu } from '@/lib/jutsus-data';
+import { defaultJutsuImage } from '@/lib/jutsus-data';
 
 const elementData: { name: string; icon: LucideIcon }[] = [
   { name: 'Katon', icon: Flame },
@@ -44,6 +33,28 @@ const elementData: { name: string; icon: LucideIcon }[] = [
   { name: 'Doton', icon: Mountain },
   { name: 'Suiton', icon: Waves },
 ];
+
+// ✅ FUNÇÃO PARA NORMALIZAR ELEMENT_LEVELS DO BANCO DE DADOS
+const normalizeElementLevels = (elementLevels: any): Record<string, number> => {
+  if (!elementLevels || typeof elementLevels !== 'object') return {};
+  
+  const normalized: Record<string, number> = {};
+  
+  Object.entries(elementLevels).forEach(([element, value]) => {
+    if (typeof value === 'object' && value !== null && 'level' in value) {
+      // ✅ Se for objeto com propriedade 'level', extrair o número
+      normalized[element] = Number((value as any).level) || 0;
+    } else if (typeof value === 'number') {
+      // ✅ Se já for número, usar diretamente
+      normalized[element] = value;
+    } else {
+      // ✅ Caso contrário, usar 0
+      normalized[element] = 0;
+    }
+  });
+  
+  return normalized;
+};
 
 const getLevelFromXp = (xp: number, maxLevel: number, baseCost = 100, factor = 1.5) => {
   let level = 0;
@@ -79,7 +90,6 @@ export default function ElementsPage() {
   const { user, supabase } = useSupabase();
   const { toast } = useToast();
   const { isActive: isPremium } = usePremiumStatus(supabase, user?.id);
-  const [isMaxing, setIsMaxing] = useState(false);
 
   const userProfileRef = useMemoSupabase(() => {
     if (!user) return null;
@@ -88,7 +98,6 @@ export default function ElementsPage() {
 
   const { data: userProfile, isLoading } = useDoc(userProfileRef);
 
-  // ✅ BUSCAR JUTSUS DO BANCO DE DADOS
   const jutsusQuery = useMemoSupabase(() => {
     return {
       table: 'jutsus',
@@ -98,7 +107,6 @@ export default function ElementsPage() {
 
   const { data: jutsusFromDB, isLoading: isLoadingJutsus } = useCollection(jutsusQuery);
 
-  // ✅ CONVERTER PARA O FORMATO ESPERADO
   const allJutsus: Jutsu[] = (jutsusFromDB || []).map((jutsu: any) => ({
     id: jutsu.id,
     name: jutsu.name,
@@ -110,82 +118,6 @@ export default function ElementsPage() {
 
   const elementExperience = userProfile?.element_experience || {};
   const jutsuExperience = userProfile?.jutsu_experience || {};
-
-  // 🎯 FUNÇÃO PARA MAXAR TODOS OS ELEMENTOS E JUTSUS
-  const handleMaxAllElements = async () => {
-    if (!userProfileRef || !supabase || !userProfile) return;
-    
-    setIsMaxing(true);
-    
-    try {
-      // Calcular XP necessário para nível 10 dos elementos
-      const xpForLevel10 = getXpForLevel(10);
-      
-      // Criar objeto com todos elementos no nível 10
-      const maxedElementLevels = {
-        Katon: 10,
-        Futon: 10,
-        Raiton: 10,
-        Doton: 10,
-        Suiton: 10,
-      };
-      
-      // Criar objeto com XP para todos elementos
-      const maxedElementExperience = {
-        Katon: xpForLevel10,
-        Futon: xpForLevel10,
-        Raiton: xpForLevel10,
-        Doton: xpForLevel10,
-        Suiton: xpForLevel10,
-      };
-      
-      // Criar objeto com TODOS os jutsus no nível 1 (aprendidos)
-      const allJutsusLearned: Record<string, number> = {};
-      const allJutsusXp: Record<string, number> = {};
-      
-      allJutsus.forEach(jutsu => {
-        allJutsusLearned[jutsu.name] = 10; // Nível 10 em todos jutsus
-        allJutsusXp[jutsu.name] = getXpForLevel(10, 120, 1.4);
-      });
-
-      // Atualizar no banco
-      const { error } = await supabase
-        .from('profiles')
-        .update({
-          element_levels: maxedElementLevels,
-          element_experience: maxedElementExperience,
-          jutsus: allJutsusLearned,
-          jutsu_experience: allJutsusXp,
-        })
-        .eq('id', userProfileRef.id);
-
-      if (error) {
-        toast({
-          variant: "destructive",
-          title: "Erro ao maxar elementos",
-          description: error.message,
-        });
-      } else {
-        toast({
-          title: "🎉 Elementos Maxados!",
-          description: "Todos os elementos foram definidos para nível 10 e todos os jutsus foram aprendidos!",
-        });
-        
-        setTimeout(() => {
-          window.location.reload();
-        }, 1500);
-      }
-    } catch (error) {
-      console.error('🔴 Erro ao maxar elementos:', error);
-      toast({
-        variant: "destructive",
-        title: "Erro",
-        description: "Ocorreu um erro ao maxar os elementos.",
-      });
-    } finally {
-      setIsMaxing(false);
-    }
-  };
 
   const handleLearnJutsu = async (jutsuName: string, element: string) => {
     if (!userProfileRef || !supabase) return;
@@ -249,11 +181,11 @@ export default function ElementsPage() {
     }
   };
 
-  if (isLoading || isLoadingJutsus) { // ✅ ADICIONAR isLoadingJutsus
+  if (isLoading || isLoadingJutsus) {
     return (
-      <div className="flex flex-col items-center justify-center h-full text-center gap-4"> {/* ✅ ADICIONAR gap-4 */}
+      <div className="flex flex-col items-center justify-center h-full text-center gap-4">
         <PageHeader title="Carregando..." description="Verificando seus elementos e jutsus." />
-        <Loader2 className="h-8 w-8 animate-spin" /> {/* ✅ ADICIONAR LOADER */}
+        <Loader2 className="h-8 w-8 animate-spin" />
       </div>
     );
   }
@@ -269,35 +201,24 @@ export default function ElementsPage() {
     );
   }
   
-  const elementLevels = userProfile?.element_levels || {};
-  const learnedJutsus = allJutsus.filter(jutsu => (elementLevels[jutsu.element] || 0) >= jutsu.requiredLevel);
+  // ✅ USAR A FUNÇÃO DE NORMALIZAÇÃO AQUI
+  const elementLevels = normalizeElementLevels(userProfile?.element_levels);
+  
+  const learnedJutsus = allJutsus.filter(jutsu => {
+    const level = elementLevels[jutsu.element] || 0;
+    return level >= jutsu.requiredLevel;
+  });
+  
   const userJutsus = userProfile?.jutsus || {};
 
   return (
     <div>
       <PageHeader title="Elementos e Jutsus" description="Treine seus elementos e jutsus para aumentar seu poder." />
       
-      {/* 🎯 BOTÃO DE TESTE */}
       <div className="my-6 flex flex-col items-center gap-4">
         <p className="text-lg">Aumente o nível dos seus elementos através de missões. Os jutsus sobem de nível automaticamente ao ganhar XP nas missões.</p>
-        
-        <div className="p-4 border-2 border-yellow-400 rounded-lg bg-yellow-50 dark:bg-yellow-950/20">
-          <p className="text-sm font-semibold mb-2 text-center">🧪 MODO TESTE</p>
-          <Button 
-            onClick={handleMaxAllElements}
-            disabled={isMaxing}
-            variant="outline"
-            className="w-full border-yellow-600 hover:bg-yellow-100 dark:hover:bg-yellow-900/30"
-          >
-            <Sparkles className="mr-2 h-4 w-4" />
-            {isMaxing ? 'Maxando...' : 'Maxar Todos Elementos e Jutsus (Nível 10)'}
-          </Button>
-          <p className="text-xs text-muted-foreground mt-2 text-center">
-            Define todos elementos para nível 10 e aprende todos os jutsus
-          </p>
-        </div>
       </div>
-
+      
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
         {elementData.map((element) => {
           const currentXp = elementExperience[element.name] || 0;
@@ -392,11 +313,10 @@ export default function ElementsPage() {
                     
                     return (
                       <Card key={jutsu.name} className={cn(
-                        "p-4 flex flex-col justify-between space-y-3 transition-all hover:shadow-lg", // ✅ ADICIONAR hover
+                        "p-4 flex flex-col justify-between space-y-3 transition-all hover:shadow-lg",
                         isLocked && "opacity-50 border-destructive"
                       )}>
                         <div className="flex items-center gap-3">
-                          {/* ✅ SUBSTITUIR ScrollText POR IMAGEM */}
                           <div className="relative w-14 h-14 rounded-lg overflow-hidden bg-gradient-to-br from-muted/80 to-muted/40 flex-shrink-0 border-2 border-primary/30 p-1">
                             <div className="relative w-full h-full">
                               <Image 
@@ -407,7 +327,6 @@ export default function ElementsPage() {
                                 unoptimized
                               />
                             </div>
-                            {/* Badge de nível */}
                             {level > 0 && (
                               <div className="absolute -top-1 -right-1 bg-primary text-primary-foreground rounded-full h-6 w-6 flex items-center justify-center text-xs font-bold border-2 border-background">
                                 {level}

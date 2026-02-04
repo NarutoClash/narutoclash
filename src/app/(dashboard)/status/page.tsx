@@ -70,9 +70,9 @@ const StatItem = ({
       <span className="font-medium text-sm">{label}</span>
       <div className="flex flex-col items-center gap-1 text-right mt-2">
         <div className="flex items-end gap-1">
-            <span className="text-xl font-bold text-foreground leading-none">
-              {Math.round(value)}
-            </span>
+        <span className="text-xl font-bold text-foreground leading-none">
+  {isNaN(value) ? 0 : Math.round(value)}
+</span>
              {bonus !== 0 && (
                <span className={cn("text-xs leading-none", bonus > 0 ? "text-green-400" : "text-red-500")}>
                   ({bonus > 0 ? `+${Math.round(bonus)}` : Math.round(bonus)})
@@ -444,19 +444,10 @@ const getBonusTooltip = (stat: StatKey, userProfile: any): React.ReactNode => {
 };
 
 // 🆕 CALCULAR BÔNUS DOS BOOSTS PREMIUM
+// 🆕 CALCULAR BÔNUS DOS BOOSTS PREMIUM (VERSÃO CORRIGIDA)
 const calculateBoostBonuses = (activeBoosts: any[] | null) => {
-  if (!activeBoosts || activeBoosts.length === 0) {
-    return {
-      vitalidade: 0,
-      inteligencia: 0,
-      taijutsu: 0,
-      ninjutsu: 0,
-      genjutsu: 0,
-      selo: 0,
-    };
-  }
-
-  const bonuses = {
+  // ✅ VALORES PADRÃO GARANTIDOS
+  const defaultBonuses = {
     vitalidade: 0,
     inteligencia: 0,
     taijutsu: 0,
@@ -465,13 +456,22 @@ const calculateBoostBonuses = (activeBoosts: any[] | null) => {
     selo: 0,
   };
 
+  if (!activeBoosts || activeBoosts.length === 0) {
+    return defaultBonuses;
+  }
+
+  const bonuses = { ...defaultBonuses };
+
   activeBoosts.forEach((boost) => {
-    const boostData = boost.item_data;
-    // ✅ Só processar se tiver stat_bonuses
-    if (boostData?.stat_bonuses) {
+    const boostData = boost?.item_data;
+    if (boostData?.stat_bonuses && typeof boostData.stat_bonuses === 'object') {
       Object.entries(boostData.stat_bonuses).forEach(([stat, value]) => {
-        if (bonuses.hasOwnProperty(stat)) {
-          bonuses[stat as keyof typeof bonuses] += Number(value) || 0;
+        if (stat in bonuses) {
+          const numValue = Number(value);
+          // ✅ GARANTIR QUE SEJA UM NÚMERO VÁLIDO
+          if (!isNaN(numValue) && isFinite(numValue)) {
+            bonuses[stat as keyof typeof bonuses] += numValue;
+          }
         }
       });
     }
@@ -479,21 +479,28 @@ const calculateBoostBonuses = (activeBoosts: any[] | null) => {
 
   return bonuses;
 };
-  // ✅ calculatedStats SIMPLIFICADO
-  const calculatedStats = useMemo(() => {
+
+// ✅ calculatedStats CORRIGIDO
+const calculatedStats = useMemo(() => {
   if (!userProfile) return null;
 
-  // 🆕 CALCULAR BÔNUS DOS BOOSTS
+  // 🆕 CALCULAR BÔNUS DOS BOOSTS COM VALIDAÇÃO
   const boostBonuses = calculateBoostBonuses(activeBoosts);
+
+  // ✅ FUNÇÃO AUXILIAR PARA GARANTIR NÚMEROS VÁLIDOS
+  const safeNumber = (value: any): number => {
+    const num = Number(value);
+    return isNaN(num) || !isFinite(num) ? 0 : num;
+  };
 
   const profileWithUpdates = {
     ...userProfile,
-    vitality: (userProfile.vitality || 0) + (pendingUpdates.vitality || 0) + boostBonuses.vitalidade,
-    intelligence: (userProfile.intelligence || 0) + (pendingUpdates.intelligence || 0) + boostBonuses.inteligencia,
-    taijutsu: (userProfile.taijutsu || 0) + (pendingUpdates.taijutsu || 0) + boostBonuses.taijutsu,
-    ninjutsu: (userProfile.ninjutsu || 0) + (pendingUpdates.ninjutsu || 0) + boostBonuses.ninjutsu,
-    genjutsu: (userProfile.genjutsu || 0) + (pendingUpdates.genjutsu || 0) + boostBonuses.genjutsu,
-    selo: (userProfile.selo || 0) + (pendingUpdates.selo || 0) + boostBonuses.selo,
+    vitality: safeNumber(userProfile.vitality) + safeNumber(pendingUpdates.vitality) + safeNumber(boostBonuses.vitalidade),
+    intelligence: safeNumber(userProfile.intelligence) + safeNumber(pendingUpdates.intelligence) + safeNumber(boostBonuses.inteligencia),
+    taijutsu: safeNumber(userProfile.taijutsu) + safeNumber(pendingUpdates.taijutsu) + safeNumber(boostBonuses.taijutsu),
+    ninjutsu: safeNumber(userProfile.ninjutsu) + safeNumber(pendingUpdates.ninjutsu) + safeNumber(boostBonuses.ninjutsu),
+    genjutsu: safeNumber(userProfile.genjutsu) + safeNumber(pendingUpdates.genjutsu) + safeNumber(boostBonuses.genjutsu),
+    selo: safeNumber(userProfile.selo) + safeNumber(pendingUpdates.selo) + safeNumber(boostBonuses.selo),
   };
 
   const stats = calculateFinalStats(profileWithUpdates);
@@ -502,14 +509,15 @@ const calculateBoostBonuses = (activeBoosts: any[] | null) => {
 
   return {
     ...stats,
-    profileVitality: profileWithUpdates.vitality,
-    profileIntelligence: profileWithUpdates.intelligence,
-    profileTaijutsu: profileWithUpdates.taijutsu,
-    profileNinjutsu: profileWithUpdates.ninjutsu,
-    profileGenjutsu: profileWithUpdates.genjutsu,
-    profileSelo: profileWithUpdates.selo,
+    profileVitality: safeNumber(profileWithUpdates.vitality),
+    profileIntelligence: safeNumber(profileWithUpdates.intelligence),
+    profileTaijutsu: safeNumber(profileWithUpdates.taijutsu),
+    profileNinjutsu: safeNumber(profileWithUpdates.ninjutsu),
+    profileGenjutsu: safeNumber(profileWithUpdates.genjutsu),
+    profileSelo: safeNumber(profileWithUpdates.selo),
   };
 }, [userProfile, pendingUpdates, activeBoosts]);
+
 
 // 🆕 Função para calcular bônus de XP e Ryo dos boosts premium
 const getActiveBoostMultipliers = () => {
@@ -1647,19 +1655,21 @@ const BattleReportModal = () => {
       )}
     </CardContent>
     <CardFooter>
-      {!isLoading && isMissionComplete && (
-        <Button className="w-full" onClick={handleCompleteMission}>
-          <CheckCircle className="mr-2 h-4 w-4" />
-          Completar Missão
-        </Button>
-      )}
-      {isHuntComplete && (
-        <Button className="w-full" onClick={handleCompleteHunt}>
-          <CheckCircle className="mr-2 h-4 w-4" />
-          Concluir Caçada
-        </Button>
-      )}
-    </CardFooter>
+  {!isLoading && isMissionComplete && (
+    <Button className="w-full" asChild>
+      <Link href="/missions">
+        <CheckCircle className="mr-2 h-4 w-4" />
+        Ir para Missões
+      </Link>
+    </Button>
+  )}
+  {isHuntComplete && (
+    <Button className="w-full" onClick={handleCompleteHunt}>
+      <CheckCircle className="mr-2 h-4 w-4" />
+      Concluir Caçada
+    </Button>
+  )}
+</CardFooter>
   </Card>
 )}
 
