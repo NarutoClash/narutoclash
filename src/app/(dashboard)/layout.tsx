@@ -54,6 +54,7 @@ import { usePremiumStatus } from '@/hooks/use-premium-status';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { useMessages } from '@/hooks/use-messages';
+import { useUnreadNews } from '@/hooks/use-unread-news';
 
 const useBattleReportsCount = (supabase: any, userId: string | undefined) => {
   const [unreadReportsCount, setUnreadReportsCount] = React.useState(0);
@@ -123,6 +124,7 @@ export default function DashboardLayout({
   const { isActive: isPremium, expiresAt } = usePremiumStatus(supabase, user?.id);
   const { unreadCount } = useMessages(supabase, user?.id);
   const { unreadReportsCount, refreshCount } = useBattleReportsCount(supabase, user?.id);
+  const { unreadCount: unreadNewsCount, refreshCount: refreshNewsCount } = useUnreadNews(supabase, user?.id);
 
   const userProfileRef = useMemoSupabase(() => {
     if (!user) return null;
@@ -146,6 +148,16 @@ export default function DashboardLayout({
       return () => clearTimeout(timer);
     }
   }, [pathname, refreshCount]);
+
+  // 🆕 REFRESH da contagem quando entrar na página de news
+  React.useEffect(() => {
+    if (pathname === '/news' && refreshNewsCount) {
+      const timer = setTimeout(() => {
+        refreshNewsCount();
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [pathname, refreshNewsCount]);
 
   React.useEffect(() => {
     if (isUserLoading || isProfileLoading) return;
@@ -204,7 +216,13 @@ export default function DashboardLayout({
 
   // 🔝 ITENS DO MENU SUPERIOR (Menos Acessados)
   const topMenuItems = [
-    { href: '/news', label: 'News', icon: Newspaper, notification: false },
+    { 
+      href: '/news', 
+      label: 'News', 
+      icon: Newspaper, 
+      notification: unreadNewsCount > 0,
+      badge: unreadNewsCount
+    },
     { 
       href: '/messages', 
       label: 'Mensagens', 
@@ -248,15 +266,15 @@ export default function DashboardLayout({
     <SidebarProvider>
       {/* Sidebar Lateral */}
       <Sidebar>
-      <SidebarHeader className="border-b border-sidebar-border p-0 overflow-hidden">
-  <Link href="/status" className="block hover:opacity-80 transition-opacity">
-    <img 
-      src="https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto/Telas/Naruto%20Clash.png" 
-      alt="Naruto Clash"
-      className="w-full h-20 object-cover scale-110"
-    />
-  </Link>
-</SidebarHeader>
+        <SidebarHeader className="border-b border-sidebar-border p-0 overflow-hidden">
+          <Link href="/status" className="block hover:opacity-80 transition-opacity">
+            <img 
+              src="https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto/Telas/Naruto%20Clash.png" 
+              alt="Naruto Clash"
+              className="w-full h-20 object-cover scale-110"
+            />
+          </Link>
+        </SidebarHeader>
 
         <SidebarContent className="p-2">
           <SidebarGroup>
@@ -314,29 +332,29 @@ export default function DashboardLayout({
             
             {/* Menu Superior - Itens Secundários */}
             <nav className="hidden md:flex items-center gap-1 flex-1">
-            {topMenuItems.map((item) => (
-  <Link
-    key={item.href}
-    href={item.href}
-    className={cn(
-      "relative flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md transition-colors hover:bg-accent hover:text-accent-foreground",
-      pathname.startsWith(item.href) && "bg-accent text-accent-foreground"
-    )}
-  >
-    <item.icon className="h-4 w-4" />
-    <span className="hidden lg:inline">{item.label}</span>
-    {item.notification && (
-      <>
-        <span className="absolute top-0 right-0 h-2 w-2 rounded-full bg-orange-500 animate-pulse" />
-        {item.badge && item.badge > 0 && (
-          <Badge variant="destructive" className="ml-1 h-5 min-w-5 px-1 text-xs">
-            {item.badge}
-          </Badge>
-        )}
-      </>
-    )}
-  </Link>
-))}
+              {topMenuItems.map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={cn(
+                    "relative flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md transition-colors hover:bg-accent hover:text-accent-foreground",
+                    pathname.startsWith(item.href) && "bg-accent text-accent-foreground"
+                  )}
+                >
+                  <item.icon className="h-4 w-4" />
+                  <span className="hidden lg:inline">{item.label}</span>
+                  {item.notification && (
+                    <>
+                      <span className="absolute top-0 right-0 h-2 w-2 rounded-full bg-orange-500 animate-pulse" />
+                      {item.badge && item.badge > 0 && (
+                        <Badge variant="destructive" className="ml-1 h-5 min-w-5 px-1 text-xs">
+                          {item.badge}
+                        </Badge>
+                      )}
+                    </>
+                  )}
+                </Link>
+              ))}
             </nav>
 
             <div className="flex-1 md:hidden" />
@@ -370,10 +388,10 @@ export default function DashboardLayout({
         </header>
 
         <main className="flex-1 p-4 md:p-6">
-  <div className="mx-auto max-w-4xl">
-    {children}
-  </div>
-</main>
+          <div className="mx-auto max-w-4xl">
+            {children}
+          </div>
+        </main>
       </SidebarInset>
     </SidebarProvider>
   );

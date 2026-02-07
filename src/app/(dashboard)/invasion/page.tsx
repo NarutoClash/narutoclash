@@ -24,26 +24,265 @@ import { bossesData, type BossData } from '@/lib/bosses-data';
 import { 
   calculateDamage,
   getRandomAttackType,
-  JUTSU_GIFS  // ✅ ADICIONAR (opcional, já vem no calculateDamage)
+  JUTSU_GIFS
 } from '@/lib/battle-system';
 import { EQUIPMENT_DATA } from '@/lib/battle-system/equipment-data';
-import { calculateFinalStats } from '@/lib/stats-calculator';  // ✅ Apenas UMA vez
-import { BattleReportModal } from '@/components/battle-report-modal';
+import { calculateFinalStats } from '@/lib/stats-calculator';
 
-
+// ✅ CONSTANTES DO BOSS
 const BOSS_DOC_ID = 'current_boss';
 const ATTACK_COOLDOWN = 10 * 60 * 1000; // 10 minutes in milliseconds
 const BOSS_DURATION = 7 * 24 * 60 * 60 * 1000; // 7 days
 
-const formatTime = (ms: number) => {
-    const totalSeconds = Math.floor(ms / 1000);
-    const hours = Math.floor(totalSeconds / 3600).toString().padStart(2, '0');
-    const minutes = Math.floor((totalSeconds % 3600) / 60).toString().padStart(2, '0');
-    const seconds = (totalSeconds % 60).toString().padStart(2, '0');
-    return `${hours}:${minutes}:${seconds}`;
+// ✅ MILESTONES DE DANO
+const DAMAGE_MILESTONES = [
+  { damage: 10000, ryo: 500, label: "10k" },
+  { damage: 25000, ryo: 1200, label: "25k" },
+  { damage: 50000, ryo: 2500, label: "50k" },
+  { damage: 75000, ryo: 4000, label: "75k" },
+  { damage: 100000, ryo: 6000, label: "100k" },
+  { damage: 150000, ryo: 9000, label: "150k" },
+  { damage: 200000, ryo: 12500, label: "200k" },
+  { damage: 300000, ryo: 18000, label: "300k" },
+  { damage: 500000, ryo: 30000, label: "500k" },
+  { damage: 750000, ryo: 45000, label: "750k" },
+  { damage: 1000000, ryo: 65000, label: "1M" },
+];
+
+// ✅ SISTEMA DE DROPS
+const BOSS_DROPS = {
+  comum: [
+    {
+      id: 'xp_scroll_small',
+      name: 'Pergaminho de XP Pequeno',
+      description: 'Concede XP baseado no seu nível',
+      effect: 'xp_multiplier',
+      multiplier: 100,
+      dropChance: 0.002,
+      rarity: 'comum',
+      icon: '📜'
+    },
+    {
+      id: 'ryo_pouch_small',
+      name: 'Bolsa de Ryo',
+      description: 'Uma pequena fortuna em moedas',
+      effect: 'ryo',
+      amount: 2000,
+      dropChance: 0.002,
+      rarity: 'comum',
+      icon: '💰'
+    },
+    {
+      id: 'healing_ointment',
+      name: 'Pomada Medicinal',
+      description: 'Restaura 30% da vida máxima',
+      effect: 'heal_percent',
+      percent: 30,
+      dropChance: 0.0015,
+      rarity: 'comum',
+      icon: '🧴'
+    },
+    {
+      id: 'chakra_tonic',
+      name: 'Tônico de Chakra',
+      description: 'Restaura 25% do chakra máximo',
+      effect: 'chakra_percent',
+      percent: 25,
+      dropChance: 0.0015,
+      rarity: 'comum',
+      icon: '⚗️'
+    },
+    {
+      id: 'training_weights',
+      name: 'Pesos de Treinamento',
+      description: 'Aumenta ganho de XP em missões por 24h',
+      effect: 'xp_boost_24h',
+      percent: 15,
+      dropChance: 0.001,
+      rarity: 'comum',
+      icon: '🏋️'
+    },
+    {
+      id: 'fortune_charm',
+      name: 'Amuleto da Fortuna',
+      description: 'Aumenta Ryo ganho em missões por 24h',
+      effect: 'ryo_boost_24h',
+      percent: 20,
+      dropChance: 0.001,
+      rarity: 'comum',
+      icon: '🧿'
+    },
+  ],
+  raro: [
+    {
+      id: 'stat_enhancement_pill',
+      name: 'Pílula de Aprimoramento',
+      description: 'Libera pontos de atributo adicionais',
+      effect: 'stat_points',
+      amount: 3,
+      dropChance: 0.0008,
+      rarity: 'raro',
+      icon: '💊'
+    },
+    {
+      id: 'element_training_scroll',
+      name: 'Pergaminho de Treinamento Elemental',
+      description: 'Acelera o domínio de um elemento',
+      effect: 'element_xp',
+      amount: 200,
+      dropChance: 0.0008,
+      rarity: 'raro',
+      icon: '📖'
+    },
+    {
+      id: 'xp_scroll_medium',
+      name: 'Pergaminho de XP Médio',
+      description: 'Maior quantidade de experiência',
+      effect: 'xp_multiplier',
+      multiplier: 300,
+      dropChance: 0.0006,
+      rarity: 'raro',
+      icon: '📜'
+    },
+    {
+      id: 'ryo_pouch_large',
+      name: 'Bolsa de Ryo Grande',
+      description: 'Uma fortuna considerável',
+      effect: 'ryo',
+      amount: 8000,
+      dropChance: 0.0005,
+      rarity: 'raro',
+      icon: '💰'
+    },
+    {
+      id: 'jutsu_refinement_manual',
+      name: 'Manual de Refinamento de Jutsu',
+      description: 'Melhora a eficiência dos jutsus',
+      effect: 'jutsu_xp',
+      amount: 500,
+      dropChance: 0.0003,
+      rarity: 'raro',
+      icon: '📕'
+    },
+  ],
+  epico: [
+    {
+      id: 'premium_pass_3days',
+      name: 'Premium Pass (3 dias)',
+      description: 'Acesso temporário a benefícios premium',
+      effect: 'premium_pass',
+      duration: 3 * 24 * 60 * 60 * 1000,
+      dropChance: 0.0003,
+      rarity: 'épico',
+      icon: '👑'
+    },
+    {
+      id: 'xp_scroll_large',
+      name: 'Pergaminho de XP Grande',
+      description: 'Experiência massiva concentrada',
+      effect: 'xp_multiplier',
+      multiplier: 500,
+      dropChance: 0.00015,
+      rarity: 'épico',
+      icon: '📜'
+    },
+    {
+      id: 'master_training_manual',
+      name: 'Manual do Mestre',
+      description: 'Conhecimento condensado de múltiplas artes',
+      effect: 'dual_stat_points',
+      amount: 2,
+      dropChance: 0.00015,
+      rarity: 'épico',
+      icon: '📚'
+    },
+    {
+      id: 'elemental_mastery_orb',
+      name: 'Orbe de Maestria Elemental',
+      description: 'Energia elemental pura concentrada',
+      effect: 'dual_element_xp',
+      amount: 500,
+      dropChance: 0.0001,
+      rarity: 'épico',
+      icon: '🔮'
+    },
+  ],
+  lendario: [
+    {
+      id: 'legendary_stat_orb',
+      name: 'Orbe Lendário de Poder',
+      description: 'Poder condensado dos deuses shinobi',
+      effect: 'all_stats',
+      amount: 10,
+      dropChance: 0.0001,
+      rarity: 'lendário',
+      icon: '✨'
+    },
+    {
+      id: 'eternal_youth_elixir',
+      name: 'Elixir da Juventude Eterna',
+      description: 'Restaura completamente vida e chakra + buff temporário',
+      effect: 'full_restore_buff',
+      buffDuration: 60 * 60 * 1000,
+      buffPercent: 20,
+      dropChance: 0.00005,
+      rarity: 'lendário',
+      icon: '🍶'
+    },
+    {
+      id: 'sage_blessing_scroll',
+      name: 'Pergaminho da Bênção do Sábio',
+      description: 'Conhecimento ancestral dos Seis Caminhos',
+      effect: 'triple_stat_points',
+      amount: 5,
+      dropChance: 0.00004,
+      rarity: 'lendário',
+      icon: '📜'
+    },
+    {
+      id: 'forbidden_technique_scroll',
+      name: 'Pergaminho de Técnica Proibida',
+      description: 'Acelera drasticamente o aprendizado',
+      effect: 'element_and_jutsu_xp',
+      amount: 1000,
+      dropChance: 0.00001,
+      rarity: 'lendário',
+      icon: '📖'
+    },
+  ],
 };
 
-// ✅ Tipo FORA do componente
+// ✅ FUNÇÃO PARA CALCULAR DROPS
+const calculateDrops = () => {
+  const allDrops = [
+    ...BOSS_DROPS.comum,
+    ...BOSS_DROPS.raro,
+    ...BOSS_DROPS.epico,
+    ...BOSS_DROPS.lendario,
+  ];
+
+  const droppedItems: any[] = [];
+
+  allDrops.forEach(item => {
+    const randomRoll = Math.random();
+    if (randomRoll <= item.dropChance) {
+      droppedItems.push(item);
+    }
+  });
+
+  return droppedItems;
+};
+
+// ✅ FUNÇÃO DE FORMATAÇÃO DE TEMPO
+const formatTime = (ms: number) => {
+  const totalSeconds = Math.floor(ms / 1000);
+  const hours = Math.floor(totalSeconds / 3600).toString().padStart(2, '0');
+  const minutes = Math.floor((totalSeconds % 3600) / 60).toString().padStart(2, '0');
+  const seconds = (totalSeconds % 60).toString().padStart(2, '0');
+  return `${hours}:${minutes}:${seconds}`;
+};
+
+// ✅ TIPO DE BATTLE LOG
 type BattleLogEntry = string | {
   turn: number;
   attacker: 'player' | 'boss';
@@ -58,22 +297,19 @@ type BattleLogEntry = string | {
 export default function InvasionPage() {
   const { user, supabase, isUserLoading: isAuthLoading } = useSupabase();
   const { toast } = useToast();
+  
+  // ✅ ESTADOS
   const [isAttacking, setIsAttacking] = useState(false);
   const [lastBattleLog, setLastBattleLog] = useState<BattleLogEntry[]>([]);
+  const [lastDrops, setLastDrops] = useState<any[]>([]);
   const [timeUntilAttack, setTimeUntilAttack] = useState(0);
   const [timeUntilRespawn, setTimeUntilRespawn] = useState(0);
   const [isPageReady, setIsPageReady] = useState(false);
-  const [showBattleReport, setShowBattleReport] = useState(false);
-const [reportData, setReportData] = useState<{
-  battleLog: BattleLogEntry[];
-  totalDamage: number;
-  bossDefeated: boolean;
-}>({
-  battleLog: [],
-  totalDamage: 0,
-  bossDefeated: false,
-});
   
+  const [newMilestonesUnlocked, setNewMilestonesUnlocked] = useState<typeof DAMAGE_MILESTONES>([]);
+ 
+
+
   useEffect(() => {
     const savedLog = localStorage.getItem('lastBattleLog');
     if (savedLog) {
@@ -125,8 +361,17 @@ const [reportData, setReportData] = useState<{
     };
     
     await supabase
-  .from('world_bosses')
-  .upsert(newBossData);
+      .from('world_bosses')
+      .upsert(newBossData);
+    
+    // ✅ RESETAR DANO E MILESTONES DE TODOS OS JOGADORES
+await supabase
+.from('profiles')
+.update({ 
+  boss_damage_dealt: 0,
+  boss_damage_milestones_claimed: []
+})
+.neq('id', '00000000-0000-0000-0000-000000000000'); // Atualiza todos
     
     bossSetter(newBossData);
     setLastBattleLog([]);
@@ -435,6 +680,28 @@ const finalDamageDealt = Math.max(0, Math.round(totalPlayerDamage));
         total_attacks: (boss?.total_attacks || 0) + 1,
       };
       
+      // ✅ NOVO: Calcular dano total acumulado do jogador
+const currentPlayerDamage = userProfile.boss_damage_dealt || 0;
+const newPlayerDamage = currentPlayerDamage + finalDamageDealt;
+
+// ✅ NOVO: Verificar milestones desbloqueados
+const claimedMilestones = userProfile.boss_damage_milestones_claimed || [];
+const unlockedMilestones = DAMAGE_MILESTONES.filter(
+  milestone => newPlayerDamage >= milestone.damage && !claimedMilestones.includes(milestone.label)
+);
+
+let totalRyoReward = 0;
+const newClaimedMilestones = [...claimedMilestones];
+
+if (unlockedMilestones.length > 0) {
+  unlockedMilestones.forEach(milestone => {
+    totalRyoReward += milestone.ryo;
+    newClaimedMilestones.push(milestone.label);
+  });
+  
+  setNewMilestonesUnlocked(unlockedMilestones);
+}
+      
       const isBossDefeated = newBossHealth < 10;
   
       if (isBossDefeated) {
@@ -455,35 +722,65 @@ const finalDamageDealt = Math.max(0, Math.round(totalPlayerDamage));
       setBossData({ ...boss, ...bossUpdate });
       
       await supabase
+  // ✅ ATUALIZAR PERFIL COM DANO, RYOS E MILESTONES
+const currentRyo = userProfile.ryo || 0;
+const profileUpdate: any = {
+  last_boss_attack: Date.now(),
+  current_health: playerStats?.maxHealth || 100,
+  boss_damage_dealt: newPlayerDamage,
+};
+
+if (totalRyoReward > 0) {
+  profileUpdate.ryo = currentRyo + totalRyoReward;
+  profileUpdate.boss_damage_milestones_claimed = newClaimedMilestones;
+}
+
+await supabase
   .from('profiles')
-  .update({
-    last_boss_attack: Date.now(),
-    current_health: playerStats?.maxHealth || 100,  // ✅ VIDA FULL
-  })
+  .update(profileUpdate)
   .eq('id', user!.id);
 
 if (setUserProfile) {
   setUserProfile({
     ...userProfile,
-    last_boss_attack: Date.now(),
-    current_health: playerStats?.maxHealth || 100,  // ✅ ATUALIZA ESTADO LOCAL
+    ...profileUpdate,
   });
 }
       
+// ✅ CALCULAR DROPS
+const droppedItems = calculateDrops();
+setLastDrops(droppedItems);
+
 setLastBattleLog(battleLog);
 localStorage.setItem('lastBattleLog', JSON.stringify(battleLog));
 
-// ✅ Abrir modal com relatório
-setReportData({
-  battleLog,
-  totalDamage: finalDamageDealt,
-  bossDefeated: isBossDefeated,
-});
-setShowBattleReport(true);
+// ✅ TOAST COM INFORMAÇÃO DE RECOMPENSAS E DROPS
+let toastDescription = `Você causou ${finalDamageDealt.toLocaleString()} de dano!`;
+
+if (totalRyoReward > 0) {
+  toastDescription += `\n\n🎁 Bônus: +${totalRyoReward.toLocaleString()} Ryō!`;
+  unlockedMilestones.forEach(m => {
+    toastDescription += `\n• ${m.label} (${m.ryo.toLocaleString()} Ryō)`;
+  });
+}
+
+if (droppedItems.length > 0) {
+  toastDescription += `\n\n🎁 Drops Recebidos:`;
+  droppedItems.forEach(item => {
+    toastDescription += `\n${item.icon} ${item.name}`;
+  });
+}
 
 toast({
-  title: isBossDefeated ? "🎉 Boss Derrotado!" : "Ataque Realizado!",
-  description: `Você causou ${finalDamageDealt.toLocaleString()} de dano!`,
+  title: isBossDefeated ? "🎉 Boss Derrotado!" : "✨ Ataque Realizado!",
+  description: toastDescription,
+  duration: (totalRyoReward > 0 || droppedItems.length > 0) ? 10000 : 4000,
+});
+
+toast({
+  title: isBossDefeated ? "🎉 Boss Derrotado!" : "✨ Ataque Realizado!",
+  description: toastDescription,
+  duration: totalRyoReward > 0 ? 8000 : 4000,
 });
       
     } catch (error) {
@@ -575,14 +872,7 @@ toast({
         alt={boss?.name || 'Boss'}
         className="max-w-full max-h-full w-auto h-auto object-contain"
       />
-      {/* ✅ ADICIONAR O MODAL AQUI */}
-    <BattleReportModal
-      isOpen={showBattleReport}
-      onClose={() => setShowBattleReport(false)}
-      battleLog={reportData.battleLog}
-      totalDamage={reportData.totalDamage}
-      bossDefeated={reportData.bossDefeated}
-    />
+      
     </div>
   </div>
 )}
@@ -591,12 +881,56 @@ toast({
             <CardDescription className="text-lg">Nível {boss?.boss_level || 0}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
-            <div className="flex justify-around text-center">
-                 <div className="flex flex-col items-center gap-1">
-                    <h3 className="text-sm font-semibold text-muted-foreground flex items-center gap-2"><Target className="h-4 w-4"/> Ataques Recebidos</h3>
-                    <p className="text-xl font-bold">{boss?.total_attacks || 0}</p>
-                </div>
-            </div>
+          <div className="flex justify-around text-center">
+  <div className="flex flex-col items-center gap-1">
+    <h3 className="text-sm font-semibold text-muted-foreground flex items-center gap-2">
+      <Target className="h-4 w-4"/> Ataques Recebidos
+    </h3>
+    <p className="text-xl font-bold">{boss?.total_attacks || 0}</p>
+  </div>
+  {/* ✅ NOVO: Barra de Progresso dos Milestones */}
+<div className="mt-6 space-y-3">
+  <h3 className="text-sm font-semibold text-center flex items-center justify-center gap-2">
+    <Trophy className="h-4 w-4 text-amber-400"/> Recompensas por Dano
+  </h3>
+  
+  <div className="space-y-2">
+    {DAMAGE_MILESTONES.map((milestone, index) => {
+      const currentDamage = userProfile?.boss_damage_dealt || 0;
+      const claimed = (userProfile?.boss_damage_milestones_claimed || []).includes(milestone.label);
+      const progress = Math.min((currentDamage / milestone.damage) * 100, 100);
+      const isCompleted = currentDamage >= milestone.damage;
+      
+      return (
+        <div key={milestone.label} className="space-y-1">
+          <div className="flex justify-between text-xs">
+            <span className={claimed ? "text-green-500 font-semibold" : "text-muted-foreground"}>
+              {claimed ? "✅" : isCompleted ? "🎁" : "🔒"} {milestone.label} de dano
+            </span>
+            <span className="text-amber-400 font-semibold">
+              {claimed ? "Recebido!" : `${milestone.ryo.toLocaleString()} Ryō`}
+            </span>
+          </div>
+          <Progress 
+            value={progress} 
+            className={`h-2 ${claimed ? "[&>div]:bg-green-500" : isCompleted ? "[&>div]:bg-amber-400" : "[&>div]:bg-primary"}`}
+          />
+        </div>
+      );
+    })}
+  </div>
+</div>
+  
+  {/* ✅ NOVO: Mostrar dano total do jogador */}
+  <div className="flex flex-col items-center gap-1">
+    <h3 className="text-sm font-semibold text-muted-foreground flex items-center gap-2">
+      <Swords className="h-4 w-4"/> Seu Dano Total
+    </h3>
+    <p className="text-xl font-bold text-amber-400">
+      {(userProfile?.boss_damage_dealt || 0).toLocaleString()}
+    </p>
+  </div>
+</div>
 
             <div className="space-y-2">
                  <div className="flex justify-between items-baseline">
@@ -621,7 +955,44 @@ toast({
                   }
               </p>
             </div>
-            
+            {/* ✅ DROPS RECENTES */}
+{lastDrops.length > 0 && (
+  <Alert variant="default" className="border-amber-500 bg-amber-950/20">
+    <Trophy className="h-4 w-4 text-amber-400" />
+    <AlertTitle className="text-amber-400">🎁 Drops Recebidos</AlertTitle>
+    <AlertDescription className="space-y-2 mt-2">
+      <div className="grid grid-cols-1 gap-2">
+        {lastDrops.map((item, index) => (
+          <div 
+            key={index}
+            className={`p-3 rounded-lg border ${
+              item.rarity === 'lendário' ? 'border-yellow-500 bg-yellow-950/20' :
+              item.rarity === 'épico' ? 'border-purple-500 bg-purple-950/20' :
+              item.rarity === 'raro' ? 'border-blue-500 bg-blue-950/20' :
+              'border-gray-500 bg-gray-950/20'
+            }`}
+          >
+            <div className="flex items-start gap-3">
+              <span className="text-3xl">{item.icon}</span>
+              <div className="flex-1">
+                <p className="font-semibold text-sm">{item.name}</p>
+                <p className="text-xs text-muted-foreground mt-1">{item.description}</p>
+                <p className={`text-xs font-bold mt-2 ${
+                  item.rarity === 'lendário' ? 'text-yellow-400' :
+                  item.rarity === 'épico' ? 'text-purple-400' :
+                  item.rarity === 'raro' ? 'text-blue-400' :
+                  'text-gray-400'
+                }`}>
+                  {item.rarity.toUpperCase()}
+                </p>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </AlertDescription>
+  </Alert>
+)}
             {lastBattleLog.length > 0 && (
     <Alert variant="default">
         <Swords className="h-4 w-4" />

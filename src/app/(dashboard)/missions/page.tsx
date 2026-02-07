@@ -703,34 +703,55 @@ useEffect(() => {
                             Recompensas ao Completar
                           </h4>
                           
-                          <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-1">
-                              <div className="flex items-center gap-2">
-                                <span className="text-sm font-medium">💰 Ryo:</span>
+                          <div className="space-y-3">
+                            {/* Ryo e XP */}
+                            <div className="grid grid-cols-2 gap-4">
+                              <div className="space-y-1">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-sm font-medium">💰 Ryo:</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-lg font-bold">{finalRyo}</span>
+                                  {bonusRyo > 0 && (
+                                    <span className="text-xs text-green-400">
+                                      (+{bonusRyo} bônus)
+                                    </span>
+                                  )}
+                                </div>
                               </div>
-                              <div className="flex items-center gap-2">
-                                <span className="text-lg font-bold">{finalRyo}</span>
-                                {bonusRyo > 0 && (
-                                  <span className="text-xs text-green-400">
-                                    (+{bonusRyo} bônus)
-                                  </span>
-                                )}
+                              
+                              <div className="space-y-1">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-sm font-medium">⭐ XP:</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-lg font-bold">{finalXP}</span>
+                                  {bonusXP > 0 && (
+                                    <span className="text-xs text-green-400">
+                                      (+{bonusXP} bônus)
+                                    </span>
+                                  )}
+                                </div>
                               </div>
                             </div>
-                            
-                            <div className="space-y-1">
-                              <div className="flex items-center gap-2">
-                                <span className="text-sm font-medium">⭐ XP:</span>
+
+                            {/* Exp. de Elemento */}
+                            {activeMissionDetails.elementExperienceReward && (
+                              <div className="pt-2 border-t">
+                                <p className="text-sm text-muted-foreground">
+                                  🔥 Exp. de Elemento: <span className="font-semibold text-foreground">{activeMissionDetails.elementExperienceReward.xp} XP</span> em {activeMissionDetails.elementExperienceReward.element}
+                                </p>
                               </div>
-                              <div className="flex items-center gap-2">
-                                <span className="text-lg font-bold">{finalXP}</span>
-                                {bonusXP > 0 && (
-                                  <span className="text-xs text-green-400">
-                                    (+{bonusXP} bônus)
-                                  </span>
-                                )}
+                            )}
+
+                            {/* Exp. de Jutsu */}
+                            {activeMissionDetails.jutsuExperienceReward && (
+                              <div className={activeMissionDetails.elementExperienceReward ? '' : 'pt-2 border-t'}>
+                                <p className="text-sm text-muted-foreground">
+                                  🥷 Exp. de Jutsu: <span className="font-semibold text-foreground">{activeMissionDetails.jutsuExperienceReward.xp} XP</span> em {activeMissionDetails.jutsuExperienceReward.jutsuName}
+                                </p>
                               </div>
-                            </div>
+                            )}
                           </div>
                           
                           {hasBonus && (

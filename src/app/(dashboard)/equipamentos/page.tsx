@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -69,6 +68,15 @@ const EquipmentCard = ({
                 </div>
             )}
             <CardHeader>
+                <div className="relative w-full h-48 mb-4 rounded-md overflow-hidden bg-muted">
+                    <Image
+                        src={item.imageUrl}
+                        alt={item.name}
+                        fill
+                        className="object-contain"
+                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                    />
+                </div>
                 <CardTitle>{item.name}</CardTitle>
                 <CardDescription>{item.description}</CardDescription>
             </CardHeader>
@@ -100,34 +108,50 @@ const EquipmentCard = ({
                                 </>
                             )}
                         </Button>
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                             <Button variant="outline" size="sm" className="w-full">
-                                <Trash2 className="mr-2 h-4 w-4" />
-                                Vender ({(item.price / 2).toLocaleString()} Ryo)
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Vender {item.name}?</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                Você receberá 50% do valor de volta. O item será removido do seu inventário.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                              <AlertDialogAction onClick={() => onSell(item)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                                Confirmar Venda
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
+                        <div className="w-full space-y-2">
+                            <p className="text-sm text-center text-muted-foreground">
+                                Valor de venda: <span className="font-semibold text-foreground">{(item.price / 2).toLocaleString()} Ryo</span>
+                            </p>
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                 <Button variant="outline" size="sm" className="w-full">
+                                    <Trash2 className="mr-2 h-4 w-4" />
+                                    Vender
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Vender {item.name}?</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Você receberá 50% do valor de volta. O item será removido do seu inventário.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                  <AlertDialogAction onClick={() => onSell(item)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                                    Confirmar Venda
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                        </div>
                     </>
                  ) : (
-                     <Button className="w-full" onClick={() => onBuy(item)} disabled={!canAfford || !canUse}>
-                        <Coins className="mr-2 h-4 w-4" />
-                        {canUse ? (canAfford ? `Comprar (${item.price.toLocaleString()} Ryo)` : 'Ryo Insuficiente') : `Requer Nível ${item.requiredLevel}`}
-                    </Button>
+                    <div className="w-full space-y-2">
+                        {!canUse ? (
+                            <p className="text-sm text-center text-destructive font-semibold">
+                                Requer Nível {item.requiredLevel}
+                            </p>
+                        ) : (
+                            <p className="text-sm text-center text-muted-foreground">
+                                Preço: <span className="font-semibold text-foreground">{item.price.toLocaleString()} Ryo</span>
+                            </p>
+                        )}
+                        <Button className="w-full" onClick={() => onBuy(item)} disabled={!canAfford || !canUse}>
+                            <Coins className="mr-2 h-4 w-4" />
+                            {canAfford || !canUse ? 'Comprar' : 'Ryo Insuficiente'}
+                        </Button>
+                    </div>
                  )}
             </CardFooter>
         </Card>

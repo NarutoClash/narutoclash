@@ -47,8 +47,8 @@ const villages = [
   'Chuva',
   'Som',
   'Cachoeira',
-'Redemoinho',
-'Grama',
+  'Redemoinho',
+  'Grama',
 ];
 
 const createCharacterSchema = z.object({
@@ -174,7 +174,22 @@ export default function CreateCharacterPage() {
                 <CardTitle>Informações do Personagem</CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
-                 <FormField
+                {/* Botão de Criar no Topo */}
+                <Button type="submit" disabled={isButtonDisabled} className="w-full h-12">
+                  {isSubmitting ? (
+                     <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Forjando Shinobi...
+                    </>
+                  ) : (
+                    <>
+                      <UserPlus className="mr-2 h-4 w-4" />
+                      Criar Personagem
+                    </>
+                  )}
+                </Button>
+
+                <FormField
                   control={form.control}
                   name="name"
                   render={({ field }) => (
@@ -188,30 +203,35 @@ export default function CreateCharacterPage() {
                   )}
                 />
 
-<FormField
-  control={form.control}
-  name="village"
-  render={({ field }) => (
-    <FormItem>
-      <FormLabel>Aldeia</FormLabel>
-      <Select onValueChange={field.onChange} defaultValue={field.value}>
-        <FormControl>
-          <SelectTrigger>
-            <SelectValue placeholder="Selecione sua aldeia..." />
-          </SelectTrigger>
-        </FormControl>
-        <SelectContent className="bg-background border-2 shadow-xl z-50">
-          {villages.map((village) => (
-            <SelectItem key={village} value={village}>
-              {village}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-      <FormMessage />
-    </FormItem>
-  )}
-/>
+                <FormField
+                  control={form.control}
+                  name="village"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Aldeia</FormLabel>
+                      <FormControl>
+                        <div className="flex flex-wrap items-center justify-center gap-2">
+                          {villages.map((village) => (
+                            <Button
+                              key={village}
+                              type="button"
+                              variant={field.value === village ? 'default' : 'outline'}
+                              size="sm"
+                              onClick={() => field.onChange(village)}
+                              className={cn(
+                                'transition-all',
+                                field.value === village && 'ring-2 ring-primary ring-offset-2'
+                              )}
+                            >
+                              {village}
+                            </Button>
+                          ))}
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
                 <FormField
                   control={form.control}
@@ -246,21 +266,6 @@ export default function CreateCharacterPage() {
                   )}
                 />
               </CardContent>
-              <CardFooter>
-                <Button type="submit" disabled={isButtonDisabled} className="w-full h-12">
-                  {isSubmitting ? (
-                     <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Forjando Shinobi...
-                    </>
-                  ) : (
-                    <>
-                      <UserPlus className="mr-2 h-4 w-4" />
-                      Criar Personagem
-                    </>
-                  )}
-                </Button>
-              </CardFooter>
             </form>
           </Form>
         </Card>

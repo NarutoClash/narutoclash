@@ -29,9 +29,18 @@ const ItemCard = ({ item, onBuy, userProfile }: { item: IchirakuItem; onBuy: (it
 
     return (
         <Card className="flex flex-col">
-            <CardHeader>
-                <div className="relative w-full h-40 mb-4 rounded-md overflow-hidden">
-                    <Image src={item.imageUrl} alt={item.name} layout="fill" objectFit="cover" />
+            <CardHeader className="pb-3">
+                {/* ✅ CONTAINER COM FUNDO E PADDING PARA CENTRALIZAR */}
+                <div className="relative w-full h-32 mb-4 rounded-md overflow-hidden bg-muted/20 flex items-center justify-center p-2">
+                    <div className="relative w-full h-full">
+                        <Image 
+                            src={item.imageUrl} 
+                            alt={item.name} 
+                            fill
+                            className="object-contain" 
+                            unoptimized
+                        />
+                    </div>
                 </div>
                 <CardTitle>{item.name}</CardTitle>
                 <CardDescription>{item.description}</CardDescription>

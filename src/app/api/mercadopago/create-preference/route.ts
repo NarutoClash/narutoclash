@@ -158,7 +158,7 @@ export async function POST(request: NextRequest) {
     // 8️⃣ Retornar link de pagamento
     return NextResponse.json({
       preference_id: response.id,
-      init_point: response.sandbox_init_point || response.init_point, // Usar sandbox em teste
+      init_point: response.init_point, // Produção real
       pagamento_id: pagamento.id,
     });
 

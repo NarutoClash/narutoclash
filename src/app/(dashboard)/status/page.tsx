@@ -16,7 +16,7 @@ import {
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Plus, UserPlus, LucideIcon, Trash2, CheckCircle, ScrollText, Utensils, Swords, Footprints, Shirt, Hand, Accessibility, Loader2, Crown, Eye, Sparkles, Clock, Award, Coins, Star, X } from 'lucide-react';
+import { Plus, UserPlus, LucideIcon, Trash2, CheckCircle, ScrollText, Utensils, Swords, Footprints, Shirt, Hand, User, Loader2, Crown, Eye, Sparkles, Clock, Award, Coins, Star, X, Layers } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
@@ -41,7 +41,210 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { calculateFinalStats } from '@/lib/stats-calculator';
 import { usePlayerRank } from '@/hooks/use-player-rank';
 import { calculateRank } from '@/lib/rank-calculator';
+import { Gift } from 'lucide-react'
 
+
+const bossDrops = {
+  comum: [
+    {
+      id: 'xp_scroll_small',
+      name: 'Pergaminho de XP Pequeno',
+      description: 'Concede XP baseado no seu nível',
+      effect: 'xp_multiplier',
+      multiplier: 100,
+      dropChance: 0.002,
+      rarity: 'comum',
+      icon: '📜'
+    },
+    {
+      id: 'ryo_pouch_small',
+      name: 'Bolsa de Ryo',
+      description: 'Uma pequena fortuna em moedas',
+      effect: 'ryo',
+      amount: 2000,
+      dropChance: 0.002,
+      rarity: 'comum',
+      icon: '💰'
+    },
+    {
+      id: 'healing_ointment',
+      name: 'Pomada Medicinal',
+      description: 'Restaura 30% da vida máxima',
+      effect: 'heal_percent',
+      percent: 30,
+      dropChance: 0.0015,
+      rarity: 'comum',
+      icon: '🧴'
+    },
+    {
+      id: 'chakra_tonic',
+      name: 'Tônico de Chakra',
+      description: 'Restaura 25% do chakra máximo',
+      effect: 'chakra_percent',
+      percent: 25,
+      dropChance: 0.0015,
+      rarity: 'comum',
+      icon: '⚗️'
+    },
+    {
+      id: 'training_weights',
+      name: 'Pesos de Treinamento',
+      description: 'Aumenta ganho de XP em missões por 24h',
+      effect: 'xp_boost_24h',
+      percent: 15,
+      dropChance: 0.001,
+      rarity: 'comum',
+      icon: '🏋️'
+    },
+    {
+      id: 'fortune_charm',
+      name: 'Amuleto da Fortuna',
+      description: 'Aumenta Ryo ganho em missões por 24h',
+      effect: 'ryo_boost_24h',
+      percent: 20,
+      dropChance: 0.001,
+      rarity: 'comum',
+      icon: '🧿'
+    },
+  ],
+  raro: [
+    {
+      id: 'stat_enhancement_pill',
+      name: 'Pílula de Aprimoramento',
+      description: 'Libera pontos de atributo adicionais',
+      effect: 'stat_points',
+      amount: 3,
+      dropChance: 0.0008,
+      rarity: 'raro',
+      icon: '💊'
+    },
+    {
+      id: 'element_training_scroll',
+      name: 'Pergaminho de Treinamento Elemental',
+      description: 'Acelera o domínio de um elemento',
+      effect: 'element_xp',
+      amount: 200,
+      dropChance: 0.0008,
+      rarity: 'raro',
+      icon: '📖'
+    },
+    {
+      id: 'xp_scroll_medium',
+      name: 'Pergaminho de XP Médio',
+      description: 'Maior quantidade de experiência',
+      effect: 'xp_multiplier',
+      multiplier: 300,
+      dropChance: 0.0006,
+      rarity: 'raro',
+      icon: '📜'
+    },
+    {
+      id: 'ryo_pouch_large',
+      name: 'Bolsa de Ryo Grande',
+      description: 'Uma fortuna considerável',
+      effect: 'ryo',
+      amount: 8000,
+      dropChance: 0.0005,
+      rarity: 'raro',
+      icon: '💰'
+    },
+    {
+      id: 'jutsu_refinement_manual',
+      name: 'Manual de Refinamento de Jutsu',
+      description: 'Melhora a eficiência dos jutsus',
+      effect: 'jutsu_xp',
+      amount: 500,
+      dropChance: 0.0003,
+      rarity: 'raro',
+      icon: '📕'
+    },
+  ],
+  epico: [
+    {
+      id: 'premium_pass_3days',
+      name: 'Premium Pass (3 dias)',
+      description: 'Acesso temporário a benefícios premium',
+      effect: 'premium_pass',
+      duration: 3 * 24 * 60 * 60 * 1000,
+      dropChance: 0.0003,
+      rarity: 'épico',
+      icon: '👑'
+    },
+    {
+      id: 'xp_scroll_large',
+      name: 'Pergaminho de XP Grande',
+      description: 'Experiência massiva concentrada',
+      effect: 'xp_multiplier',
+      multiplier: 500,
+      dropChance: 0.00015,
+      rarity: 'épico',
+      icon: '📜'
+    },
+    {
+      id: 'master_training_manual',
+      name: 'Manual do Mestre',
+      description: 'Conhecimento condensado de múltiplas artes',
+      effect: 'dual_stat_points',
+      amount: 2,
+      dropChance: 0.00015,
+      rarity: 'épico',
+      icon: '📚'
+    },
+    {
+      id: 'elemental_mastery_orb',
+      name: 'Orbe de Maestria Elemental',
+      description: 'Energia elemental pura concentrada',
+      effect: 'dual_element_xp',
+      amount: 500,
+      dropChance: 0.0001,
+      rarity: 'épico',
+      icon: '🔮'
+    },
+  ],
+  lendario: [
+    {
+      id: 'legendary_stat_orb',
+      name: 'Orbe Lendário de Poder',
+      description: 'Poder condensado dos deuses shinobi',
+      effect: 'all_stats',
+      amount: 10,
+      dropChance: 0.0001,
+      rarity: 'lendário',
+      icon: '✨'
+    },
+    {
+      id: 'eternal_youth_elixir',
+      name: 'Elixir da Juventude Eterna',
+      description: 'Restaura completamente vida e chakra + buff temporário',
+      effect: 'full_restore_buff',
+      buffDuration: 60 * 60 * 1000,
+      buffPercent: 20,
+      dropChance: 0.00005,
+      rarity: 'lendário',
+      icon: '🍶'
+    },
+    {
+      id: 'sage_blessing_scroll',
+      name: 'Pergaminho da Bênção do Sábio',
+      description: 'Conhecimento ancestral dos Seis Caminhos',
+      effect: 'triple_stat_points',
+      amount: 5,
+      dropChance: 0.00004,
+      rarity: 'lendário',
+      icon: '📜'
+    },
+    {
+      id: 'forbidden_technique_scroll',
+      name: 'Pergaminho de Técnica Proibida',
+      description: 'Acelera drasticamente o aprendizado',
+      effect: 'element_and_jutsu_xp',
+      amount: 1000,
+      dropChance: 0.00001,
+      rarity: 'lendário',
+      icon: '📖'
+    },
+  ],
+};
 
 const StatItem = ({
   label,
@@ -814,21 +1017,21 @@ useEffect(() => {
   if (!userProfileRef || !supabase || !user || !userProfile || !calculatedStats) return;
 
   const interval = setInterval(async () => {
-    const now = Date.now();
-    const lastRegen = userProfile.last_chakra_regen || now;
-    const timeSinceLastRegen = now - lastRegen;
-    const timeUntilNextRegen = 60000 - (timeSinceLastRegen % 60000);
-    
-    // Atualizar contador visual (em segundos)
-    setChakraRegenTimeRemaining(Math.ceil(timeUntilNextRegen / 1000));
+    try {
+      const now = Date.now();
+      const lastRegen = userProfile.last_chakra_regen || now;
+      const timeSinceLastRegen = now - lastRegen;
+      const timeUntilNextRegen = 60000 - (timeSinceLastRegen % 60000);
+      
+      // Atualizar contador visual (em segundos)
+      setChakraRegenTimeRemaining(Math.ceil(timeUntilNextRegen / 1000));
 
-    // Se passou 1 minuto ou mais desde a última regeneração
-    if (timeSinceLastRegen >= 60000) {
-      const currentChakra = userProfile.current_chakra ?? calculatedStats.maxChakra;
-      const maxChakra = calculatedStats.maxChakra;
+      // Se passou 1 minuto ou mais desde a última regeneração
+      if (timeSinceLastRegen >= 60000) {
+        const currentChakra = userProfile.current_chakra ?? calculatedStats.maxChakra;
+        const maxChakra = calculatedStats.maxChakra;
 
-      if (currentChakra < maxChakra) {
-        try {
+        if (currentChakra < maxChakra) {
           // Buscar dados atuais
           const { data: currentData, error: fetchError } = await supabase
             .from('profiles')
@@ -836,46 +1039,36 @@ useEffect(() => {
             .eq('id', user.id)
             .single();
 
-          if (fetchError || !currentData) {
-            console.error('Erro ao buscar chakra:', fetchError);
-            return;
-          }
+          if (fetchError) return;
+          if (!currentData) return;
 
           // Calcular quantos minutos se passaram
           const lastRegenTime = currentData.last_chakra_regen || now;
           const minutesPassed = Math.floor((now - lastRegenTime) / 60000);
           
           if (minutesPassed >= 1) {
-            // Regenerar chakra (pode ser mais de 1 se passou muito tempo)
+            // Regenerar chakra
             const chakraToAdd = Math.min(minutesPassed, maxChakra - currentData.current_chakra);
             const newChakra = Math.min(maxChakra, currentData.current_chakra + chakraToAdd);
 
-            const { error: updateError } = await supabase
+            await supabase
               .from('profiles')
               .update({ 
                 current_chakra: newChakra,
                 last_chakra_regen: now
               })
               .eq('id', user.id);
-
-            if (updateError) {
-              console.error('Erro ao regenerar chakra:', updateError);
-            }
           }
-        } catch (error) {
-          console.error('Erro na regeneração de chakra:', error);
-        }
-      } else {
-        // Chakra está cheio, apenas atualizar o timestamp
-        try {
+        } else {
+          // Chakra está cheio, apenas atualizar o timestamp
           await supabase
             .from('profiles')
             .update({ last_chakra_regen: now })
             .eq('id', user.id);
-        } catch (error) {
-          console.error('Erro ao atualizar timestamp:', error);
         }
       }
+    } catch (error) {
+      // Silencioso - regeneração não é crítica
     }
   }, 1000);
 
@@ -1326,6 +1519,107 @@ const handleUsePremiumItem = async (item: any) => {
   }
 };
 
+// ✅ LOCALIZAÇÃO: Junto com as outras funções de handler
+
+const handleUseBossItem = async (item: any) => {
+  if (!userProfile || !userProfileRef || !supabase || !calculatedStats) return;
+
+  const currentQuantity = userProfile.boss_inventory?.[item.id] || 0;
+  if (currentQuantity <= 0) return;
+
+  try {
+    const updateData: any = {
+      boss_inventory: {
+        ...userProfile.boss_inventory,
+        [item.id]: Math.max(0, currentQuantity - 1),
+      },
+    };
+
+    // Processar efeito do item
+    switch (item.effect) {
+      case 'xp_multiplier':
+        const xpGain = userProfile.level * item.multiplier;
+        updateData.experience = (userProfile.experience || 0) + xpGain;
+        toast({
+          title: `${item.icon} ${item.name} Usado!`,
+          description: `Você ganhou ${xpGain} XP!`,
+        });
+        break;
+
+      case 'ryo':
+        updateData.ryo = (userProfile.ryo || 0) + item.amount;
+        toast({
+          title: `${item.icon} ${item.name} Usado!`,
+          description: `Você ganhou ${item.amount} Ryo!`,
+        });
+        break;
+
+      case 'heal_percent':
+        const healAmount = Math.floor((calculatedStats.maxHealth * item.percent) / 100);
+        updateData.current_health = Math.min(
+          calculatedStats.maxHealth,
+          (userProfile.current_health || 0) + healAmount
+        );
+        toast({
+          title: `${item.icon} ${item.name} Usado!`,
+          description: `Você restaurou ${healAmount} de vida!`,
+        });
+        break;
+
+      case 'chakra_percent':
+        const chakraAmount = Math.floor((calculatedStats.maxChakra * item.percent) / 100);
+        updateData.current_chakra = Math.min(
+          calculatedStats.maxChakra,
+          (userProfile.current_chakra || 0) + chakraAmount
+        );
+        toast({
+          title: `${item.icon} ${item.name} Usado!`,
+          description: `Você restaurou ${chakraAmount} de chakra!`,
+        });
+        break;
+
+      case 'stat_points':
+        updateData.stat_points = (userProfile.stat_points || 0) + item.amount;
+        toast({
+          title: `${item.icon} ${item.name} Usado!`,
+          description: `Você ganhou ${item.amount} pontos de atributo!`,
+        });
+        break;
+
+      case 'all_stats':
+        updateData.vitality = (userProfile.vitality || 0) + item.amount;
+        updateData.intelligence = (userProfile.intelligence || 0) + item.amount;
+        updateData.taijutsu = (userProfile.taijutsu || 0) + item.amount;
+        updateData.ninjutsu = (userProfile.ninjutsu || 0) + item.amount;
+        updateData.genjutsu = (userProfile.genjutsu || 0) + item.amount;
+        updateData.selo = (userProfile.selo || 0) + item.amount;
+        toast({
+          title: `${item.icon} ${item.name} Usado!`,
+          description: `+${item.amount} em TODOS os atributos!`,
+        });
+        break;
+
+      // Adicionar outros efeitos conforme necessário...
+    }
+
+    await supabase
+      .from('profiles')
+      .update(updateData)
+      .eq('id', user.id);
+
+    setTimeout(() => {
+      window.location.reload();
+    }, 1500);
+  } catch (error: any) {
+    console.error('Erro ao usar item:', error);
+    toast({
+      variant: 'destructive',
+      title: 'Erro ao usar item',
+      description: error.message,
+    });
+  }
+};
+
 // 🆕 Modal de Relatório de Batalha
 const BattleReportModal = () => {
   if (!showBattleReport || !battleReport) return null;
@@ -1534,10 +1828,10 @@ const BattleReportModal = () => {
   const equippedHands = equipmentsData.find(e => e.id === userProfile.hands_id);
   
   const equipmentIcons = {
-    Peito: Shirt,
-    Pernas: Accessibility,
-    Pés: Footprints,
-    Mãos: Hand,
+    Peito: Layers ,
+    Pernas: Layers ,
+    Pés: Layers ,
+    Mãos: Layers ,
   };
 
   return (
@@ -1853,158 +2147,51 @@ const BattleReportModal = () => {
             </TooltipProvider>
 
             <div className="mt-6 border-t pt-6">
-    <h3 className="mb-4 text-lg font-semibold text-center">Arma</h3>
-    <div className="flex justify-center">
-        {equippedWeapon ? (
-            <Card className="w-full max-w-sm flex flex-col items-center p-4 border-primary ring-2 ring-primary">
-                <div className="relative w-32 h-32 mb-4 rounded-md overflow-hidden bg-muted/20">
-                    <Image 
-                        src={equippedWeapon.imageUrl} 
-                        alt={equippedWeapon.name} 
-                        fill
-                        className="object-contain"
-                        unoptimized
-                    />
-                </div>
-                
-                <CardTitle className="flex items-center gap-2 text-xl mb-2">
-                    <Swords className="h-5 w-5 text-primary" />
-                    {equippedWeapon.name}
-                </CardTitle>
-                
-                <CardDescription className="text-center mb-4">
-                    {equippedWeapon.description}
-                </CardDescription>
-                
-                <CardContent className="w-full p-0 mt-2 space-y-1">
-                    <h4 className="font-semibold text-sm mb-2 text-center">Atributos</h4>
-                    {Object.entries(equippedWeapon.buffs).map(([key, value]) => (
-                        value !== 0 && (
-                            <StatBuffDisplay 
-                                key={key} 
-                                label={key.charAt(0).toUpperCase() + key.slice(1)} 
-                                value={value} 
-                            />
-                        )
-                    ))}
-                </CardContent>
-            </Card>
-        ) : (
-            <Card className="w-full max-w-sm flex flex-col items-center p-6 border-dashed border-2">
-                <Swords className="h-12 w-12 text-muted-foreground mb-4" />
-                <p className="text-center text-muted-foreground">
-                    Nenhuma arma equipada.
-                </p>
-                <Button asChild className="mt-4" size="sm">
-                    <Link href="/weapons">
-                        Visitar Arsenal
-                    </Link>
-                </Button>
-            </Card>
-        )}
+    <h3 className="mb-4 text-lg font-semibold text-center">Equipamentos</h3>
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {[equippedChest, equippedLegs, equippedFeet, equippedHands].map((item, index) => {
+           const category = ['Peito', 'Pernas', 'Pés', 'Mãos'][index] as keyof typeof equipmentIcons;
+           const Icon = equipmentIcons[category];
+
+           if (item) {
+               return (
+                   <Card key={item.id} className="w-full flex flex-col items-center p-4">
+                       <div className="relative w-24 h-24 mb-3 rounded-md overflow-hidden bg-muted/20">
+                           <Image 
+                               src={item.imageUrl} 
+                               alt={item.name} 
+                               fill
+                               className="object-contain"
+                               unoptimized
+                           />
+                       </div>
+                       <CardTitle className="text-lg mb-2 text-center">
+                           {item.name}
+                       </CardTitle>
+                       <CardContent className="w-full p-0 mt-2 space-y-1">
+                           {Object.entries(item.buffs).map(([key, value]) => (
+                               value !== 0 && <StatBuffDisplay key={key} label={key} value={value} />
+                           ))}
+                       </CardContent>
+                   </Card>
+               );
+           }
+           return (
+               <Card key={category} className="w-full flex flex-col items-center p-4 bg-muted/20 border-dashed">
+                    <Icon className="h-12 w-12 text-muted-foreground mb-3"/>
+                    <CardTitle className="text-lg mb-2 text-muted-foreground">
+                        Vazio
+                    </CardTitle>
+                    <CardContent className="w-full p-0 mt-2">
+                       <p className="text-center text-xs text-muted-foreground">Visite o Arsenal para equipar.</p>
+                    </CardContent>
+               </Card>
+           );
+        })}
     </div>
 </div>
 
-             <div className="mt-6 border-t pt-6">
-                <h3 className="mb-4 text-lg font-semibold text-center">Equipamentos</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                    {[equippedChest, equippedLegs, equippedFeet, equippedHands].map((item, index) => {
-                       const category = ['Peito', 'Pernas', 'Pés', 'Mãos'][index] as keyof typeof equipmentIcons;
-                       const Icon = equipmentIcons[category];
-
-                       if (item) {
-                           return (
-                               <Card key={item.id} className="w-full flex flex-col items-center p-4">
-                                   <CardTitle className="flex items-center gap-2 text-xl mb-2">
-                                       <Icon className="h-5 w-5"/>
-                                       {item.name}
-                                   </CardTitle>
-                                   <CardContent className="w-full p-0 mt-2 space-y-1">
-                                       {Object.entries(item.buffs).map(([key, value]) => (
-                                           value !== 0 && <StatBuffDisplay key={key} label={key} value={value} />
-                                       ))}
-                                   </CardContent>
-                               </Card>
-                           );
-                       }
-                       return (
-                           <Card key={category} className="w-full flex flex-col items-center p-4 bg-muted/20 border-dashed">
-                                <CardTitle className="flex items-center gap-2 text-xl mb-2 text-muted-foreground">
-                                    <Icon className="h-5 w-5"/>
-                                    Vazio
-                                </CardTitle>
-                                <CardContent className="w-full p-0 mt-2">
-                                   <p className="text-center text-xs text-muted-foreground">Visite o Arsenal para equipar.</p>
-                                </CardContent>
-                           </Card>
-                       );
-                    })}
-                </div>
-            </div>
-             
-            <div className="mt-6 border-t pt-6">
-  <h3 className="mb-4 text-lg font-semibold text-center">Invocação</h3>
-  <div className="flex justify-center">
-    {equippedSummon ? (
-      <Card className="w-full max-w-sm flex flex-col items-center p-4 border-primary ring-2 ring-primary">
-        <div className="relative w-32 h-32 mb-4 rounded-md overflow-hidden bg-muted/20">
-          <Image 
-            src={equippedSummon.imageUrl} 
-            alt={equippedSummon.name} 
-            fill
-            className="object-contain"
-            unoptimized
-          />
-        </div>
-        
-        <CardTitle className="flex items-center gap-2 text-xl mb-2">
-          <Footprints className="h-5 w-5 text-primary" />
-          {equippedSummon.name}
-        </CardTitle>
-        
-        <CardDescription className="text-center mb-4">
-          {equippedSummon.description}
-        </CardDescription>
-        
-        <CardContent className="w-full p-0 mt-2 space-y-1">
-          <h4 className="font-semibold text-sm mb-2 text-center">Atributos</h4>
-          {Object.entries(equippedSummon.buffs).map(([key, value]) => {
-            const statKey = key as keyof Summon['buffs'];
-            const baseBuff = equippedSummon.buffs[statKey] || 0;
             
-            const trainedStat = userProfile.summon_trained_stat;
-            const summonLevel = userProfile.summon_level || 1;
-            
-            let buffWithTraining = baseBuff;
-            if (trainedStat === key && summonLevel > 1) {
-              buffWithTraining = baseBuff + ((summonLevel - 1) * TRAINING_BONUS_PER_LEVEL);
-            }
-            
-            return buffWithTraining !== 0 && (
-              <StatBuffDisplay
-                key={key}
-                label={key.charAt(0).toUpperCase() + key.slice(1)}
-                value={buffWithTraining}
-              />
-            );
-          })}
-        </CardContent>
-      </Card>
-    ) : (
-      <Card className="w-full max-w-sm flex flex-col items-center p-6 border-dashed border-2">
-        <Footprints className="h-12 w-12 text-muted-foreground mb-4" />
-        <p className="text-center text-muted-foreground">
-          Nenhum contrato de invocação ativo.
-        </p>
-        <Button asChild className="mt-4" size="sm">
-          <Link href="/summons">
-            Visitar Contratos
-          </Link>
-        </Button>
-      </Card>
-    )}
-  </div>
-</div>
 
 {/* 🆕 SEÇÃO DE BOOSTS PREMIUM ATIVOS */}
 {activeBoosts && activeBoosts.length > 0 && (
@@ -2409,6 +2596,84 @@ const BattleReportModal = () => {
   ) : (
     <p className="text-center text-muted-foreground">Seu inventário está vazio. Visite o Ichiraku para comprar itens!</p>
   )}
+</div>
+
+ 
+
+{/* Inventário do Boss */}
+<div className="mt-6 border-t pt-6">
+  <h3 className="mb-4 text-lg font-semibold text-center flex items-center justify-center gap-2">
+    <Gift className="h-5 w-5 text-purple-500" />
+    Recompensas do Boss
+  </h3>
+  {(() => {
+    const bossInventory = userProfile.boss_inventory || {};
+    const bossItems = Object.entries(bossInventory)
+      .filter(([_, quantity]) => (quantity as number) > 0)
+      .map(([id, quantity]) => {
+        // Buscar item em todas as categorias
+        const allDrops = [
+          ...bossDrops.comum,
+          ...bossDrops.raro,
+          ...bossDrops.epico,
+          ...bossDrops.lendario
+        ];
+        const itemData = allDrops.find(item => item.id === id);
+        return itemData ? { ...itemData, quantity } : null;
+      })
+      .filter(Boolean);
+
+    if (bossItems.length === 0) {
+      return (
+        <p className="text-center text-muted-foreground">
+          Nenhum item do boss ainda. Participe da Invasão Global!
+        </p>
+      );
+    }
+
+    return (
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        {bossItems.map((item: any) => {
+          const rarityColors = {
+            comum: 'border-gray-500',
+            raro: 'border-blue-500',
+            épico: 'border-purple-500',
+            lendário: 'border-amber-500',
+          };
+
+          return (
+            <Card
+              key={item.id}
+              className={cn(
+                'relative transition-all hover:scale-105',
+                rarityColors[item.rarity as keyof typeof rarityColors]
+              )}
+            >
+              <CardHeader className="pb-3">
+                <div className="text-4xl text-center mb-2">{item.icon}</div>
+                <CardTitle className="text-sm text-center">{item.name}</CardTitle>
+                <CardDescription className="text-xs text-center">
+                  {item.description}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="text-center">
+                <Badge variant="secondary">x{item.quantity}</Badge>
+              </CardContent>
+              <CardFooter>
+                <Button
+                  className="w-full"
+                  size="sm"
+                  onClick={() => handleUseBossItem(item)}
+                >
+                  Usar
+                </Button>
+              </CardFooter>
+            </Card>
+          );
+        })}
+      </div>
+    );
+  })()}
 </div>
 
           </CardContent>
