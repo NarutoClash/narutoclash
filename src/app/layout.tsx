@@ -1,8 +1,8 @@
 import type { Metadata } from 'next';
+import Script from 'next/script';
 import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 import { SupabaseClientProvider } from '@/supabase';
-import { BattleReportsNotification } from '@/components/battle-reports-notification';
 
 export const metadata: Metadata = {
   title: 'Naruto Clash',
@@ -28,6 +28,12 @@ export default function RootLayout({
           {children}
           <Toaster />
         </SupabaseClientProvider>
+
+        {/* ✅ SDK do Mercado Pago - Device ID Anti-Fraude */}
+        <Script
+          src="https://sdk.mercadopago.com/js/v2"
+          strategy="lazyOnload"
+        />
       </body>
     </html>
   );

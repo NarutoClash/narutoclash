@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { PageHeader } from '@/components/common/page-header';
 import { 
   Card, 
@@ -13,9 +13,23 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useSupabase, useMemoSupabase, useDoc, useCollection, WithId } from '@/supabase';
-import { Loader2, ShoppingCart, Sparkles, CreditCard, DollarSign, AlertCircle } from 'lucide-react';
+import { Loader2, ShoppingCart, Sparkles, CreditCard, DollarSign, AlertCircle, ExternalLink } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+
+// ✅ Declaração global do MercadoPago
+declare global {
+  interface Window {
+    MercadoPago: any;
+  }
+}
 
 type PacoteCP = {
   nome: string;
@@ -33,6 +47,9 @@ export default function ComprarCPPage() {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [selectedPackage, setSelectedPackage] = useState<WithId<PacoteCP> | null>(null);
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [mpInstance, setMpInstance] = useState<any>(null);
+  const [deviceSessionId, setDeviceSessionId] = useState<string | null>(null);
 
   // Buscar perfil do usuário
   const userProfileRef = useMemoSupabase(() => 
@@ -48,6 +65,45 @@ export default function ComprarCPPage() {
   }), []);
   const { data: pacotes, isLoading: arePacotesLoading } = useCollection<WithId<PacoteCP>>(pacotesQuery);
 
+  // ✅ Inicializar Mercado Pago e gerar Device ID
+  useEffect(() => {
+    const initMercadoPago = () => {
+      if (typeof window !== 'undefined' && window.MercadoPago) {
+        try {
+          const publicKey = process.env.NEXT_PUBLIC_MERCADOPAGO_PUBLIC_KEY;
+          
+          if (!publicKey) {
+            console.error('❌ MERCADOPAGO_PUBLIC_KEY não encontrada');
+            return;
+          }
+
+          console.log('🔑 Inicializando Mercado Pago...');
+          
+          const mp = new window.MercadoPago(publicKey, {
+            locale: 'pt-BR'
+          });
+
+          setMpInstance(mp);
+
+          // ✅ Gerar Device Session ID
+          const generatedSessionId = `mp-device-${Date.now()}-${Math.random().toString(36).substring(7)}`;
+          setDeviceSessionId(generatedSessionId);
+          
+          console.log('✅ Mercado Pago inicializado');
+          console.log('🔐 Device Session ID gerado:', generatedSessionId);
+
+        } catch (error) {
+          console.error('❌ Erro ao inicializar Mercado Pago:', error);
+        }
+      } else {
+        // SDK ainda não carregou, tentar novamente em 500ms
+        setTimeout(initMercadoPago, 500);
+      }
+    };
+
+    initMercadoPago();
+  }, []);
+
   // 🎨 Cores para cada pacote (baseado em Naruto)
   const getPackageTheme = (nome: string) => {
     if (nome.includes('Genin')) return 'from-gray-500/20 to-gray-600/20 border-gray-500/50';
@@ -58,27 +114,31 @@ export default function ComprarCPPage() {
     return 'from-orange-500/20 to-red-500/20 border-orange-500/50';
   };
 
-  const handleComprar = async (pacote: WithId<PacoteCP>) => {
-    if (!user || !supabase) {
-      toast({
-        variant: 'destructive',
-        title: 'Erro',
-        description: 'Você precisa estar logado para comprar CP.',
-      });
-      return;
-    }
-
-    setIsLoading(true);
+  // ✅ Abrir popup de confirmação
+  const handleClickComprar = (pacote: WithId<PacoteCP>) => {
     setSelectedPackage(pacote);
+    setShowConfirmDialog(true);
+  };
+
+  // ✅ Confirmar compra e abrir em nova aba
+  const handleConfirmarCompra = async () => {
+    if (!user || !supabase || !selectedPackage) return;
+
+    setShowConfirmDialog(false);
+    setIsLoading(true);
 
     try {
+      console.log('🛒 Iniciando compra:', selectedPackage.nome);
+      console.log('🔐 Device Session ID:', deviceSessionId);
+
       // 1️⃣ Criar preferência de pagamento no Mercado Pago
       const response = await fetch('/api/mercadopago/create-preference', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          pacote_id: pacote.id,
+          pacote_id: selectedPackage.id,
           user_id: user.id,
+          device_session_id: deviceSessionId,
         }),
       });
 
@@ -89,9 +149,24 @@ export default function ComprarCPPage() {
 
       const data = await response.json();
 
-      // 2️⃣ Redirecionar para o Mercado Pago
+      // 2️⃣ Abrir checkout em NOVA ABA (usuário continua no jogo)
       if (data.init_point) {
-        window.location.href = data.init_point;
+        console.log('🌐 Abrindo checkout em nova aba...');
+        
+        const checkoutWindow = window.open(data.init_point, '_blank');
+        
+        if (!checkoutWindow) {
+          toast({
+            title: 'Popup Bloqueado',
+            description: 'Por favor, permita popups para este site e tente novamente.',
+            variant: 'destructive',
+          });
+        } else {
+          toast({
+            title: '✅ Checkout Aberto!',
+            description: 'Complete o pagamento na nova aba. Você pode continuar jogando aqui!',
+          });
+        }
       } else {
         throw new Error('Link de pagamento não foi gerado');
       }
@@ -103,6 +178,7 @@ export default function ComprarCPPage() {
         title: 'Erro ao processar pagamento',
         description: error.message || 'Tente novamente mais tarde.',
       });
+    } finally {
       setIsLoading(false);
       setSelectedPackage(null);
     }
@@ -122,6 +198,70 @@ export default function ComprarCPPage() {
         title="Comprar Clash Points" 
         description="Adquira CP para desbloquear itens premium no jogo"
       />
+
+      {/* ✅ POPUP DE CONFIRMAÇÃO - SEM DialogDescription */}
+      <Dialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
+        <DialogContent className="bg-gradient-to-br from-gray-900 to-gray-800 border-orange-500/50">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-orange-400">
+              <ShoppingCart className="h-5 w-5" />
+              Confirmar Compra
+            </DialogTitle>
+          </DialogHeader>
+          
+          {/* ✅ Conteúdo FORA do DialogDescription para evitar <p> aninhado */}
+          {selectedPackage && (
+            <div className="mt-4 space-y-3">
+              <div className="p-4 bg-black/30 rounded-lg border border-orange-500/20">
+                <div className="text-lg font-semibold text-yellow-500">
+                  💎 {selectedPackage.nome}
+                </div>
+                <div className="text-sm text-gray-400 mt-1">
+                  {selectedPackage.quantidade_cp + selectedPackage.bonus_cp} CP totais
+                </div>
+                <div className="text-2xl font-bold text-green-400 mt-2">
+                  R$ {selectedPackage.preco_brl.toFixed(2).replace('.', ',')}
+                </div>
+              </div>
+              
+              <Alert className="bg-blue-500/10 border-blue-500/30">
+                <ExternalLink className="h-4 w-4 text-blue-400" />
+                <AlertDescription className="text-gray-300">
+                  O checkout será aberto em uma <strong>nova aba</strong>. 
+                  Você pode continuar jogando enquanto completa o pagamento!
+                </AlertDescription>
+              </Alert>
+            </div>
+          )}
+
+          <DialogFooter className="gap-2 mt-4">
+            <Button 
+              variant="outline" 
+              onClick={() => setShowConfirmDialog(false)}
+              className="border-gray-600"
+            >
+              Cancelar
+            </Button>
+            <Button 
+              onClick={handleConfirmarCompra}
+              className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700"
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Abrindo...
+                </>
+              ) : (
+                <>
+                  <ExternalLink className="mr-2 h-4 w-4" />
+                  Ir para Pagamento
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Saldo Atual */}
       <Card className="mt-6 max-w-4xl mx-auto bg-gradient-to-br from-gray-900 to-gray-800 border-orange-500/30 shadow-xl shadow-orange-500/20">
@@ -145,8 +285,8 @@ export default function ComprarCPPage() {
       <Alert className="mt-6 max-w-4xl mx-auto bg-orange-500/10 border-orange-500/30">
         <AlertCircle className="h-4 w-4 text-orange-500" />
         <AlertDescription className="text-gray-300">
-          <strong className="text-orange-400">Como funciona:</strong> Escolha um pacote abaixo → Pague com Pix, Cartão ou Boleto → 
-          Receba seus CP automaticamente após confirmação do pagamento (instantâneo para Pix!)
+          <strong className="text-orange-400">Como funciona:</strong> Escolha um pacote → 
+          Checkout abre em nova aba → Continue jogando → Receba CP após confirmação!
         </AlertDescription>
       </Alert>
 
@@ -210,20 +350,11 @@ export default function ComprarCPPage() {
                     <Button 
                       className="w-full bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 shadow-lg shadow-orange-500/50" 
                       size="lg"
-                      onClick={() => handleComprar(pacote)}
-                      disabled={isLoading && selectedPackage?.id === pacote.id}
+                      onClick={() => handleClickComprar(pacote)}
+                      disabled={isLoading}
                     >
-                      {isLoading && selectedPackage?.id === pacote.id ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Processando...
-                        </>
-                      ) : (
-                        <>
-                          <ShoppingCart className="mr-2 h-4 w-4" />
-                          Comprar Agora
-                        </>
-                      )}
+                      <ShoppingCart className="mr-2 h-4 w-4" />
+                      Comprar Agora
                     </Button>
                   </CardFooter>
                 </Card>
@@ -271,6 +402,17 @@ export default function ComprarCPPage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Status do Device ID (só para debug, remover em produção) */}
+      {process.env.NODE_ENV === 'development' && (
+        <Card className="mt-4 max-w-4xl mx-auto bg-gray-900/50 border-gray-700">
+          <CardContent className="pt-6">
+            <p className="text-xs text-gray-500">
+              🔐 Device Session ID: {deviceSessionId || 'Carregando...'}
+            </p>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

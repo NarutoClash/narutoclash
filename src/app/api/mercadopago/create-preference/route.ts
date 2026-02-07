@@ -24,12 +24,26 @@ const supabase = createClient(
   }
 );
 
+// ✅ Função para validar e formatar CPF
+function validarCPF(cpf: string): string | null {
+  const cpfNumeros = cpf.replace(/\D/g, '');
+  
+  if (cpfNumeros.length !== 11) return null;
+  if (/^(\d)\1{10}$/.test(cpfNumeros)) return null;
+  
+  return cpfNumeros;
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { pacote_id, user_id } = body;
+    const { pacote_id, user_id, device_session_id } = body; // ✅ Receber Device ID
 
-    console.log('📦 Criando preferência de pagamento:', { pacote_id, user_id });
+    console.log('📦 Criando preferência de pagamento:', { 
+      pacote_id, 
+      user_id,
+      device_session_id: device_session_id ? '✅ Presente' : '❌ Ausente'
+    });
 
     // 1️⃣ Validar dados
     if (!pacote_id || !user_id) {
@@ -110,8 +124,17 @@ export async function POST(request: NextRequest) {
 
     console.log('✅ Registro de pagamento criado:', pagamento.id);
 
-    // 6️⃣ Criar preferência no Mercado Pago
-    const preferenceData = {
+    // 6️⃣ Validar e formatar CPF (se existir)
+    let cpfFormatado = null;
+    if (userProfile.cpf) {
+      cpfFormatado = validarCPF(userProfile.cpf);
+      if (!cpfFormatado) {
+        console.warn('⚠️ CPF inválido no perfil do usuário:', userProfile.cpf);
+      }
+    }
+
+    // 7️⃣ Criar preferência no Mercado Pago
+    const preferenceData: any = {
       items: [
         {
           id: pacote.id.toString(),
@@ -125,6 +148,13 @@ export async function POST(request: NextRequest) {
       payer: {
         name: userName,
         email: userEmail,
+        // ✅ Só incluir CPF se for válido
+        ...(cpfFormatado && {
+          identification: {
+            type: 'CPF',
+            number: cpfFormatado,
+          },
+        }),
       },
       back_urls: {
         success: `${process.env.NEXT_PUBLIC_SITE_URL}/buy/success`,
@@ -140,25 +170,39 @@ export async function POST(request: NextRequest) {
         pacote_id: pacote.id,
         pagamento_id: pagamento.id,
         total_cp: totalCP,
+        // ✅ Incluir Device Session ID nos metadados
+        ...(device_session_id && { device_session_id }),
       },
+      // ✅ Configurações de segurança anti-fraude
+      binary_mode: true,
+      expires: true,
+      expiration_date_from: new Date().toISOString(),
+      expiration_date_to: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+      // ✅ IMPORTANTE: Adicionar Device Session ID para análise de fraude
+      ...(device_session_id && {
+        additional_info: {
+          device_id: device_session_id,
+        },
+      }),
     };
 
     console.log('📤 Enviando preferência ao Mercado Pago...');
+    console.log('🔐 Device ID incluído:', !!device_session_id);
 
     const response = await preference.create({ body: preferenceData });
 
     console.log('✅ Preferência criada:', response.id);
 
-    // 7️⃣ Atualizar registro com preference_id
+    // 8️⃣ Atualizar registro com preference_id
     await supabase
       .from('pagamentos_mercadopago')
       .update({ preference_id: response.id })
       .eq('id', pagamento.id);
 
-    // 8️⃣ Retornar link de pagamento
+    // 9️⃣ Retornar link de pagamento
     return NextResponse.json({
       preference_id: response.id,
-      init_point: response.init_point, // Produção real
+      init_point: response.init_point,
       pagamento_id: pagamento.id,
     });
 
