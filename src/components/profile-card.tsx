@@ -5,6 +5,8 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { villageImages } from '@/lib/village-images';
+import { calculateRank } from '@/lib/rank-calculator';
+import { Crown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface ProfileCardProps {
@@ -14,7 +16,7 @@ interface ProfileCardProps {
     avatar_url?: string;
     level: number;
     village?: string;
-    rank?: string; // ✅ ADICIONADO
+    rank?: string;
     experience?: number;
     max_experience?: number;
     ryo?: number;
@@ -22,27 +24,23 @@ interface ProfileCardProps {
   className?: string;
   showExperience?: boolean;
   showRyo?: boolean;
+  isKage?: boolean; // ✅ NOVO: indica se é Kage
 }
 
 export function ProfileCard({ 
   profile, 
   className,
   showExperience = true,
-  showRyo = false 
+  showRyo = false,
+  isKage = false 
 }: ProfileCardProps) {
   const villageImage = profile.village ? villageImages[profile.village] : null;
   const xpPercentage = profile.max_experience 
     ? ((profile.experience || 0) / profile.max_experience) * 100 
     : 0;
 
-  // ✅ Cores dos ranks
-  const rankColors: Record<string, string> = {
-    'Kage': 'bg-gradient-to-r from-purple-500 to-pink-500 text-white',
-    'Jōnin': 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white',
-    'Chūnin': 'bg-gradient-to-r from-green-500 to-emerald-500 text-white',
-    'Genin': 'bg-gradient-to-r from-amber-500 to-orange-500 text-white',
-    'Academia': 'bg-gradient-to-r from-slate-400 to-slate-500 text-white',
-  };
+  // ✅ CALCULAR RANK BASEADO NO NÍVEL
+  const calculatedRank = calculateRank(profile.level);
 
   return (
     <Link href={`/profile/${profile.id}`}>
@@ -82,15 +80,20 @@ export function ProfileCard({
                     {profile.village}
                   </Badge>
                 )}
-                {/* ✅ BADGE DE RANK COM COR */}
-                {profile.rank && (
+                
+                {/* ✅ BADGE DO RANK BASE (sempre aparece) */}
+                <Badge variant="secondary" className="text-xs font-semibold">
+                  {calculatedRank}
+                </Badge>
+                
+                {/* ✅ BADGE DE KAGE (só se for Kage da aldeia) */}
+                {isKage && (
                   <Badge 
-                    className={cn(
-                      "text-xs font-bold",
-                      rankColors[profile.rank] || "bg-secondary"
-                    )}
+                    variant="default"
+                    className="text-xs font-semibold bg-gradient-to-r from-amber-400 to-amber-600 text-white"
                   >
-                    {profile.rank}
+                    <Crown className="h-3 w-3 mr-1" />
+                    Kage
                   </Badge>
                 )}
               </div>

@@ -183,23 +183,59 @@ const useActiveBoosts = (supabase: any, userId: string | undefined) => {
     return activeBoosts;
   };
 
-const getBoostMultipliers = (activeBoosts: any[] | null) => {
-    let xpMultiplier = 1;
-    let ryoMultiplier = 1;
+  // 🆕 ADICIONAR ESTA FUNÇÃO AQUI
+const useBossBuffs = (supabase: any, userId: string | undefined) => {
+  const [bossBuffs, setBossBuffs] = useState<any[] | null>(null);
+  
+  useEffect(() => {
+    if (!userId || !supabase) return;
     
-    if (activeBoosts && activeBoosts.length > 0) {
-      activeBoosts.forEach((boost: any) => {
-        if (boost.item_type === 'xp_boost' && boost.item_data?.boost_percentage) {
-          xpMultiplier += boost.item_data.boost_percentage / 100;
-        }
-        if (boost.item_type === 'ryo_boost' && boost.item_data?.boost_percentage) {
-          ryoMultiplier += boost.item_data.boost_percentage / 100;
-        }
-      });
-    }
+    const fetchBuffs = async () => {
+      const { data } = await supabase
+        .from('active_boss_buffs')
+        .select('*')
+        .eq('user_id', userId)
+        .gte('expires_at', new Date().toISOString());
+      
+      setBossBuffs(data || []);
+    };
     
-    return { xpMultiplier, ryoMultiplier };
-  };
+    fetchBuffs();
+  }, [userId, supabase]);
+  
+  return bossBuffs;
+};
+
+const getBoostMultipliers = (activeBoosts: any[] | null, bossBuffs: any[] | null) => {
+  let xpMultiplier = 1;
+  let ryoMultiplier = 1;
+  
+  // 🎁 BUFFS PREMIUM (CP)
+  if (activeBoosts && activeBoosts.length > 0) {
+    activeBoosts.forEach((boost: any) => {
+      if (boost.item_type === 'xp_boost' && boost.item_data?.boost_percentage) {
+        xpMultiplier += boost.item_data.boost_percentage / 100;
+      }
+      if (boost.item_type === 'ryo_boost' && boost.item_data?.boost_percentage) {
+        ryoMultiplier += boost.item_data.boost_percentage / 100;
+      }
+    });
+  }
+  
+  // 🏋️ BUFFS DO BOSS (24H)
+  if (bossBuffs && bossBuffs.length > 0) {
+    bossBuffs.forEach((buff: any) => {
+      if (buff.buff_type === 'xp_boost') {
+        xpMultiplier += buff.buff_value / 100;
+      }
+      if (buff.buff_type === 'ryo_boost') {
+        ryoMultiplier += buff.buff_value / 100;
+      }
+    });
+  }
+  
+  return { xpMultiplier, ryoMultiplier };
+};
 
 export default function MissionsPage() {
     const { user, supabase } = useSupabase();
@@ -215,6 +251,7 @@ export default function MissionsPage() {
     const { data: userProfile, isLoading } = useDoc(userProfileRef);
     
     const activeBoosts = useActiveBoosts(supabase, user?.id);
+    const bossBuffs = useBossBuffs(supabase, user?.id);
 
 const [localActiveMission, setLocalActiveMission] = useState<{
     missionId: string;
@@ -447,26 +484,27 @@ useEffect(() => {
             console.log('👤 User ID:', userProfileRef.id);
         
             try {
-                const { data: activeBoosts } = await supabase
-                    .from('user_premium_inventory')
-                    .select('*')
-                    .eq('user_id', user.id)
-                    .in('item_type', ['xp_boost', 'ryo_boost'])
-                    .gte('expires_at', new Date().toISOString());
-        
-                let xpMultiplier = 1;
-                let ryoMultiplier = 1;
-        
-                if (activeBoosts && activeBoosts.length > 0) {
-                    activeBoosts.forEach((boost: any) => {
-                        if (boost.item_type === 'xp_boost' && boost.item_data?.boost_percentage) {
-                            xpMultiplier += boost.item_data.boost_percentage / 100;
-                        }
-                        if (boost.item_type === 'ryo_boost' && boost.item_data?.boost_percentage) {
-                            ryoMultiplier += boost.item_data.boost_percentage / 100;
-                        }
-                    });
-                }
+              // 🎁 BUSCAR BUFFS PREMIUM
+              const { data: premiumBoosts } = await supabase
+                  .from('user_premium_inventory')
+                  .select('*')
+                  .eq('user_id', user.id)
+                  .in('item_type', ['xp_boost', 'ryo_boost'])
+                  .gte('expires_at', new Date().toISOString());
+          
+              // 🏋️ BUSCAR BUFFS DO BOSS
+              const { data: bossBuffsData } = await supabase
+                  .from('active_boss_buffs')
+                  .select('*')
+                  .eq('user_id', user.id)
+                  .gte('expires_at', new Date().toISOString());
+          
+              // 🧮 CALCULAR MULTIPLICADORES
+              const { xpMultiplier, ryoMultiplier } = getBoostMultipliers(premiumBoosts, bossBuffsData);
+              
+              console.log('💰 MULTIPLICADORES APLICADOS:', { xpMultiplier, ryoMultiplier });
+              console.log('🎁 Premium Boosts:', premiumBoosts);
+              console.log('🏋️ Boss Buffs:', bossBuffsData);
         
                 const baseRyo = activeMissionDetails.ryoReward;
                 const baseXP = activeMissionDetails.experienceReward;
@@ -665,7 +703,7 @@ useEffect(() => {
     }
     
     if (activeMission && activeMissionDetails) {
-        const { xpMultiplier, ryoMultiplier } = getBoostMultipliers(activeBoosts);
+      const { xpMultiplier, ryoMultiplier } = getBoostMultipliers(activeBoosts, bossBuffs);
         
         const baseRyo = activeMissionDetails.ryoReward;
         const baseXP = activeMissionDetails.experienceReward;

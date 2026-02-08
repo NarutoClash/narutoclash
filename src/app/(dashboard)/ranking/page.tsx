@@ -43,64 +43,84 @@ export default function RankingPage() {
 
   const fetchTotalCount = async () => {
     if (!supabase) return;
-
+  
     try {
       let query = supabase
         .from('profiles')
-        .select('id', { count: 'exact', head: true });
-
+        .select('*', { count: 'exact', head: true }); // ✅ MUDEI PARA '*'
+  
       if (villageFilter !== 'all') {
         query = query.eq('village', villageFilter);
       }
-
+  
       const { count, error } = await query;
-
-      if (error) throw error;
+  
+      if (error) {
+        console.error('❌ Erro ao contar perfis:', error);
+        throw error;
+      }
+      
+      console.log('📊 Total de perfis:', count);
       setTotalProfiles(count || 0);
     } catch (error: any) {
       console.error('❌ Erro ao contar perfis:', error);
+      setTotalProfiles(0);
     }
   };
-
   const fetchProfiles = async () => {
     if (!supabase) {
       console.log('⏳ Aguardando Supabase inicializar...');
       return;
     }
-
+  
     setIsLoading(true);
     try {
-      console.log('🔍 Buscando perfis...');
+      console.log('🔍 Buscando perfis...', { 
+        villageFilter, 
+        currentPage, 
+        from: (currentPage - 1) * PROFILES_PER_PAGE,
+        to: currentPage * PROFILES_PER_PAGE - 1
+      });
       
       const from = (currentPage - 1) * PROFILES_PER_PAGE;
       const to = from + PROFILES_PER_PAGE - 1;
-
+  
       let query = supabase
         .from('profiles')
-        .select('id, name, avatar_url, level, village, rank, experience, max_experience, ryo')
+        .select('id, name, avatar_url, level, village, experience, max_experience, ryo') // ✅ REMOVIDO 'rank' e 'user_id'
         .order('level', { ascending: false })
+        .order('created_at', { ascending: true }) // ✅ ORDENAÇÃO SECUNDÁRIA
         .range(from, to);
-
+  
       if (villageFilter !== 'all') {
         query = query.eq('village', villageFilter);
       }
-
+  
       const { data, error } = await query;
-
+  
       if (error) {
         console.error('❌ Erro do Supabase:', error);
+        console.error('❌ Detalhes do erro:', JSON.stringify(error, null, 2));
         throw error;
       }
-
-      console.log('✅ Perfis carregados:', data?.length || 0);
-      setProfiles(data || []);
+  
+      if (!data) {
+        console.warn('⚠️ Nenhum dado retornado');
+        setProfiles([]);
+        return;
+      }
+  
+      console.log('✅ Perfis carregados:', data.length);
+      setProfiles(data);
     } catch (error: any) {
       console.error('❌ Erro ao carregar perfis:', error);
+      console.error('❌ Stack:', error?.stack);
       toast({
         variant: 'destructive',
         title: 'Erro ao carregar ranking',
         description: error?.message || 'Não foi possível carregar os ninjas.',
       });
+      setProfiles([]); // ✅ GARANTIR QUE PROFILES SEJA ARRAY VAZIO
     } finally {
       setIsLoading(false);
     }
@@ -136,6 +156,15 @@ export default function RankingPage() {
       </div>
     );
   }
+
+// ✅ ADICIONAR ANTES DO RETURN (linha ~140)
+const getKageStatus = (profile: any, position: number) => {
+  // É Kage se for TOP 1 da aldeia
+  if (villageFilter !== 'all' && position === 1) {
+    return true;
+  }
+  return false;
+};
 
   return (
     <div>
@@ -198,36 +227,40 @@ export default function RankingPage() {
       ) : (
         <>
           {/* Grid de Perfis com Posição no Ranking */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {profiles.map((profile, index) => {
-              const rankPosition = (currentPage - 1) * PROFILES_PER_PAGE + index + 1;
-              return (
-                <div key={profile.id} className="relative">
-                  {/* Badge de Posição */}
-                  <div className="absolute -left-2 -top-2 z-10">
-                    {rankPosition === 1 ? (
-                      <div className="bg-gradient-to-br from-amber-400 to-amber-600 text-white rounded-full h-8 w-8 flex items-center justify-center text-sm font-bold shadow-lg border-2 border-amber-300">
-                        👑
-                      </div>
-                    ) : rankPosition === 2 ? (
-                      <div className="bg-gradient-to-br from-slate-300 to-slate-500 text-white rounded-full h-8 w-8 flex items-center justify-center text-xs font-bold shadow-lg border-2 border-slate-200">
-                        {rankPosition}
-                      </div>
-                    ) : rankPosition === 3 ? (
-                      <div className="bg-gradient-to-br from-amber-600 to-amber-800 text-white rounded-full h-8 w-8 flex items-center justify-center text-xs font-bold shadow-lg border-2 border-amber-500">
-                        {rankPosition}
-                      </div>
-                    ) : (
-                      <div className="bg-muted text-muted-foreground rounded-full h-7 w-7 flex items-center justify-center text-xs font-bold shadow border">
-                        {rankPosition}
-                      </div>
-                    )}
-                  </div>
-                  <ProfileCard profile={profile} showExperience={false} />
-                </div>
-              );
-            })}
-          </div>
+<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+  {profiles.map((profile, index) => {
+    const rankPosition = (currentPage - 1) * PROFILES_PER_PAGE + index + 1;
+    return (
+      <div key={profile.id} className="relative">
+        {/* Badge de Posição */}
+        <div className="absolute -left-2 -top-2 z-10">
+          {rankPosition === 1 ? (
+            <div className="bg-gradient-to-br from-amber-400 to-amber-600 text-white rounded-full h-8 w-8 flex items-center justify-center text-sm font-bold shadow-lg border-2 border-amber-300">
+              👑
+            </div>
+          ) : rankPosition === 2 ? (
+            <div className="bg-gradient-to-br from-slate-300 to-slate-500 text-white rounded-full h-8 w-8 flex items-center justify-center text-xs font-bold shadow-lg border-2 border-slate-200">
+              {rankPosition}
+            </div>
+          ) : rankPosition === 3 ? (
+            <div className="bg-gradient-to-br from-amber-600 to-amber-800 text-white rounded-full h-8 w-8 flex items-center justify-center text-xs font-bold shadow-lg border-2 border-amber-500">
+              {rankPosition}
+            </div>
+          ) : (
+            <div className="bg-muted text-muted-foreground rounded-full h-7 w-7 flex items-center justify-center text-xs font-bold shadow border">
+              {rankPosition}
+            </div>
+          )}
+        </div>
+        <ProfileCard 
+  profile={profile} 
+  showExperience={false}
+  isKage={getKageStatus(profile, rankPosition)}
+/>
+      </div>
+    );
+  })}
+</div>
 
           {/* Paginação */}
           <div className="mt-8 flex flex-col sm:flex-row items-center justify-between gap-4">

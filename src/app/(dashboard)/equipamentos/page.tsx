@@ -172,6 +172,7 @@ const SectionHeader = ({ title, icon: Icon }: { title: string; icon: React.Eleme
 export default function EquipamentosPage() {
     const { user, supabase } = useSupabase();
     const { toast } = useToast();
+    const [isProcessing, setIsProcessing] = useState(false);
 
     const userProfileRef = useMemoSupabase(() => {
         if (!user) return null;
@@ -187,63 +188,102 @@ export default function EquipamentosPage() {
         'Mãos': 'hands_id',
     };
 
-    const handleBuyItem = (item: Equipment) => {
-        if (!userProfileRef || !userProfile || !supabase) return;
+    const handleBuyItem = async (item: Equipment) => {
+        if (!userProfileRef || !userProfile || !supabase || isProcessing) return;
 
         if (userProfile.ryo < item.price) {
             toast({ variant: "destructive", title: "Ryo Insuficiente!" });
             return;
         }
 
-        const currentOwnedIds = userProfile.ownedEquipmentIds || [];
-        const updatePayload: any = {
-            ryo: (userProfile.ryo || 0) - item.price,
-            ownedEquipmentIds: [...currentOwnedIds, item.id]
-        };
-        
-        const fieldToUpdate = typeToFieldMap[item.type];
-        if (fieldToUpdate) {
-            updatePayload[fieldToUpdate] = item.id;
-        }
+        setIsProcessing(true);
 
-        updateDocumentNonBlocking(userProfileRef, updatePayload, supabase);
-        toast({ title: "Compra realizada!", description: `${item.name} foi comprado e equipado.` });
-    };
-
-    const handleEquipItem = (item: Equipment) => {
-        if (!userProfileRef || !supabase) return;
-        
-        const updatePayload: any = {};
-        const fieldToUpdate = typeToFieldMap[item.type];
-        if(fieldToUpdate) {
-            updatePayload[fieldToUpdate] = item.id;
-        }
-        
-        updateDocumentNonBlocking(userProfileRef, updatePayload, supabase);
-        toast({ title: 'Equipamento Alterado!', description: `Você equipou ${item.name}.` });
-    };
-
-    const handleSellItem = (item: Equipment) => {
-         if (!userProfileRef || !userProfile || !supabase) return;
-
-        const sellPrice = Math.floor(item.price / 2);
-        const currentOwnedIds = userProfile.ownedEquipmentIds || [];
-        const updatePayload: any = {
-            ryo: (userProfile.ryo || 0) + sellPrice,
-            ownedEquipmentIds: currentOwnedIds.filter((id: string) => id !== item.id)
-        };
-        
-        const fieldToUpdate = typeToFieldMap[item.type];
-        if (fieldToUpdate) {
-            const currentlyEquippedId = userProfile[fieldToUpdate];
-            if (currentlyEquippedId === item.id) {
-                updatePayload[fieldToUpdate] = null;
+        try {
+            const currentOwnedIds = userProfile.ownedEquipmentIds || [];
+            const updatePayload: any = {
+                ryo: (userProfile.ryo || 0) - item.price,
+                ownedEquipmentIds: [...currentOwnedIds, item.id]
+            };
+            
+            const fieldToUpdate = typeToFieldMap[item.type];
+            if (fieldToUpdate) {
+                updatePayload[fieldToUpdate] = item.id;
             }
-        }
 
-        updateDocumentNonBlocking(userProfileRef, updatePayload, supabase);
-        toast({ title: "Item Vendido!", description: `${item.name} foi vendido por ${sellPrice} Ryo.` });
-    }
+            await updateDocumentNonBlocking(userProfileRef, updatePayload, supabase);
+            
+            toast({ title: "Compra realizada!", description: `${item.name} foi comprado e equipado.` });
+
+            // Reload após 1 segundo
+            setTimeout(() => {
+                window.location.reload();
+            }, 1000);
+        } catch (error) {
+            toast({ variant: "destructive", title: "Erro ao comprar item" });
+            setIsProcessing(false);
+        }
+    };
+
+    const handleEquipItem = async (item: Equipment) => {
+        if (!userProfileRef || !supabase || isProcessing) return;
+        
+        setIsProcessing(true);
+
+        try {
+            const updatePayload: any = {};
+            const fieldToUpdate = typeToFieldMap[item.type];
+            if(fieldToUpdate) {
+                updatePayload[fieldToUpdate] = item.id;
+            }
+            
+            await updateDocumentNonBlocking(userProfileRef, updatePayload, supabase);
+            
+            toast({ title: 'Equipamento Alterado!', description: `Você equipou ${item.name}.` });
+
+            // Reload após 1 segundo
+            setTimeout(() => {
+                window.location.reload();
+            }, 1000);
+        } catch (error) {
+            toast({ variant: "destructive", title: "Erro ao equipar item" });
+            setIsProcessing(false);
+        }
+    };
+
+    const handleSellItem = async (item: Equipment) => {
+        if (!userProfileRef || !userProfile || !supabase || isProcessing) return;
+
+        setIsProcessing(true);
+
+        try {
+            const sellPrice = Math.floor(item.price / 2);
+            const currentOwnedIds = userProfile.ownedEquipmentIds || [];
+            const updatePayload: any = {
+                ryo: (userProfile.ryo || 0) + sellPrice,
+                ownedEquipmentIds: currentOwnedIds.filter((id: string) => id !== item.id)
+            };
+            
+            const fieldToUpdate = typeToFieldMap[item.type];
+            if (fieldToUpdate) {
+                const currentlyEquippedId = userProfile[fieldToUpdate];
+                if (currentlyEquippedId === item.id) {
+                    updatePayload[fieldToUpdate] = null;
+                }
+            }
+
+            await updateDocumentNonBlocking(userProfileRef, updatePayload, supabase);
+            
+            toast({ title: "Item Vendido!", description: `${item.name} foi vendido por ${sellPrice} Ryo.` });
+
+            // Reload após 1 segundo
+            setTimeout(() => {
+                window.location.reload();
+            }, 1000);
+        } catch (error) {
+            toast({ variant: "destructive", title: "Erro ao vender item" });
+            setIsProcessing(false);
+        }
+    };
     
     const equipmentCategories: { name: 'Peito' | 'Pernas' | 'Pés' | 'Mãos', icon: React.ElementType }[] = [
         { name: 'Peito', icon: Shirt },

@@ -13,12 +13,18 @@ export function usePlayerRank(
   village: string | undefined,
   level: number | undefined
 ) {
-  const [rank, setRank] = useState<string>('Estudante');
+  const [rank, setRank] = useState<string>('');
   const [isLoading, setIsLoading] = useState(true);
   const [isKage, setIsKage] = useState(false);
 
   useEffect(() => {
     async function fetchRank() {
+      // ✅ SEMPRE CALCULAR O RANK BASE
+      if (level !== undefined) {
+        const baseRank = calculateRank(level);
+        setRank(baseRank);
+      }
+
       if (!supabase || !userId || !village || level === undefined) {
         setIsLoading(false);
         return;
@@ -27,17 +33,12 @@ export function usePlayerRank(
       setIsLoading(true);
 
       try {
-        // Calcula o rank base
-        const baseRank = calculateRank(level);
-        
-        // Verifica se é Kage
+        // Verifica se é Kage (NÃO sobrescreve o rank)
         const kageStatus = await checkIfKage(supabase, userId, village, level);
-        
         setIsKage(kageStatus);
-        setRank(kageStatus ? 'Kage' : baseRank);
       } catch (error) {
         console.error('Erro ao buscar rank:', error);
-        setRank(calculateRank(level));
+        setIsKage(false);
       } finally {
         setIsLoading(false);
       }

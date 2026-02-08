@@ -42,6 +42,7 @@ import { calculateFinalStats } from '@/lib/stats-calculator';
 import { usePlayerRank } from '@/hooks/use-player-rank';
 import { calculateRank } from '@/lib/rank-calculator';
 import { Gift } from 'lucide-react'
+import { usePathname } from 'next/navigation';
 
 
 const bossDrops = {
@@ -51,7 +52,7 @@ const bossDrops = {
       name: 'Pergaminho de XP Pequeno',
       description: 'Concede XP baseado no seu nível',
       effect: 'xp_multiplier',
-      multiplier: 100,
+      multiplier: 25,
       dropChance: 0.002,
       rarity: 'comum',
       icon: '📜'
@@ -133,7 +134,7 @@ const bossDrops = {
       name: 'Pergaminho de XP Médio',
       description: 'Maior quantidade de experiência',
       effect: 'xp_multiplier',
-      multiplier: 300,
+      multiplier: 50,
       dropChance: 0.0006,
       rarity: 'raro',
       icon: '📜'
@@ -161,21 +162,11 @@ const bossDrops = {
   ],
   epico: [
     {
-      id: 'premium_pass_3days',
-      name: 'Premium Pass (3 dias)',
-      description: 'Acesso temporário a benefícios premium',
-      effect: 'premium_pass',
-      duration: 3 * 24 * 60 * 60 * 1000,
-      dropChance: 0.0003,
-      rarity: 'épico',
-      icon: '👑'
-    },
-    {
       id: 'xp_scroll_large',
       name: 'Pergaminho de XP Grande',
       description: 'Experiência massiva concentrada',
       effect: 'xp_multiplier',
-      multiplier: 500,
+      multiplier: 80,
       dropChance: 0.00015,
       rarity: 'épico',
       icon: '📜'
@@ -361,9 +352,133 @@ const SEAL_COOLDOWN = 24 * 60 * 60 * 1000;
 
 type StatKey = 'vitalidade' | 'inteligencia' | 'taijutsu' | 'ninjutsu' | 'genjutsu' | 'selo';
 
+const SelectionModal = ({ 
+  isOpen, 
+  onClose, 
+  onConfirm, 
+  title, 
+  description,
+  options,
+  maxSelections,
+  icon 
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  onConfirm: (selected: string[]) => void;
+  title: string;
+  description: string;
+  options: { value: string; label: string }[];
+  maxSelections: number;
+  icon: string;
+}) => {
+  const [selected, setSelected] = useState<string[]>([]);
+
+  // ✅ ADICIONE ESTAS 5 LINHAS AQUI (ANTES DO IF)
+  useEffect(() => {
+    if (!isOpen) {
+      setSelected([]);
+    }
+  }, [isOpen]);
+  // ✅ FIM DAS LINHAS ADICIONADAS
+
+  if (!isOpen) return null;  // ← Agora o IF vem DEPOIS do useEffect
+
+  const handleToggle = (value: string) => {
+    if (selected.includes(value)) {
+      setSelected(selected.filter(v => v !== value));
+    } else if (selected.length < maxSelections) {
+      setSelected([...selected, value]);
+    }
+  };
+
+  const handleConfirm = () => {
+    if (selected.length === maxSelections) {
+      onConfirm(selected);
+      setSelected([]); // ✅ Resetar seleção
+      onClose();
+    }
+  };
+
+  
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
+      <Card className="w-full max-w-md border-2">
+        <CardHeader>
+          <CardTitle className="text-center text-2xl flex items-center justify-center gap-3">
+            <span className="text-4xl">{icon}</span>
+            {title}
+          </CardTitle>
+          <CardDescription className="text-center mt-2">
+            {description}
+          </CardDescription>
+        </CardHeader>
+
+        <CardContent className="space-y-4">
+          <div className="text-center text-sm text-muted-foreground mb-4">
+            Selecionados: {selected.length} / {maxSelections}
+          </div>
+
+          <div className="grid grid-cols-1 gap-2">
+            {options.map((option) => {
+              const isSelected = selected.includes(option.value);
+              const isDisabled = !isSelected && selected.length >= maxSelections;
+
+              return (
+                <Button
+                  key={option.value}
+                  variant={isSelected ? "default" : "outline"}
+                  className={cn(
+                    "w-full justify-start text-left",
+                    isDisabled && "opacity-50 cursor-not-allowed"
+                  )}
+                  onClick={() => handleToggle(option.value)}
+                  disabled={isDisabled}
+                >
+                  {isSelected && <CheckCircle className="mr-2 h-4 w-4" />}
+                  {option.label}
+                </Button>
+              );
+            })}
+          </div>
+        </CardContent>
+
+        <CardFooter className="flex gap-2">
+          <Button variant="outline" className="flex-1" onClick={onClose}>
+            Cancelar
+          </Button>
+          <Button 
+            className="flex-1" 
+            onClick={handleConfirm}
+            disabled={selected.length !== maxSelections}
+          >
+            Confirmar
+          </Button>
+        </CardFooter>
+      </Card>
+    </div>
+  );
+};
+
 export default function StatusPage() {
   const { user, supabase } = useSupabase();
   const { toast } = useToast();
+  const [hasCheckedReload, setHasCheckedReload] = useState(false);
+
+  // 🆕 Reload ao entrar na página (ALTERNATIVA MAIS LIMPA)
+  useEffect(() => {
+    if (!hasCheckedReload) {
+      setHasCheckedReload(true);
+      
+      const lastReload = sessionStorage.getItem('status-last-reload');
+      const now = Date.now();
+      
+      // Só recarrega se passou mais de 2 segundos desde o último reload
+      if (!lastReload || now - parseInt(lastReload) > 2000) {
+        sessionStorage.setItem('status-last-reload', now.toString());
+        window.location.reload();
+      }
+    }
+  }, [hasCheckedReload]);
 
   const userProfileRef = useMemoSupabase(() => {
     if (!user) return null;
@@ -424,7 +539,8 @@ const boostsQuery = useMemoSupabase(() => {
 
 const { data: activeBoosts } = useCollection(boostsQuery);
 
-// 🆕 BUSCAR APENAS POÇÕES (SEPARADO)
+
+// 🆕 BUSCAR POÇÕES SEM JOIN
 const potionsQuery = useMemoSupabase(() => {
   if (!user) return null;
   return {
@@ -438,6 +554,25 @@ const potionsQuery = useMemoSupabase(() => {
 }, [user]);
 
 const { data: activePotions } = useCollection(potionsQuery);
+
+// 🆕 BUSCAR DADOS DOS PREMIUM ITEMS
+const premiumItemsQuery = useMemoSupabase(() => ({
+  table: 'premium_items',
+  query: (builder: any) => builder.select('*')
+}), []);
+
+const { data: allPremiumItems } = useCollection(premiumItemsQuery);
+
+// 🆕 CRIAR MAPA DE PREMIUM ITEMS
+const premiumItemsMap = useMemo(() => {
+  if (!allPremiumItems) return new Map();
+  const map = new Map();
+  allPremiumItems.forEach((item: any) => {
+    map.set(item.id, item);
+  });
+  return map;
+}, [allPremiumItems]);
+
 // 🆕 BUSCAR PREMIUM PASS ATIVO (inclui item_data)
 const premiumPassQuery = useMemoSupabase(() => {
   if (!user) return null;
@@ -1123,6 +1258,11 @@ useEffect(() => {
 // 🆕 Estado para controlar o modal de relatório de batalha
 const [showBattleReport, setShowBattleReport] = useState(false);
 const [battleReport, setBattleReport] = useState<any>(null);
+// 🆕 ESTADOS PARA MODAIS DE SELEÇÃO
+const [showStatSelection, setShowStatSelection] = useState(false);
+const [showElementSelection, setShowElementSelection] = useState(false);
+const [showJutsuSelection, setShowJutsuSelection] = useState(false);
+const [currentItem, setCurrentItem] = useState<any>(null);
 
 // 🆕 Verificar relatório de batalha pendente ao carregar
 useEffect(() => {
@@ -1464,30 +1604,38 @@ const handleCompleteHunt = async () => {
     }, 1500);
 };
 
-const handleUsePremiumItem = async (item: any) => {
+const handleUsePremiumItem = async (item: any, premiumItem?: any) => {
   if (!userProfileRef || !supabase || !userProfile || !calculatedStats) return;
   
   try {
-    const restorePercentage = item.item_data?.restore_percentage || 100;
-    
     let updateData: any = {};
     
+    // ✅ BUSCAR DADOS CORRETOS DO ITEM
+    const itemData = premiumItem?.item_data || item.item_data || {};
+    const itemName = premiumItem?.name || item.item_data?.name || 'Item';
+    
     if (item.item_type === 'chakra_potion') {
-      const restoreAmount = Math.floor((calculatedStats.maxChakra * restorePercentage) / 100);
+      const restoreAmount = itemData.restore_amount 
+        ? itemData.restore_amount 
+        : Math.floor((calculatedStats.maxChakra * (itemData.restore_percentage || 100)) / 100);
+      
       const newChakra = Math.min(calculatedStats.maxChakra, currentChakra + restoreAmount);
       updateData.current_chakra = newChakra;
       
       toast({
-        title: '🧪 Item Usado!',
+        title: `🧪 ${itemName} Usado!`,
         description: `Você restaurou ${restoreAmount} de chakra!`,
       });
     } else if (item.item_type === 'health_potion') {
-      const restoreAmount = Math.floor((calculatedStats.maxHealth * restorePercentage) / 100);
+      const restoreAmount = itemData.restore_amount 
+        ? itemData.restore_amount 
+        : Math.floor((calculatedStats.maxHealth * (itemData.restore_percentage || 100)) / 100);
+      
       const newHealth = Math.min(calculatedStats.maxHealth, currentHealth + restoreAmount);
       updateData.current_health = newHealth;
       
       toast({
-        title: '🧪 Item Usado!',
+        title: `🧪 ${itemName} Usado!`,
         description: `Você restaurou ${restoreAmount} de vida!`,
       });
     }
@@ -1500,8 +1648,13 @@ const handleUsePremiumItem = async (item: any) => {
     
     if (updateError) throw updateError;
     
-    // Deletar item do inventário premium (se não for stackable)
-    if (!item.item_data?.stackable) {
+    // 🆕 DECREMENTAR QUANTIDADE OU DELETAR ITEM
+    if (item.quantity > 1) {
+      await supabase
+        .from('user_premium_inventory')
+        .update({ quantity: item.quantity - 1 })
+        .eq('id', item.id);
+    } else {
       await supabase
         .from('user_premium_inventory')
         .delete()
@@ -1522,7 +1675,7 @@ const handleUsePremiumItem = async (item: any) => {
 // ✅ LOCALIZAÇÃO: Junto com as outras funções de handler
 
 const handleUseBossItem = async (item: any) => {
-  if (!userProfile || !userProfileRef || !supabase || !calculatedStats) return;
+  if (!userProfile || !userProfileRef || !supabase || !calculatedStats || !user) return;
 
   const currentQuantity = userProfile.boss_inventory?.[item.id] || 0;
   if (currentQuantity <= 0) return;
@@ -1535,26 +1688,93 @@ const handleUseBossItem = async (item: any) => {
       },
     };
 
-    // Processar efeito do item
+    // ✅ PROCESSAR EFEITOS DO ITEM
     switch (item.effect) {
-      case 'xp_multiplier':
-        const xpGain = userProfile.level * item.multiplier;
-        updateData.experience = (userProfile.experience || 0) + xpGain;
+      // 🆕 BOOST DE XP POR 24H
+      case 'xp_boost_24h': {
+        const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+        
+        await supabase
+          .from('active_boss_buffs')
+          .insert({
+            user_id: user.id,
+            buff_type: 'xp_boost',
+            buff_value: item.percent,
+            expires_at: expiresAt.toISOString(),
+          });
+        
         toast({
           title: `${item.icon} ${item.name} Usado!`,
-          description: `Você ganhou ${xpGain} XP!`,
+          description: `+${item.percent}% XP por 24 horas!`,
         });
         break;
+      }
 
-      case 'ryo':
+      // 🆕 BOOST DE RYO POR 24H
+      case 'ryo_boost_24h': {
+        const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+        
+        await supabase
+          .from('active_boss_buffs')
+          .insert({
+            user_id: user.id,
+            buff_type: 'ryo_boost',
+            buff_value: item.percent,
+            expires_at: expiresAt.toISOString(),
+          });
+        
+        toast({
+          title: `${item.icon} ${item.name} Usado!`,
+          description: `+${item.percent}% Ryo por 24 horas!`,
+        });
+        break;
+      }
+
+      // ✅ CORRIGIDO: XP_MULTIPLIER AGORA VERIFICA LEVEL-UP
+      case 'xp_multiplier': {
+        const xpGain = userProfile.level * item.multiplier;
+        const newExperience = (userProfile.experience || 0) + xpGain;
+        
+        updateData.experience = newExperience;
+        
+        // ✅ VERIFICAR SE SUBIU DE NÍVEL
+        const { level: newLevel } = getLevelFromXp(newExperience);
+        
+        if (newLevel > userProfile.level) {
+          const newMaxExperience = getXpForLevel(newLevel + 1);
+          const levelsGained = newLevel - userProfile.level;
+          const newStatPoints = (userProfile.stat_points || 0) + (levelsGained * 5);
+          const newRank = calculateRank(newLevel);
+          
+          updateData.level = newLevel;
+          updateData.max_experience = newMaxExperience;
+          updateData.stat_points = newStatPoints;
+          updateData.rank = newRank;
+          
+          toast({
+            title: `${item.icon} ${item.name} Usado!`,
+            description: `Você ganhou ${xpGain} XP e subiu para o nível ${newLevel}! (+${levelsGained * 5} pontos de atributo)`,
+            duration: 5000,
+          });
+        } else {
+          toast({
+            title: `${item.icon} ${item.name} Usado!`,
+            description: `Você ganhou ${xpGain} XP!`,
+          });
+        }
+        break;
+      }
+
+      case 'ryo': {
         updateData.ryo = (userProfile.ryo || 0) + item.amount;
         toast({
           title: `${item.icon} ${item.name} Usado!`,
           description: `Você ganhou ${item.amount} Ryo!`,
         });
         break;
+      }
 
-      case 'heal_percent':
+      case 'heal_percent': {
         const healAmount = Math.floor((calculatedStats.maxHealth * item.percent) / 100);
         updateData.current_health = Math.min(
           calculatedStats.maxHealth,
@@ -1565,8 +1785,9 @@ const handleUseBossItem = async (item: any) => {
           description: `Você restaurou ${healAmount} de vida!`,
         });
         break;
+      }
 
-      case 'chakra_percent':
+      case 'chakra_percent': {
         const chakraAmount = Math.floor((calculatedStats.maxChakra * item.percent) / 100);
         updateData.current_chakra = Math.min(
           calculatedStats.maxChakra,
@@ -1577,16 +1798,72 @@ const handleUseBossItem = async (item: any) => {
           description: `Você restaurou ${chakraAmount} de chakra!`,
         });
         break;
+      }
 
-      case 'stat_points':
+      case 'stat_points': {
         updateData.stat_points = (userProfile.stat_points || 0) + item.amount;
         toast({
           title: `${item.icon} ${item.name} Usado!`,
           description: `Você ganhou ${item.amount} pontos de atributo!`,
         });
         break;
+      }
 
-      case 'all_stats':
+      case 'full_restore_buff': {
+        updateData.current_health = calculatedStats.maxHealth;
+        updateData.current_chakra = calculatedStats.maxChakra;
+        
+        const expiresAt = new Date(Date.now() + item.buffDuration);
+        
+        await supabase.from('active_boss_buffs').insert([
+          {
+            user_id: user.id,
+            buff_type: 'xp_boost',
+            buff_value: item.buffPercent,
+            expires_at: expiresAt.toISOString(),
+          },
+          {
+            user_id: user.id,
+            buff_type: 'ryo_boost',
+            buff_value: item.buffPercent,
+            expires_at: expiresAt.toISOString(),
+          }
+        ]);
+        
+        toast({
+          title: `${item.icon} ${item.name} Usado!`,
+          description: `Vida e Chakra restaurados! +${item.buffPercent}% XP e Ryo por 1 hora!`,
+        });
+        break;
+      }
+
+      case 'triple_stat_points':
+      case 'dual_stat_points': {
+        setCurrentItem(item);
+        setShowStatSelection(true);
+        return;
+      }
+
+      case 'element_xp':
+      case 'dual_element_xp': {
+        setCurrentItem(item);
+        setShowElementSelection(true);
+        return;
+      }
+
+      case 'jutsu_xp': {
+        setCurrentItem(item);
+        setShowJutsuSelection(true);
+        return;
+      }
+
+      case 'element_and_jutsu_xp': {
+        setCurrentItem(item);
+        setShowElementSelection(true);
+        return;
+      }
+
+      case 'all_stats': {
         updateData.vitality = (userProfile.vitality || 0) + item.amount;
         updateData.intelligence = (userProfile.intelligence || 0) + item.amount;
         updateData.taijutsu = (userProfile.taijutsu || 0) + item.amount;
@@ -1598,14 +1875,33 @@ const handleUseBossItem = async (item: any) => {
           description: `+${item.amount} em TODOS os atributos!`,
         });
         break;
+      }
 
-      // Adicionar outros efeitos conforme necessário...
+      default:
+        console.warn('Efeito não implementado:', item.effect);
+        toast({
+          variant: 'destructive',
+          title: 'Item não implementado',
+          description: 'Este item ainda não está funcional.',
+        });
+        return;
     }
 
-    await supabase
+    // ✅ ATUALIZAR INVENTÁRIO (SEMPRE)
+    const { error: updateError } = await supabase
       .from('profiles')
       .update(updateData)
       .eq('id', user.id);
+
+    if (updateError) {
+      console.error('❌ Erro ao atualizar perfil:', updateError);
+      toast({
+        variant: 'destructive',
+        title: 'Erro ao usar item',
+        description: updateError.message,
+      });
+      return;
+    }
 
     setTimeout(() => {
       window.location.reload();
@@ -1618,6 +1914,157 @@ const handleUseBossItem = async (item: any) => {
       description: error.message,
     });
   }
+};
+
+
+// 🆕 FUNÇÕES DE CONFIRMAÇÃO DOS MODAIS
+const handleStatSelection = async (selectedStats: string[]) => {
+  if (!currentItem || !userProfile || !supabase || !user) return;
+
+  const updateData: any = {
+    boss_inventory: {
+      ...userProfile.boss_inventory,
+      [currentItem.id]: Math.max(0, (userProfile.boss_inventory?.[currentItem.id] || 0) - 1),
+    },
+  };
+
+  selectedStats.forEach(stat => {
+    const statMap: Record<string, string> = {
+      'Vitalidade': 'vitality',
+      'Inteligência': 'intelligence',
+      'Taijutsu': 'taijutsu',
+      'Ninjutsu': 'ninjutsu',
+      'Genjutsu': 'genjutsu',
+      'Selo': 'selo',
+    };
+    
+    const dbStat = statMap[stat];
+    updateData[dbStat] = (userProfile[dbStat] || 0) + currentItem.amount;
+  });
+
+  await supabase.from('profiles').update(updateData).eq('id', user.id);
+
+  toast({
+    title: `${currentItem.icon} ${currentItem.name} Usado!`,
+    description: `+${currentItem.amount} em ${selectedStats.join(', ')}!`,
+  });
+
+  setTimeout(() => window.location.reload(), 1500);
+};
+
+const handleElementSelection = async (selectedElements: string[]) => {
+  if (!currentItem || !userProfile || !supabase || !user) return;
+
+  const updateData: any = {
+    boss_inventory: {
+      ...userProfile.boss_inventory,
+      [currentItem.id]: Math.max(0, (userProfile.boss_inventory?.[currentItem.id] || 0) - 1),
+    },
+    element_experience: { ...(userProfile.element_experience || {}) },
+    element_levels: { ...(userProfile.element_levels || {}) }
+  };
+
+  // ✅ RECALCULAR NÍVEIS DOS ELEMENTOS
+  selectedElements.forEach(element => {
+    const currentXp = (userProfile.element_experience?.[element] || 0);
+    const newXp = currentXp + currentItem.amount;
+    
+    updateData.element_experience[element] = newXp;
+    
+    // ✅ CALCULAR NOVO NÍVEL (usando a função do missions/page.tsx)
+    const getLevelFromXp = (xp: number, maxLevel = 10) => {
+      let level = 0;
+      let requiredXp = 0;
+      const baseCost = 100;
+      const factor = 1.5;
+      
+      while (level < maxLevel) {
+        requiredXp += Math.floor(baseCost * Math.pow(factor, level));
+        if (xp >= requiredXp) {
+          level++;
+        } else {
+          break;
+        }
+      }
+      return level;
+    };
+    
+    const newLevel = getLevelFromXp(newXp);
+    updateData.element_levels[element] = newLevel;
+  });
+
+  await supabase.from('profiles').update(updateData).eq('id', user.id);
+
+  toast({
+    title: `${currentItem.icon} ${currentItem.name} Usado!`,
+    description: `+${currentItem.amount} XP em ${selectedElements.join(', ')}!`,
+  });
+
+  // ✅ Se for "element_and_jutsu_xp", abrir modal de jutsu
+  if (currentItem.effect === 'element_and_jutsu_xp') {
+    // ✅ RESETAR MODAL DE ELEMENTO ANTES DE ABRIR O DE JUTSU
+    setShowElementSelection(false);
+    
+    // ✅ AGUARDAR 500MS ANTES DE ABRIR O MODAL DE JUTSU
+    setTimeout(() => {
+      setShowJutsuSelection(true);
+    }, 500);
+  } else {
+    setTimeout(() => window.location.reload(), 1500);
+  }
+};
+
+const handleJutsuSelection = async (selectedJutsus: string[]) => {
+  if (!currentItem || !userProfile || !supabase || !user) return;
+
+  const updateData: any = {
+    boss_inventory: {
+      ...userProfile.boss_inventory,
+      [currentItem.id]: Math.max(0, (userProfile.boss_inventory?.[currentItem.id] || 0) - 1),
+    },
+    jutsu_experience: { ...(userProfile.jutsu_experience || {}) },
+    jutsus: { ...(userProfile.jutsus || {}) }
+  };
+
+  // ✅ RECALCULAR NÍVEIS DOS JUTSUS
+  selectedJutsus.forEach(jutsu => {
+    const currentXp = (userProfile.jutsu_experience?.[jutsu] || 0);
+    const newXp = currentXp + currentItem.amount;
+    
+    updateData.jutsu_experience[jutsu] = newXp;
+    
+    // ✅ CALCULAR NOVO NÍVEL (usando a função do elements/page.tsx)
+    const getLevelFromXp = (xp: number, maxLevel = 25) => {
+      let level = 0;
+      let requiredXp = 0;
+      const baseCost = 120;
+      const factor = 1.4;
+      
+      while (level < maxLevel) {
+        requiredXp += Math.floor(baseCost * Math.pow(factor, level));
+        if (xp >= requiredXp) {
+          level++;
+        } else {
+          break;
+        }
+      }
+      return level;
+    };
+    
+    const currentLevel = userProfile.jutsus?.[jutsu] || 1;
+    const newLevel = Math.max(currentLevel, getLevelFromXp(newXp));
+    
+    updateData.jutsus[jutsu] = newLevel;
+  });
+
+  await supabase.from('profiles').update(updateData).eq('id', user.id);
+
+  toast({
+    title: `${currentItem.icon} ${currentItem.name} Usado!`,
+    description: `+${currentItem.amount} XP em ${selectedJutsus.join(', ')}!`,
+  });
+
+  setTimeout(() => window.location.reload(), 1500);
 };
 
 // 🆕 Modal de Relatório de Batalha
@@ -1994,32 +2441,57 @@ const BattleReportModal = () => {
 )}
                 </div>
                 <div className="flex items-center justify-center sm:justify-start gap-2 mt-2">
-                    <CardDescription className="text-md">
-                      Nível {userProfile.level} - {userProfile.village}
-                    </CardDescription>
-                    {!isRankLoading && (
-                      <Badge 
-                        variant={isKage ? "default" : "secondary"} 
-                        className={cn(
-                          "text-sm font-semibold",
-                          isKage && "bg-gradient-to-r from-amber-400 to-amber-600 text-white"
-                        )}
-                      >
-                        {isKage && <Crown className="h-3 w-3 mr-1" />}
-                        {playerRank}
-                      </Badge>
-                    )}
-                </div>
-                <div className="mt-4">
-                  <ProgressBarStat
-                    label="Experiência"
-                    value={userProfile.experience}
-                    max={userProfile.max_experience}
-                  />
-                </div>
-              </div>
-            </div>
-          </CardHeader>
+  <CardDescription className="text-md">
+    Nível {userProfile.level} - {userProfile.village}
+  </CardDescription>
+  
+  {/* Badge do Rank Base (sempre aparece) */}
+  {!isRankLoading && playerRank && (
+    <Badge 
+      variant="secondary"
+      className="text-sm font-semibold"
+    >
+      {playerRank}
+    </Badge>
+  )}
+  
+  {/* Badge de Kage (só aparece se for Kage) */}
+  {!isRankLoading && isKage && (
+    <Badge 
+      variant="default"
+      className="text-sm font-semibold bg-gradient-to-r from-amber-400 to-amber-600 text-white"
+    >
+      <Crown className="h-3 w-3 mr-1" />
+      Kage
+    </Badge>
+  )}
+</div>
+      <div className="mt-4">
+        <ProgressBarStat
+          label="Experiência"
+          value={userProfile.experience}
+          max={userProfile.max_experience}
+        />
+      </div>
+      
+      {/* 🆕 MOEDA E CLASH POINTS */}
+      <div className="flex items-center justify-center sm:justify-start gap-4 mt-4">
+        <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-amber-500/10 border border-amber-500/30">
+          <Coins className="h-4 w-4 text-amber-500" />
+          <span className="text-sm font-semibold text-amber-500">
+            {userProfile.ryo?.toLocaleString() || 0} Ryo
+          </span>
+        </div>
+        <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-purple-500/10 border border-purple-500/30">
+          <Sparkles className="h-4 w-4 text-purple-500" />
+          <span className="text-sm font-semibold text-purple-500">
+            {userProfile.clash_points?.toLocaleString() || 0} CP
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+</CardHeader>
           <CardContent className="p-6">
              <div className="mb-6 grid grid-cols-1 sm:grid-cols-2 gap-4 text-center">
                  <p className="text-lg">
@@ -2412,20 +2884,34 @@ const BattleReportModal = () => {
         const canUseHealth = item.item_type === 'health_potion' && currentHealth < calculatedStats.maxHealth;
         const canUse = canUseChakra || canUseHealth;
         
+        // ✅ BUSCAR DADOS DO PREMIUM ITEM DO MAPA
+        const premiumItem = premiumItemsMap.get(item.premium_item_id);
+        const itemName = premiumItem?.name || item.item_data?.name || 'Item Premium';
+        const itemDescription = premiumItem?.description || item.item_data?.description || '';
+        const itemData = premiumItem?.item_data || item.item_data || {};
+        
         return (
-          <Card key={item.id} className="w-48 border-purple-500/50">
+          <Card key={item.id} className="w-48 border-purple-500/50 relative">
+            {/* 🆕 BADGE DE QUANTIDADE */}
+            {item.quantity > 1 && (
+              <div className="absolute -top-2 -right-2 bg-primary text-primary-foreground rounded-full h-8 w-8 flex items-center justify-center text-sm font-bold border-2 border-background z-10">
+                {item.quantity}
+              </div>
+            )}
+            
             <CardHeader className="pb-3">
               <CardTitle className="text-sm text-center">
-                {item.item_data?.name || 'Item Premium'}
+                {itemName}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               <div className="text-center">
                 <div className="text-2xl mb-2">🧪</div>
                 <p className="text-xs text-muted-foreground">
-                  Restaura {item.item_data?.restore_percentage || 100}% de {
-                    item.item_type === 'chakra_potion' ? 'Chakra' : 'Vida'
-                  }
+                  {itemData.restore_amount 
+                    ? `Restaura ${itemData.restore_amount}` 
+                    : `Restaura ${itemData.restore_percentage || 100}%`
+                  } de {item.item_type === 'chakra_potion' ? 'Chakra' : 'Vida'}
                 </p>
               </div>
               
@@ -2433,7 +2919,7 @@ const BattleReportModal = () => {
                 className="w-full" 
                 size="sm"
                 disabled={!canUse}
-                onClick={() => handleUsePremiumItem(item)}
+                onClick={() => handleUsePremiumItem(item, premiumItem)}
               >
                 {canUse ? 'Usar' : (
                   item.item_type === 'chakra_potion' ? 'Chakra Cheio' : 'Vida Cheia'
@@ -2611,7 +3097,6 @@ const BattleReportModal = () => {
     const bossItems = Object.entries(bossInventory)
       .filter(([_, quantity]) => (quantity as number) > 0)
       .map(([id, quantity]) => {
-        // Buscar item em todas as categorias
         const allDrops = [
           ...bossDrops.comum,
           ...bossDrops.raro,
@@ -2679,6 +3164,59 @@ const BattleReportModal = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* 🆕 MODAIS DE SELEÇÃO */}
+      <SelectionModal
+        isOpen={showStatSelection}
+        onClose={() => {
+          setShowStatSelection(false);
+          setCurrentItem(null);
+        }}
+        onConfirm={handleStatSelection}
+        title={currentItem?.effect === 'triple_stat_points' ? 'Escolha 3 Atributos' : 'Escolha 2 Atributos'}
+        description={`Selecione ${currentItem?.effect === 'triple_stat_points' ? '3' : '2'} atributos para receber +${currentItem?.amount} pontos cada`}
+        options={[
+          { value: 'Vitalidade', label: 'Vitalidade' },
+          { value: 'Inteligência', label: 'Inteligência' },
+          { value: 'Taijutsu', label: 'Taijutsu' },
+          { value: 'Ninjutsu', label: 'Ninjutsu' },
+          { value: 'Genjutsu', label: 'Genjutsu' },
+          { value: 'Selo', label: 'Selo' },
+        ]}
+        maxSelections={currentItem?.effect === 'triple_stat_points' ? 3 : 2}
+        icon={currentItem?.icon || '📜'}
+      />
+
+      <SelectionModal
+        isOpen={showElementSelection}
+        onClose={() => {
+          setShowElementSelection(false);
+          setCurrentItem(null);
+        }}
+        onConfirm={handleElementSelection}
+        title={currentItem?.effect === 'dual_element_xp' || currentItem?.effect === 'element_and_jutsu_xp' ? 'Escolha 2 Elementos' : 'Escolha 1 Elemento'}
+        description={`Selecione ${currentItem?.effect === 'dual_element_xp' || currentItem?.effect === 'element_and_jutsu_xp' ? '2' : '1'} elemento(s) para receber +${currentItem?.amount} XP`}
+        options={allElements.map(el => ({ value: el, label: el }))}
+        maxSelections={currentItem?.effect === 'dual_element_xp' || currentItem?.effect === 'element_and_jutsu_xp' ? 2 : 1}
+        icon={currentItem?.icon || '🔥'}
+      />
+
+      <SelectionModal
+        isOpen={showJutsuSelection}
+        onClose={() => {
+          setShowJutsuSelection(false);
+          setCurrentItem(null);
+        }}
+        onConfirm={handleJutsuSelection}
+        title={currentItem?.effect === 'element_and_jutsu_xp' ? 'Escolha 2 Jutsus' : 'Escolha 1 Jutsu'}
+        description={`Selecione ${currentItem?.effect === 'element_and_jutsu_xp' ? '2' : '1'} jutsu(s) para receber +${currentItem?.amount} XP`}
+        options={learnedJutsus.map(([name]) => ({ value: name, label: name }))}
+        maxSelections={currentItem?.effect === 'element_and_jutsu_xp' ? 2 : 1}
+        icon={currentItem?.icon || '🥷'}
+      />
+
+      {/* Modal de Relatório de Batalha */}
+      <BattleReportModal />
     </div>
   );
 }

@@ -12,7 +12,7 @@ import {
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Swords, ScrollText, Flame, Wind, Zap, Mountain, Waves, Footprints, Shirt, Hand, Accessibility, Crown } from 'lucide-react';
+import { Loader2, Swords, ScrollText, Footprints, Shirt, Hand, Crown } from 'lucide-react';
 import * as LucideIcons from 'lucide-react';
 import Image from 'next/image';
 import { useSupabase } from '@/supabase';
@@ -26,14 +26,21 @@ import { BioEditor } from '@/components/bio-editor';
 import { usePlayerRank } from '@/hooks/use-player-rank';
 import { cn } from '@/lib/utils';
 import { JUTSU_GIFS } from '@/lib/battle-system/jutsu-gifs';
+import { elementImages } from '@/lib/element-images';
 
-const StatDisplay = ({ label, value, className }: { label: string; value: number; className?: string }) => (
-  <div className={cn("flex flex-col items-center justify-center rounded-lg border bg-muted/30 p-4 shadow-sm", className)}>
-    <span className="text-sm font-medium text-muted-foreground mb-1">{label}</span>
-    <span className="text-2xl font-bold text-foreground">{Math.round(value)}</span>
-  </div>
-);
+// ✅ COMPONENTE CORRIGIDO - Valida NaN
+const StatDisplay = ({ label, value, className }: { label: string; value: number | null | undefined; className?: string }) => {
+  const safeValue = typeof value === 'number' && !isNaN(value) && isFinite(value) ? value : 0;
+  
+  return (
+    <div className={cn("flex flex-col items-center justify-center rounded-lg border bg-muted/30 p-4 shadow-sm", className)}>
+      <span className="text-sm font-medium text-muted-foreground mb-1">{label}</span>
+      <span className="text-2xl font-bold text-foreground">{Math.round(safeValue)}</span>
+    </div>
+  );
+};
 
+// ✅ COMPONENTE CORRIGIDO - Valida NaN
 const ProgressBarStat = ({
   label,
   value,
@@ -41,27 +48,25 @@ const ProgressBarStat = ({
   className,
 }: {
   label: string;
-  value: number;
-  max: number;
+  value: number | null | undefined;
+  max: number | null | undefined;
   className?: string;
-}) => (
-  <div className="w-full">
-    <div className="mb-1 flex items-baseline justify-between text-sm">
-      <span className="font-medium">{label}</span>
-      <span className="text-xs text-muted-foreground">
-        {Math.round(value)} / {Math.round(max)}
-      </span>
+}) => {
+  const safeValue = typeof value === 'number' && !isNaN(value) && isFinite(value) ? value : 0;
+  const safeMax = typeof max === 'number' && !isNaN(max) && isFinite(max) && max > 0 ? max : 1;
+  const percentage = (safeValue / safeMax) * 100;
+  
+  return (
+    <div className="w-full">
+      <div className="mb-1 flex items-baseline justify-between text-sm">
+        <span className="font-medium">{label}</span>
+        <span className="text-xs text-muted-foreground">
+          {Math.round(safeValue)} / {Math.round(safeMax)}
+        </span>
+      </div>
+      <Progress value={percentage} className={cn('h-3', className)} />
     </div>
-    <Progress value={(value / max) * 100} className={cn('h-3', className)} />
-  </div>
-);
-
-const elementIconMap: { [key: string]: any } = {
-  'Katon': Flame,
-  'Futon': Wind,
-  'Raiton': Zap,
-  'Doton': Mountain,
-  'Suiton': Waves,
+  );
 };
 
 const allElements = ['Katon', 'Futon', 'Raiton', 'Doton', 'Suiton'];
@@ -73,10 +78,8 @@ export default function ProfilePage() {
   const [profile, setProfile] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // ✅ Verificar se é o próprio perfil
   const isOwnProfile = user?.id === profileId;
 
-  // Hook para buscar o rank do jogador (incluindo verificação de Kage)
   const { rank: playerRank, isKage, isLoading: isRankLoading } = usePlayerRank(
     supabase,
     profileId,
@@ -90,7 +93,6 @@ export default function ProfilePage() {
 
       setIsLoading(true);
       try {
-        // ✅ Sempre busca os dados públicos do perfil
         const { data, error } = await supabase
           .from('profiles')
           .select('*')
@@ -99,10 +101,6 @@ export default function ProfilePage() {
 
         if (error) throw error;
         setProfile(data);
-
-        // ⚠️ REMOVIDO: Não busca dados premium de outros jogadores
-        // O hook usePremiumStatus só é chamado no layout para o usuário logado
-        
       } catch (error) {
         console.error('Erro ao carregar perfil:', error);
       } finally {
@@ -133,6 +131,9 @@ export default function ProfilePage() {
   const villageImage = profile.village ? villageImages[profile.village] : null;
   const calculatedStats = calculateFinalStats(profile);
 
+  const currentHealth = Math.min(profile.current_health ?? calculatedStats?.maxHealth ?? 100, calculatedStats?.maxHealth ?? 100);
+  const currentChakra = profile.current_chakra ?? calculatedStats?.maxChakra ?? 100;
+
   const unlockedElements = allElements.filter(
     (elementName) => (profile.element_levels?.[elementName] || 0) > 0
   );
@@ -154,24 +155,23 @@ export default function ProfilePage() {
   return (
     <div>
       <PageHeader
-        title={`Perfil de ${profile.name}`}
+        title={`Perfil de ${profile.name || 'Ninja'}`}
         description="Veja as informações e conquistas deste ninja."
       />
 
       <div className="mt-8">
-        {/* Card Principal do Perfil */}
         <Card className="mx-auto max-w-4xl">
           <CardHeader className="border-b">
             <div className="flex flex-col sm:flex-row items-center gap-6">
               <Avatar className="h-32 w-32 rounded-md border-2 border-primary shadow-lg">
                 <AvatarImage src={profile.avatar_url} alt={profile.name} />
-                <AvatarFallback>{profile.name?.charAt(0)}</AvatarFallback>
+                <AvatarFallback>{profile.name?.charAt(0) || 'N'}</AvatarFallback>
               </Avatar>
               
-              <div className="flex-1 text-center sm:text-left">
+              <div className="flex-1 text-center sm:text-left w-full">
                 <div className="flex flex-col sm:flex-row items-center justify-center sm:justify-start gap-4 mb-2">
                   <CardTitle className="font-headline text-3xl">
-                    {profile.name}
+                    {profile.name || 'Ninja'}
                   </CardTitle>
                   {villageImage && (
                     <Image 
@@ -186,7 +186,7 @@ export default function ProfilePage() {
                 
                 <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 mt-3">
                   <Badge variant="default" className="text-md">
-                    Nível {profile.level}
+                    Nível {profile.level ?? 0}
                   </Badge>
                   <Badge variant="outline" className="text-md">
                     {profile.village || 'Sem Vila'}
@@ -204,73 +204,60 @@ export default function ProfilePage() {
                     </Badge>
                   )}
                 </div>
-
-                {/* Bio - Só edita se for próprio perfil */}
-                {isOwnProfile ? (
-                  <div className="mt-4">
-                    <BioEditor userId={user!.id} initialBio={profile.bio || ''} />
-                  </div>
-                ) : (
-                  profile.bio && (
-                    <div className="mt-4 p-3 bg-muted/30 rounded-md border">
-                      <p className="text-sm text-muted-foreground italic">{profile.bio}</p>
-                    </div>
-                  )
-                )}
               </div>
             </div>
           </CardHeader>
 
           <CardContent className="space-y-8 pt-6">
-            {/* Barras de Progresso */}
-            {profile.level < 100 && (
+            {/* ✅ SEÇÃO DE BIO ATUALIZADA */}
+            <div>
+              <BioEditor 
+                profileId={profileId} 
+                isOwner={isOwnProfile}
+                initialContent={profile.bio || ''}
+              />
+            </div>
+
+            {(profile.level ?? 0) < 100 && (
               <div className="space-y-4">
                 <h3 className="text-lg font-semibold border-b pb-2">Progresso</h3>
                 <div className="space-y-3">
                   <ProgressBarStat
                     label="Experiência"
-                    value={profile.xp}
-                    max={profile.xp_for_next_level}
+                    value={profile.experience ?? 0}
+                    max={profile.max_experience ?? 100}
                     className="[&>div]:bg-gradient-to-r [&>div]:from-blue-500 [&>div]:to-cyan-500"
                   />
                   <ProgressBarStat
                     label="HP"
-                    value={calculatedStats.currentHP}
-                    max={calculatedStats.finalHP}
+                    value={currentHealth}
+                    max={calculatedStats?.maxHealth ?? 100}
                     className="[&>div]:bg-gradient-to-r [&>div]:from-red-500 [&>div]:to-rose-500"
                   />
                   <ProgressBarStat
                     label="Chakra"
-                    value={calculatedStats.currentChakra}
-                    max={calculatedStats.finalChakra}
+                    value={currentChakra}
+                    max={calculatedStats?.maxChakra ?? 100}
                     className="[&>div]:bg-gradient-to-r [&>div]:from-purple-500 [&>div]:to-violet-500"
-                  />
-                  <ProgressBarStat
-                    label="Stamina"
-                    value={calculatedStats.currentStamina}
-                    max={calculatedStats.finalStamina}
-                    className="[&>div]:bg-gradient-to-r [&>div]:from-green-500 [&>div]:to-emerald-500"
                   />
                 </div>
               </div>
             )}
 
-            {/* Grid de Stats */}
-            {(profile.strength > 0 || profile.intelligence > 0 || profile.taijutsu > 0) && (
+            {((profile.vitality ?? 0) > 0 || (profile.intelligence ?? 0) > 0 || (profile.taijutsu ?? 0) > 0) && (
               <div className="space-y-4">
                 <h3 className="text-lg font-semibold border-b pb-2">Atributos</h3>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                  <StatDisplay label="Força" value={calculatedStats.finalStrength} />
-                  <StatDisplay label="Inteligência" value={calculatedStats.finalIntelligence} />
-                  <StatDisplay label="Taijutsu" value={calculatedStats.finalTaijutsu} />
-                  <StatDisplay label="Ninjutsu" value={calculatedStats.finalNinjutsu} />
-                  <StatDisplay label="Genjutsu" value={calculatedStats.finalGenjutsu} />
-                  <StatDisplay label="Selo" value={calculatedStats.finalSelo} />
+                  <StatDisplay label="Vitalidade" value={calculatedStats?.finalVitality ?? 0} />
+                  <StatDisplay label="Inteligência" value={calculatedStats?.finalIntelligence ?? 0} />
+                  <StatDisplay label="Taijutsu" value={calculatedStats?.finalTaijutsu ?? 0} />
+                  <StatDisplay label="Ninjutsu" value={calculatedStats?.finalNinjutsu ?? 0} />
+                  <StatDisplay label="Genjutsu" value={calculatedStats?.finalGenjutsu ?? 0} />
+                  <StatDisplay label="Selo" value={calculatedStats?.finalSelo ?? 0} />
                 </div>
               </div>
             )}
 
-            {/* Dōjutsu */}
             {doujutsu && doujutsuInfo && (
               <div className="space-y-4">
                 <h3 className="text-lg font-semibold border-b pb-2">Dōjutsu</h3>
@@ -288,16 +275,15 @@ export default function ProfilePage() {
               </div>
             )}
 
-            {/* Selo Amaldiçoado */}
-            {profile.cursed_seal && profile.cursed_seal.level > 0 && (
+            {profile.cursed_seal && (profile.cursed_seal.level ?? 0) > 0 && (
               <div className="space-y-4">
                 <h3 className="text-lg font-semibold border-b pb-2">Selo Amaldiçoado</h3>
                 <Card className="p-4 bg-gradient-to-r from-red-500/10 to-orange-500/10 border-red-500/20">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h4 className="text-xl font-bold">Nível {profile.cursed_seal.level}</h4>
+                      <h4 className="text-xl font-bold">Nível {profile.cursed_seal.level ?? 0}</h4>
                       <p className="text-sm text-muted-foreground">
-                        {profile.cursed_seal.level === 1 ? "Primeiro Estágio" : "Segundo Estágio"}
+                        {(profile.cursed_seal.level ?? 0) === 1 ? "Primeiro Estágio" : "Segundo Estágio"}
                       </p>
                     </div>
                   </div>
@@ -305,7 +291,6 @@ export default function ProfilePage() {
               </div>
             )}
 
-            {/* Arma Equipada */}
             {equippedWeapon && (
               <div className="space-y-4">
                 <h3 className="text-lg font-semibold border-b pb-2">Arma</h3>
@@ -332,7 +317,6 @@ export default function ProfilePage() {
               </div>
             )}
 
-            {/* Invocação */}
             {equippedSummon && (
               <div className="space-y-4">
                 <h3 className="text-lg font-semibold border-b pb-2">Invocação</h3>
@@ -359,32 +343,39 @@ export default function ProfilePage() {
               </div>
             )}
 
-            {/* Equipamentos */}
             {(equippedChest || equippedLegs || equippedFeet || equippedHands) && (
               <div className="space-y-4">
                 <h3 className="text-lg font-semibold border-b pb-2">Equipamentos</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                   {[
                     { item: equippedChest, label: 'Peito', Icon: Shirt },
-                    { item: equippedLegs, label: 'Pernas', Icon: Accessibility },
+                    { item: equippedLegs, label: 'Pernas', Icon: Shirt },
                     { item: equippedFeet, label: 'Pés', Icon: Footprints },
                     { item: equippedHands, label: 'Mãos', Icon: Hand },
                   ].map(({ item, label, Icon }) => (
                     item ? (
                       <Card key={label} className="p-3 bg-muted/20">
-                        <div className="flex items-center gap-2">
-                          <Icon className="h-5 w-5 text-primary" />
-                          <div className="flex-1 min-w-0">
-                            <p className="text-xs text-muted-foreground">{label}</p>
-                            <p className="text-sm font-medium truncate">{item.name}</p>
+                        <div className="flex flex-col items-center gap-3">
+                          <div className="relative w-16 h-16 rounded-md overflow-hidden bg-muted/30">
+                            <Image 
+                              src={item.imageUrl} 
+                              alt={item.name} 
+                              fill
+                              className="object-contain"
+                              unoptimized
+                            />
+                          </div>
+                          <div className="text-center w-full">
+                            <p className="text-xs text-muted-foreground mb-1">{label}</p>
+                            <p className="text-sm font-medium">{item.name}</p>
                           </div>
                         </div>
                       </Card>
                     ) : (
                       <Card key={label} className="p-3 bg-muted/10 border-dashed">
-                        <div className="flex items-center gap-2">
-                          <Icon className="h-5 w-5 text-muted-foreground" />
-                          <div>
+                        <div className="flex flex-col items-center gap-3 py-4">
+                          <Icon className="h-12 w-12 text-muted-foreground" />
+                          <div className="text-center">
                             <p className="text-xs text-muted-foreground">{label}</p>
                             <p className="text-sm text-muted-foreground">Vazio</p>
                           </div>
@@ -396,27 +387,51 @@ export default function ProfilePage() {
               </div>
             )}
 
-            {/* Elementos */}
             {unlockedElements.length > 0 && (
               <div className="space-y-4">
                 <h3 className="text-lg font-semibold border-b pb-2">Elementos Dominados</h3>
                 <div className="flex justify-center gap-4 flex-wrap">
                   {unlockedElements.map((elementName) => {
-                    const Icon = elementIconMap[elementName];
-                    return Icon ? (
-                      <Card key={elementName} className="p-4 bg-muted/20">
-                        <div className="flex flex-col items-center gap-2">
-                          <Icon className="h-8 w-8 text-primary" />
-                          <span className="text-sm font-medium">{elementName}</span>
+                    const elementImage = elementImages[elementName as keyof typeof elementImages];
+                    const elementLevel = profile.element_levels?.[elementName] || 0;
+                    
+                    const finalAdjustments = {
+                      Katon: { x: -1, y: 0, scale: 2.1 },
+                      Futon: { x: -5, y: -1, scale: 1.95 },
+                      Raiton: { x: 3, y: 1, scale: 2.3 },
+                      Doton: { x: 0, y: 0, scale: 2.1 },
+                      Suiton: { x: 3, y: 0, scale: 1.85 },
+                    };
+                    
+                    const adj = finalAdjustments[elementName as keyof typeof finalAdjustments] || { x: 0, y: 0, scale: 1 };
+                    
+                    return (
+                      <div key={elementName} className="flex flex-col items-center gap-2 p-4 rounded-lg border bg-muted/30 hover:bg-muted/50 transition-all">
+                        <div className="w-16 h-16 rounded-full border-2 border-primary flex items-center justify-center bg-muted/50 overflow-hidden p-2">
+                          <div 
+                            className="relative w-full h-full"
+                            style={{
+                              transform: `translate(${adj.x}px, ${adj.y}px) scale(${adj.scale})`,
+                            }}
+                          >
+                            <Image 
+                              src={elementImage} 
+                              alt={elementName}
+                              fill
+                              className="object-contain"
+                              unoptimized
+                            />
+                          </div>
                         </div>
-                      </Card>
-                    ) : null;
+                        <span className="text-sm font-medium">{elementName}</span>
+                        <span className="text-xs text-muted-foreground">Nível {elementLevel}</span>
+                      </div>
+                    );
                   })}
                 </div>
               </div>
             )}
 
-            {/* Jutsus */}
             {learnedJutsus.length > 0 && (
               <div className="space-y-4">
                 <h3 className="text-lg font-semibold border-b pb-2">Jutsus Aprendidos</h3>

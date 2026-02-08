@@ -57,7 +57,7 @@ const BOSS_DROPS = {
       name: 'Pergaminho de XP Pequeno',
       description: 'Concede XP baseado no seu nível',
       effect: 'xp_multiplier',
-      multiplier: 100,
+      multiplier: 25,
       dropChance: 0.002,
       rarity: 'comum',
       icon: '📜'
@@ -65,7 +65,7 @@ const BOSS_DROPS = {
     {
       id: 'ryo_pouch_small',
       name: 'Bolsa de Ryo',
-      description: 'Uma pequena fortuna em moedas',
+      description: 'Uma pequena fortuna em moedas (2.000 Ryo)',
       effect: 'ryo',
       amount: 2000,
       dropChance: 0.002,
@@ -95,7 +95,7 @@ const BOSS_DROPS = {
     {
       id: 'training_weights',
       name: 'Pesos de Treinamento',
-      description: 'Aumenta ganho de XP em missões por 24h',
+      description: 'Aumenta ganho de XP em missões por 24h (15%)',
       effect: 'xp_boost_24h',
       percent: 15,
       dropChance: 0.001,
@@ -105,7 +105,7 @@ const BOSS_DROPS = {
     {
       id: 'fortune_charm',
       name: 'Amuleto da Fortuna',
-      description: 'Aumenta Ryo ganho em missões por 24h',
+      description: 'Aumenta Ryo ganho em missões por 24h (20%)',
       effect: 'ryo_boost_24h',
       percent: 20,
       dropChance: 0.001,
@@ -117,7 +117,7 @@ const BOSS_DROPS = {
     {
       id: 'stat_enhancement_pill',
       name: 'Pílula de Aprimoramento',
-      description: 'Libera pontos de atributo adicionais',
+      description: 'Libera pontos de atributo adicionais (+3)',
       effect: 'stat_points',
       amount: 3,
       dropChance: 0.0008,
@@ -127,7 +127,7 @@ const BOSS_DROPS = {
     {
       id: 'element_training_scroll',
       name: 'Pergaminho de Treinamento Elemental',
-      description: 'Acelera o domínio de um elemento',
+      description: 'Acelera o domínio de um elemento (+200 XP)',
       effect: 'element_xp',
       amount: 200,
       dropChance: 0.0008,
@@ -139,7 +139,7 @@ const BOSS_DROPS = {
       name: 'Pergaminho de XP Médio',
       description: 'Maior quantidade de experiência',
       effect: 'xp_multiplier',
-      multiplier: 300,
+      multiplier: 50,
       dropChance: 0.0006,
       rarity: 'raro',
       icon: '📜'
@@ -147,7 +147,7 @@ const BOSS_DROPS = {
     {
       id: 'ryo_pouch_large',
       name: 'Bolsa de Ryo Grande',
-      description: 'Uma fortuna considerável',
+      description: 'Uma fortuna considerável (8.000 Ryo)',
       effect: 'ryo',
       amount: 8000,
       dropChance: 0.0005,
@@ -157,7 +157,7 @@ const BOSS_DROPS = {
     {
       id: 'jutsu_refinement_manual',
       name: 'Manual de Refinamento de Jutsu',
-      description: 'Melhora a eficiência dos jutsus',
+      description: 'Melhora a eficiência dos jutsus (+500 XP)',
       effect: 'jutsu_xp',
       amount: 500,
       dropChance: 0.0003,
@@ -167,21 +167,11 @@ const BOSS_DROPS = {
   ],
   epico: [
     {
-      id: 'premium_pass_3days',
-      name: 'Premium Pass (3 dias)',
-      description: 'Acesso temporário a benefícios premium',
-      effect: 'premium_pass',
-      duration: 3 * 24 * 60 * 60 * 1000,
-      dropChance: 0.0003,
-      rarity: 'épico',
-      icon: '👑'
-    },
-    {
       id: 'xp_scroll_large',
       name: 'Pergaminho de XP Grande',
       description: 'Experiência massiva concentrada',
       effect: 'xp_multiplier',
-      multiplier: 500,
+      multiplier: 80,
       dropChance: 0.00015,
       rarity: 'épico',
       icon: '📜'
@@ -189,7 +179,7 @@ const BOSS_DROPS = {
     {
       id: 'master_training_manual',
       name: 'Manual do Mestre',
-      description: 'Conhecimento condensado de múltiplas artes',
+      description: 'Conhecimento condensado de múltiplas artes (+2 pontos em dois atributos diferentes)',
       effect: 'dual_stat_points',
       amount: 2,
       dropChance: 0.00015,
@@ -199,7 +189,7 @@ const BOSS_DROPS = {
     {
       id: 'elemental_mastery_orb',
       name: 'Orbe de Maestria Elemental',
-      description: 'Energia elemental pura concentrada',
+      description: 'Energia elemental pura concentrada (+500 XP em dois elementos)',
       effect: 'dual_element_xp',
       amount: 500,
       dropChance: 0.0001,
@@ -211,7 +201,7 @@ const BOSS_DROPS = {
     {
       id: 'legendary_stat_orb',
       name: 'Orbe Lendário de Poder',
-      description: 'Poder condensado dos deuses shinobi',
+      description: 'Poder condensado dos deuses shinobi (+10 pontos em TODOS os atributos)',
       effect: 'all_stats',
       amount: 10,
       dropChance: 0.0001,
@@ -221,7 +211,7 @@ const BOSS_DROPS = {
     {
       id: 'eternal_youth_elixir',
       name: 'Elixir da Juventude Eterna',
-      description: 'Restaura completamente vida e chakra + buff temporário',
+      description: 'Restaura completamente vida e chakra + buff temporário (+20% por 1 hora)',
       effect: 'full_restore_buff',
       buffDuration: 60 * 60 * 1000,
       buffPercent: 20,
@@ -232,7 +222,7 @@ const BOSS_DROPS = {
     {
       id: 'sage_blessing_scroll',
       name: 'Pergaminho da Bênção do Sábio',
-      description: 'Conhecimento ancestral dos Seis Caminhos',
+      description: 'Conhecimento ancestral dos Seis Caminhos (+5 pontos em três  atributo diferentes)',
       effect: 'triple_stat_points',
       amount: 5,
       dropChance: 0.00004,
@@ -242,7 +232,7 @@ const BOSS_DROPS = {
     {
       id: 'forbidden_technique_scroll',
       name: 'Pergaminho de Técnica Proibida',
-      description: 'Acelera drasticamente o aprendizado',
+      description: 'Acelera drasticamente o aprendizado (+1000 XP em elementos E jutsus)',
       effect: 'element_and_jutsu_xp',
       amount: 1000,
       dropChance: 0.00001,
@@ -1034,10 +1024,83 @@ toast({
 )}
           </CardContent>
           <CardFooter className="flex-col gap-4">
-            <Button 
-              onClick={handleAttack} 
-              disabled={!canAttack || isAttacking || !isPageReady}
-              className="w-full text-lg py-6"
+  {/* 🧪 BOTÃO DE TESTE - ADICIONA ITENS REAIS NO BANCO */}
+  {process.env.NODE_ENV === 'development' && (
+    <Button 
+      onClick={async () => {
+        if (!userProfile || !supabase || !user) return;
+        
+        console.log('🧪 ===== TESTE DE DROPS - ADICIONANDO AO BANCO =====');
+        
+        try {
+          // Pegar todos os itens de todas as raridades
+          const allItems = [
+            ...BOSS_DROPS.comum,
+            ...BOSS_DROPS.raro,
+            ...BOSS_DROPS.epico,
+            ...BOSS_DROPS.lendario,
+          ];
+          
+          // Criar objeto de inventário com 1 de cada item
+          const testInventory: Record<string, number> = {};
+          allItems.forEach(item => {
+            testInventory[item.id] = 1;
+          });
+          
+          console.log('📦 Inventário a ser adicionado:', testInventory);
+          
+          // Atualizar no banco de dados
+          const { data, error } = await supabase
+            .from('profiles')
+            .update({
+              boss_inventory: testInventory
+            })
+            .eq('id', user.id)
+            .select();
+          
+          if (error) {
+            console.error('❌ Erro ao adicionar itens:', error);
+            toast({
+              variant: 'destructive',
+              title: "Erro ao adicionar itens",
+              description: error.message,
+            });
+            return;
+          }
+          
+          console.log('✅ Itens adicionados com sucesso:', data);
+          
+          toast({
+            title: "🧪 TESTE CONCLUÍDO",
+            description: `${allItems.length} itens adicionados ao inventário do boss! Recarregando...`,
+            duration: 3000,
+          });
+          
+          // Recarregar após 2 segundos
+          setTimeout(() => {
+            window.location.href = '/status';
+          }, 2000);
+          
+        } catch (error: any) {
+          console.error('❌ Erro no teste:', error);
+          toast({
+            variant: 'destructive',
+            title: "Erro no teste",
+            description: error.message,
+          });
+        }
+      }}
+      variant="outline"
+      className="w-full border-2 border-yellow-500 text-yellow-500 hover:bg-yellow-500/10"
+    >
+      🧪 TESTAR DROPS (Adicionar Todos ao Inventário)
+    </Button>
+  )}
+  
+  <Button 
+    onClick={handleAttack} 
+    disabled={!canAttack || isAttacking || !isPageReady}
+    className="w-full text-lg py-6"
               style={{ pointerEvents: (!canAttack || isAttacking || !isPageReady) ? 'none' : 'auto' }}
             >
               {isAttacking ? (

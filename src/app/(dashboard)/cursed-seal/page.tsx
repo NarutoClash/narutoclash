@@ -47,6 +47,28 @@ const formatTime = (ms: number) => {
     return `${hours}:${minutes}:${seconds}`;
 };
 
+// ✅ FUNÇÃO PARA NORMALIZAR ELEMENT_LEVELS DO BANCO DE DADOS
+const normalizeElementLevels = (elementLevels: any): Record<string, number> => {
+  if (!elementLevels || typeof elementLevels !== 'object') return {};
+  
+  const normalized: Record<string, number> = {};
+  
+  Object.entries(elementLevels).forEach(([element, value]) => {
+    if (typeof value === 'object' && value !== null && 'level' in value) {
+      // ✅ Se for objeto com propriedade 'level', extrair o número
+      normalized[element] = Number((value as any).level) || 0;
+    } else if (typeof value === 'number') {
+      // ✅ Se já for número, usar diretamente
+      normalized[element] = value;
+    } else {
+      // ✅ Caso contrário, usar 0
+      normalized[element] = 0;
+    }
+  });
+  
+  return normalized;
+};
+
 const SEAL_DURATION = 30 * 60 * 1000; // 30 minutes
 const SEAL_COOLDOWN = 24 * 60 * 60 * 1000; // 24 hours
 const OBTAIN_LEVEL_REQ = 30;
@@ -69,7 +91,10 @@ export default function CursedSealPage() {
 
   const sealData = userProfile?.cursedSeal || {};
   const { level: sealLevel = 0, isActive: isSealActive = false, activationTime, cooldownUntil } = sealData;
-  const totalElementLevel = Object.values(userProfile?.elementLevels || {}).reduce((sum, level) => sum + level, 0);
+  
+  // ✅ USAR A FUNÇÃO DE NORMALIZAÇÃO AQUI
+  const elementLevels = normalizeElementLevels(userProfile?.element_levels);
+  const totalElementLevel = Object.values(elementLevels).reduce((sum: number, level: number) => sum + level, 0);
 
   const canAttemptObtain = userProfile && userProfile.level >= OBTAIN_LEVEL_REQ && totalElementLevel >= OBTAIN_ELEMENT_REQ;
   const canAttemptUpgrade = userProfile && sealLevel === 1 && totalElementLevel >= UPGRADE_ELEMENT_REQ;

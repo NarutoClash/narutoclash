@@ -894,20 +894,34 @@ useEffect(() => {
               <p className="text-2xl font-bold text-primary">{Math.floor(remainingHuntTime/60)} minutos</p>
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium">Selecione a duração</label>
-              <Select value={huntDuration} onValueChange={setHuntDuration}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecionar tempo..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {timeOptions.map(time => (
-                    <SelectItem key={time} value={(time * 60).toString()} disabled={time*60 > remainingHuntTime}>
-                      {time} minutos
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+  <label className="text-sm font-medium">Selecione a duração</label>
+  <Select value={huntDuration} onValueChange={setHuntDuration}>
+    <SelectTrigger className="h-12 text-base font-semibold bg-card border-2">
+      <SelectValue placeholder="Selecionar tempo..." />
+    </SelectTrigger>
+    <SelectContent 
+      className="max-h-[300px] bg-card border-2 shadow-xl z-50"
+      position="popper"
+      sideOffset={5}
+    >
+      {timeOptions.map(time => (
+        <SelectItem 
+          key={time} 
+          value={(time * 60).toString()} 
+          disabled={time*60 > remainingHuntTime}
+          className="text-base font-medium py-3 cursor-pointer hover:bg-accent focus:bg-accent data-[disabled]:opacity-50 data-[disabled]:cursor-not-allowed"
+        >
+          <div className="flex items-center justify-between w-full gap-4">
+            <span className="font-bold">{time} minutos</span>
+            <span className="text-xs text-muted-foreground">
+              ({Math.floor((time * 20))} Ryo / {Math.floor((time * 30))} XP)
+            </span>
+          </div>
+        </SelectItem>
+      ))}
+    </SelectContent>
+  </Select>
+</div>
           </CardContent>
           <CardFooter>
             <Button 

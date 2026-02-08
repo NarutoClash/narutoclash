@@ -39,6 +39,8 @@ import {
   ShoppingCart,
   Mail,
   Crown,
+  BookOpen,
+  MessageCircleQuestion,
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import Link from 'next/link';
@@ -215,42 +217,45 @@ export default function DashboardLayout({
   });
 
   // 🔝 ITENS DO MENU SUPERIOR (Menos Acessados)
-  const topMenuItems = [
-    { 
-      href: '/news', 
-      label: 'News', 
-      icon: Newspaper, 
-      notification: unreadNewsCount > 0,
-      badge: unreadNewsCount
-    },
-    { 
-      href: '/messages', 
-      label: 'Mensagens', 
-      icon: Mail, 
-      notification: unreadCount > 0 || unreadReportsCount > 0,
-      badge: (unreadCount || 0) + (unreadReportsCount || 0)
-    },
-    { href: '/ranking', label: 'Ranking', icon: Trophy, notification: false },
-    { href: '/mercado-premium', label: 'Mercado Premium', icon: Database, notification: false },
-    { href: '/buy', label: 'Comprar CP', icon: ShoppingCart, notification: false },
-  ];
+const topMenuItems = [
+  { 
+    href: '/news', 
+    label: 'News', 
+    icon: Newspaper, 
+    notification: unreadNewsCount > 0,
+    badge: unreadNewsCount
+  },
+  { 
+    href: '/messages', 
+    label: 'Mensagens', 
+    icon: Mail, 
+    notification: unreadCount > 0 || unreadReportsCount > 0,
+    badge: (unreadCount || 0) + (unreadReportsCount || 0)
+  },
+  { href: '/ranking', label: 'Ranking', icon: Trophy, notification: false },
+  { href: '/chat', label: 'Chat Global', icon: MessageCircle, notification: false },
+  { href: '/manual-ninja', label: 'Manual Ninja', icon: BookOpen, notification: false },
+  { href: '/mercado-premium', label: 'Mercado Premium', icon: Database, notification: false },
+  { href: '/buy', label: 'Comprar CP', icon: ShoppingCart, notification: false },
+  { href: '/suporte', label: 'Suporte', icon: MessageCircleQuestion, notification: false }, // 🆕 SUPORTE
+];
 
-  // 📱 ITENS DA SIDEBAR (Mais Acessados)
-  const sidebarItems = [
-    { href: '/status', label: 'Status', icon: Activity, notification: hasStatPoints },
-    { href: '/missions', label: 'Missões', icon: ScrollText, notification: isMissionComplete },
-    { href: '/hunts', label: 'Caçadas', icon: Target, notification: isHuntComplete },
-    { href: '/invasion', label: 'Invasão', icon: ShieldAlert, notification: canAttackBoss },
-    { href: '/elements', label: 'Elementos', icon: Flame, notification: showElementsNotification },
-    { href: '/doujutsu', label: 'Dōjutsu', icon: Eye, notification: showDojutsuNotification },
-    { href: '/cursed-seal', label: 'Selo Amaldiçoado', icon: ShieldQuestion, notification: showSealNotification },
-    { href: '/weapons', label: 'Armas', icon: Swords, notification: showWeaponNotification },
-    { href: '/summons', label: 'Invocação', icon: Footprints, notification: showSummonNotification },
-    { href: '/equipamentos', label: 'Equipamentos', icon: Grip, notification: false },
-    { href: '/clan', label: 'Clã', icon: Users, notification: false },
-    { href: '/chat', label: 'Chat Global', icon: MessageCircle, notification: false },
-    { href: '/ichiraku', label: 'Ichiraku', icon: Utensils, notification: false },
-  ];
+// 📱 ITENS DA SIDEBAR (Mais Acessados)
+const sidebarItems = [
+  { href: '/status', label: 'Status', icon: Activity, notification: hasStatPoints },
+  { href: '/missions', label: 'Missões', icon: ScrollText, notification: isMissionComplete },
+  { href: '/hunts', label: 'Caçadas', icon: Target, notification: isHuntComplete },
+  { href: '/invasion', label: 'Invasão', icon: ShieldAlert, notification: canAttackBoss },
+  { href: '/elements', label: 'Elementos', icon: Flame, notification: showElementsNotification },
+  { href: '/doujutsu', label: 'Dōjutsu', icon: Eye, notification: showDojutsuNotification },
+  { href: '/cursed-seal', label: 'Selo Amaldiçoado', icon: ShieldQuestion, notification: showSealNotification },
+  { href: '/weapons', label: 'Armas', icon: Swords, notification: showWeaponNotification },
+  { href: '/summons', label: 'Invocação', icon: Footprints, notification: showSummonNotification },
+  { href: '/equipamentos', label: 'Equipamentos', icon: Grip, notification: false },
+  { href: '/clan', label: 'Clã', icon: Users, notification: false },
+  { href: '/ichiraku', label: 'Ichiraku', icon: Utensils, notification: false },
+  // ✅ Chat Global removido daqui
+];
 
   if (isUserLoading || (user && !userProfile && pathname !== '/create-character')) {
     return (

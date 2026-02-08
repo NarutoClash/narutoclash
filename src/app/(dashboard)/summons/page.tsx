@@ -156,108 +156,134 @@ const SummonCard = ({
                  )}
             </CardContent>
             <CardFooter className="flex-col gap-2">
-                {isOwned ? (
-                    <>
-                        <Dialog open={isTrainingDialogOpen} onOpenChange={setIsTrainingDialogOpen}>
-                            <DialogTrigger asChild>
-                                <Button 
-                                    variant="outline" 
-                                    className="w-full border-orange-500/50 hover:bg-orange-500/10" 
-                                    disabled={isMaxLevel}
-                                >
-                                    <TrendingUp className="mr-2 h-4 w-4" />
-                                    {isMaxLevel ? 'Nível Máximo' : `Treinar (${trainingCost.toLocaleString()} Ryo)`}
-                                </Button>
-                            </DialogTrigger>
-                            <DialogContent className="bg-gradient-to-br from-gray-900 to-gray-800 border-orange-500/20">
-                                <DialogHeader>
-                                    <DialogTitle className="text-orange-400">Treinar {summon.name}</DialogTitle>
-                                    <DialogDescription className="text-gray-400">
-                                        Escolha qual atributo você quer treinar. Cada nível adiciona +{TRAINING_BONUS_PER_LEVEL} ao stat escolhido.
-                                        {trainedStat && (
-                                            <span className="block mt-2 text-orange-400 font-semibold">
-                                                Atributo atual em treinamento: {trainedStat.charAt(0).toUpperCase() + trainedStat.slice(1)}
-                                            </span>
-                                        )}
-                                    </DialogDescription>
-                                </DialogHeader>
-                                <div className="grid grid-cols-2 gap-2 my-4">
-                                    {summon.trainableStats.map(stat => (
-                                        <Button
-                                            key={stat}
-                                            variant={selectedStat === stat ? "default" : "outline"}
-                                            onClick={() => setSelectedStat(stat)}
-                                            className={cn(
-                                                "capitalize",
-                                                selectedStat === stat && "bg-gradient-to-r from-orange-500 to-red-600"
-                                            )}
-                                        >
-                                            {stat}
-                                        </Button>
-                                    ))}
-                                </div>
-                                <DialogFooter>
-                                    <Button 
-                                        onClick={handleTrainClick} 
-                                        disabled={!selectedStat || !canAffordTraining}
-                                        className={cn(
-                                            selectedStat && canAffordTraining && "bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700"
-                                        )}
-                                    >
-                                        {!canAffordTraining ? 'Ryo Insuficiente' : 'Confirmar Treinamento'}
-                                    </Button>
-                                </DialogFooter>
-                            </DialogContent>
-                        </Dialog>
-
-                        <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                                <Button variant="destructive" className="w-full bg-red-600 hover:bg-red-700">
-                                    <Trash2 className="mr-2 h-4 w-4" />
-                                    Cancelar Contrato
-                                </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent className="bg-gradient-to-br from-gray-900 to-gray-800 border-orange-500/20">
-                                <AlertDialogHeader>
-                                    <AlertDialogTitle className="text-orange-400">Cancelar contrato com {summon.name}?</AlertDialogTitle>
-                                    <AlertDialogDescription className="text-gray-400">
-                                        Você receberá apenas 50% do valor base ({(summon.price / 2).toLocaleString()} Ryo).
-                                        {summonLevel > 1 && (
-                                            <span className="block mt-2 text-red-500 font-semibold">
-                                                ⚠️ Todo o investimento em treinamento será perdido!
-                                            </span>
-                                        )}
-                                    </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                    <AlertDialogCancel className="border-orange-500/50 hover:bg-orange-500/10">Manter Contrato</AlertDialogCancel>
-                                    <AlertDialogAction 
-                                        onClick={() => onSell(summon)}
-                                        className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700"
-                                    >
-                                        Confirmar
-                                    </AlertDialogAction>
-                                </AlertDialogFooter>
-                            </AlertDialogContent>
-                        </AlertDialog>
-                    </>
-                ) : (
+    {isOwned ? (
+        <>
+            <Dialog open={isTrainingDialogOpen} onOpenChange={setIsTrainingDialogOpen}>
+                <DialogTrigger asChild>
                     <Button 
-                        className={cn(
-                            "w-full",
-                            canBuy && !hasSummon && "bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 shadow-lg shadow-orange-500/50"
-                        )}
-                        onClick={() => onBuy(summon)} 
-                        disabled={!canBuy || hasSummon}
+                        variant="outline" 
+                        className="w-full h-auto min-h-[44px] py-3 border-orange-500/50 hover:bg-orange-500/10 whitespace-normal text-center" 
+                        disabled={isMaxLevel}
                     >
-                        <Coins className="mr-2 h-4 w-4" />
+                        <div className="flex flex-col items-center gap-1 w-full">
+                            <div className="flex items-center gap-2">
+                                <TrendingUp className="h-4 w-4 flex-shrink-0" />
+                                <span className="font-semibold">
+                                    {isMaxLevel ? 'Nível Máximo' : 'Treinar'}
+                                </span>
+                            </div>
+                            {!isMaxLevel && (
+                                <span className="text-xs text-muted-foreground">
+                                    {trainingCost.toLocaleString()} Ryo
+                                </span>
+                            )}
+                        </div>
+                    </Button>
+                </DialogTrigger>
+                <DialogContent className="bg-gradient-to-br from-gray-900 to-gray-800 border-orange-500/20">
+                    <DialogHeader>
+                        <DialogTitle className="text-orange-400">Treinar {summon.name}</DialogTitle>
+                        <DialogDescription className="text-gray-400">
+                            Escolha qual atributo você quer treinar. Cada nível adiciona +{TRAINING_BONUS_PER_LEVEL} ao stat escolhido.
+                            {trainedStat && (
+                                <span className="block mt-2 text-orange-400 font-semibold">
+                                    Atributo atual em treinamento: {trainedStat.charAt(0).toUpperCase() + trainedStat.slice(1)}
+                                </span>
+                            )}
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="grid grid-cols-2 gap-2 my-4">
+                        {summon.trainableStats.map(stat => (
+                            <Button
+                                key={stat}
+                                variant={selectedStat === stat ? "default" : "outline"}
+                                onClick={() => setSelectedStat(stat)}
+                                className={cn(
+                                    "capitalize h-auto py-3",
+                                    selectedStat === stat && "bg-gradient-to-r from-orange-500 to-red-600"
+                                )}
+                            >
+                                {stat}
+                            </Button>
+                        ))}
+                    </div>
+                    <DialogFooter>
+                        <Button 
+                            onClick={handleTrainClick} 
+                            disabled={!selectedStat || !canAffordTraining}
+                            className={cn(
+                                "h-auto py-3",
+                                selectedStat && canAffordTraining && "bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700"
+                            )}
+                        >
+                            {!canAffordTraining ? 'Ryo Insuficiente' : 'Confirmar Treinamento'}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            <AlertDialog>
+                <AlertDialogTrigger asChild>
+                    <Button 
+                        variant="destructive" 
+                        className="w-full h-auto min-h-[44px] py-3 bg-red-600 hover:bg-red-700 whitespace-normal"
+                    >
+                        <Trash2 className="mr-2 h-4 w-4 flex-shrink-0" />
+                        <span>Cancelar Contrato</span>
+                    </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent className="bg-gradient-to-br from-gray-900 to-gray-800 border-orange-500/20">
+                    <AlertDialogHeader>
+                        <AlertDialogTitle className="text-orange-400">Cancelar contrato com {summon.name}?</AlertDialogTitle>
+                        <AlertDialogDescription className="text-gray-400">
+                            Você receberá apenas 50% do valor base ({(summon.price / 2).toLocaleString()} Ryo).
+                            {summonLevel > 1 && (
+                                <span className="block mt-2 text-red-500 font-semibold">
+                                    ⚠️ Todo o investimento em treinamento será perdido!
+                                </span>
+                            )}
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel className="border-orange-500/50 hover:bg-orange-500/10">Manter Contrato</AlertDialogCancel>
+                        <AlertDialogAction 
+                            onClick={() => onSell(summon)}
+                            className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700"
+                        >
+                            Confirmar
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+        </>
+    ) : (
+        <Button 
+            className={cn(
+                "w-full h-auto min-h-[56px] py-3 whitespace-normal text-center",
+                canBuy && !hasSummon && "bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 shadow-lg shadow-orange-500/50"
+            )}
+            onClick={() => onBuy(summon)} 
+            disabled={!canBuy || hasSummon}
+        >
+            <div className="flex flex-col items-center gap-1 w-full">
+                <div className="flex items-center gap-2">
+                    <Coins className="h-4 w-4 flex-shrink-0" />
+                    <span className="font-semibold">
                         {hasSummon ? 'Contrato já ativo' : 
                          summon.isPremium && !isPremium ? 'Apenas Premium' :
-                         canUse ? (canAfford ? `Contrato (${summon.price.toLocaleString()} Ryo)` : 'Ryo Insuficiente') : 
+                         canUse ? (canAfford ? 'Formar Contrato' : 'Ryo Insuficiente') : 
                          `Requer Nível ${summon.requiredLevel}`}
-                    </Button>
+                    </span>
+                </div>
+                {canBuy && !hasSummon && (
+                    <span className="text-xs text-white/80">
+                        {summon.price.toLocaleString()} Ryo
+                    </span>
                 )}
-            </CardFooter>
+            </div>
+        </Button>
+    )}
+</CardFooter>
         </Card>
     );
 };

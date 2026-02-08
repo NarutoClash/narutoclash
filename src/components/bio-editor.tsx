@@ -92,36 +92,52 @@ const parseContent = (content: string) => {
   return parts;
 };
 
-export function BioEditor({ profileId, initialContent, isOwner }: BioEditorProps) {
+export function BioEditor({ profileId, initialContent = '', isOwner }: BioEditorProps) {
   const { supabase } = useSupabase();
   const { toast } = useToast();
   const [isEditing, setIsEditing] = useState(false);
-  const [bioContent, setBioContent] = useState(initialContent || '');
+  const [bioContent, setBioContent] = useState(initialContent);
   const [isSaving, setIsSaving] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
+  const [showColorMenu, setShowColorMenu] = useState(false);
 
   const handleSave = async () => {
-    if (!supabase) return;
+    if (!supabase) {
+      toast({
+        variant: 'destructive',
+        title: 'Erro',
+        description: 'Não foi possível conectar ao banco de dados.',
+      });
+      return;
+    }
 
     setIsSaving(true);
+    
     try {
+      // ✅ CORRIGIDO: Usar o nome correto da coluna
       const { error } = await supabase
         .from('profiles')
-        .update({
-          bio_content: bioContent.trim() || null,
-          bio_image_url: null, // Não usa mais este campo
-        })
+        .update({ bio: bioContent.trim() || null })
         .eq('id', profileId);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Erro do Supabase:', error);
+        throw error;
+      }
 
       toast({
         title: 'Bio atualizada!',
         description: 'Suas informações foram salvas com sucesso.',
       });
-      setIsEditing(false);
       
-      setTimeout(() => window.location.reload(), 1000);
+      setIsEditing(false);
+      setShowPreview(false);
+      
+      // Recarregar após 1 segundo
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
+      
     } catch (error: any) {
       console.error('Erro ao salvar bio:', error);
       toast({
@@ -135,7 +151,7 @@ export function BioEditor({ profileId, initialContent, isOwner }: BioEditorProps
   };
 
   const handleCancel = () => {
-    setBioContent(initialContent || '');
+    setBioContent(initialContent);
     setIsEditing(false);
     setShowPreview(false);
   };
@@ -171,8 +187,6 @@ export function BioEditor({ profileId, initialContent, isOwner }: BioEditorProps
     const after = bioContent.substring(cursorPos);
     setBioContent(before + '[u]texto sublinhado[/u]' + after);
   };
-
-  const [showColorMenu, setShowColorMenu] = useState(false);
 
   const colors = [
     { name: 'red', label: 'Vermelho', color: '#ef4444' },
@@ -336,9 +350,11 @@ export function BioEditor({ profileId, initialContent, isOwner }: BioEditorProps
                 <div className="rounded-lg border bg-muted/20 p-4 min-h-[100px]">
                   {parsedContent.map((part, index) => (
                     part.type === 'text' ? (
-                      <p key={index} className="whitespace-pre-wrap text-sm leading-relaxed inline">
-                        {part.content}
-                      </p>
+                      <p 
+                        key={index} 
+                        className="whitespace-pre-wrap text-sm leading-relaxed inline"
+                        dangerouslySetInnerHTML={{ __html: processTextFormatting(part.content) }}
+                      />
                     ) : (
                       <div key={index} className="relative w-full max-w-md h-48 my-3">
                         <Image

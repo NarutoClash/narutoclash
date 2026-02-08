@@ -885,148 +885,7 @@ useEffect(() => {
       setIsSubmitting(false);
     }
   };
-  const handleResetClanMissions = async () => {
-    if (!supabase || !clanRef) return;
-    
-    setIsSubmitting(true);
-    try {
-      console.log('🔄 Iniciando reset de missões do clã...');
-      
-      // ✅ Limpa TODAS as completions do clã
-      const { error: deleteError } = await supabase
-        .from('clan_mission_completions')
-        .delete()
-        .eq('clan_id', clanRef.id);
-  
-      if (deleteError) throw deleteError;
-  
-      // ✅ Limpa todas as missões ativas dos membros
-      await supabase
-        .from('clan_members')
-        .update({ active_clan_mission: null })
-        .eq('clan_id', clanRef.id);
-  
-      // ✅ Buscar todas as missões
-      const { data: allMissions } = await supabase
-        .from('clan_missions')
-        .select('id')
-        .eq('is_active', true);
-  
-      if (!allMissions || allMissions.length < 10) {
-        toast({
-          variant: 'destructive',
-          title: 'Missões Insuficientes',
-          description: `Apenas ${allMissions?.length || 0} missões no banco. Necessário pelo menos 10.`,
-        });
-        setIsSubmitting(false);
-        return;
-      }
-  
-      // ✅ Gerar 10 missões aleatórias
-      const missionIds = allMissions.map(m => m.id);
-      const newActiveMissions = generateClanMissions(missionIds);
-  
-      // ✅ Atualizar clã
-      const { error: updateError } = await supabase
-        .from('clans')
-        .update({ active_missions: newActiveMissions })
-        .eq('id', clanRef.id);
-  
-      if (updateError) throw updateError;
-  
-      toast({
-        title: '🔄 Missões do Clã Resetadas!',
-        description: `10 novas missões geradas. Histórico limpo.`,
-      });
-  
-      setTimeout(() => {
-        window.location.reload();
-      }, 800);
-    } catch (error: any) {
-      console.error('❌ Erro ao resetar missões:', error);
-      toast({
-        variant: 'destructive',
-        title: 'Erro ao resetar missões',
-        description: error.message,
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
 
-const handleForceCompleteMission = async () => {
-  if (!user || !supabase || !userProfile || !clanRef || !clanData || !activeMission || !currentMember) return;
-  
-  const mission = clanMissions?.find(m => m.id === activeMission.missionId);
-  if (!mission) return;
-
-  setIsSubmitting(true);
-
-  try {
-    // Registrar conclusão
-    const { error: completionError } = await supabase
-      .from('clan_mission_completions')
-      .insert({
-        clan_id: clanRef.id,
-        mission_id: mission.id,
-        user_id: user.id,
-        user_name: userProfile.name,
-        xp_earned: mission.xp_reward,
-      });
-
-    if (completionError) throw completionError;
-
-    // Atualizar XP do clã
-    const newXp = clanData.xp + mission.xp_reward;
-    const newLevel = clanData.level;
-    const xpRequired = clanData.xp_required;
-
-    let updateData: any = { xp: newXp };
-    
-    if (newXp >= xpRequired) {
-      updateData = {
-        level: newLevel + 1,
-        xp: 0,
-        xp_required: Math.floor(1000 * (newLevel + 1) * 1.5),
-      };
-    }
-
-    const { error: clanError } = await supabase
-      .from('clans')
-      .update(updateData)
-      .eq('id', clanRef.id);
-
-    if (clanError) throw clanError;
-
-    // Limpar missão ativa
-    const { error: memberError } = await supabase
-      .from('clan_members')
-      .update({ active_clan_mission: null })
-      .eq('clan_id', clanRef.id)
-      .eq('user_id', user.id);
-
-    if (memberError) throw memberError;
-
-    toast({
-      title: '⚡ Missão Completada Instantaneamente!',
-      description: `Você ganhou ${mission.xp_reward} XP para o clã!`,
-    });
-
-    setActiveMission(null);
-
-    setTimeout(() => {
-      window.location.reload();
-    }, 1000);
-  } catch (error: any) {
-    toast({
-      variant: 'destructive',
-      title: 'Erro ao completar missão',
-      description: error.message,
-    });
-  } finally {
-    setIsSubmitting(false);
-  }
-};
 
   if (isUserLoading || isClanLoading) {
     return <div className="flex justify-center items-center h-full"><Loader2 className="h-8 w-8 animate-spin" /></div>;
@@ -1052,27 +911,15 @@ const handleForceCompleteMission = async () => {
         Nível {clanData.level} • {totalMembros}/{getClanMemberLimit(clanData.level)} Membros
       </CardDescription>
     </div>
-    <div className="flex items-center gap-3">
-      {/* ✅ BOTÃO DE RESET PARA TESTES */}
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={handleResetClanMissions}
-        disabled={isSubmitting}
-      >
-        🔄 Resetar Missões (Teste)
-      </Button>
-      
-      {dailyMissionsResetTimer && (
-        <div className="flex flex-col items-end gap-1">
-          <span className="text-xs text-muted-foreground">Próximo reset:</span>
-          <div className="flex items-center gap-2 rounded-md border bg-muted px-3 py-1.5 text-sm">
-            <Timer className="h-4 w-4 text-primary"/>
-            <span className="font-mono font-semibold">{dailyMissionsResetTimer}</span>
-          </div>
+    {dailyMissionsResetTimer && (
+      <div className="flex flex-col items-end gap-1">
+        <span className="text-xs text-muted-foreground">Próximo reset:</span>
+        <div className="flex items-center gap-2 rounded-md border bg-muted px-3 py-1.5 text-sm">
+          <Timer className="h-4 w-4 text-primary"/>
+          <span className="font-mono font-semibold">{dailyMissionsResetTimer}</span>
         </div>
-      )}
-    </div>
+      </div>
+    )}
   </div>
 </CardHeader>
           <CardContent>
@@ -1381,20 +1228,10 @@ const handleForceCompleteMission = async () => {
                 Coletar Recompensa
               </Button>
             ) : isMyMission ? (
-              <div className="space-y-2">
-                <Button className="w-full" disabled>
-                  <Timer className="mr-2 h-4 w-4 animate-spin"/>
-                  Missão em Andamento...
-                </Button>
-                <Button 
-                  className="w-full" 
-                  variant="outline"
-                  onClick={handleForceCompleteMission}
-                  disabled={isSubmitting}
-                >
-                  ⚡ Completar Instantaneamente (Teste)
-                </Button>
-              </div>
+              <Button className="w-full" disabled>
+                <Timer className="mr-2 h-4 w-4 animate-spin"/>
+                Missão em Andamento...
+              </Button>
             ) : isOccupied ? (
               <Button className="w-full" disabled variant="secondary">
                 <Users className="mr-2 h-4 w-4" />

@@ -100,49 +100,70 @@ const WeaponCard = ({
                  </div>
             </CardContent>
             <CardFooter className="flex-col gap-2">
-                {isOwned ? (
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                         <Button variant="destructive" className="w-full bg-red-600 hover:bg-red-700">
-                            <Trash2 className="mr-2 h-4 w-4" />
-                            Vender por {(weapon.price / 2).toLocaleString()} Ryo
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent className="bg-gradient-to-br from-gray-900 to-gray-800 border-orange-500/20">
-                        <AlertDialogHeader>
-                          <AlertDialogTitle className="text-orange-400">Vender {weapon.name}?</AlertDialogTitle>
-                          <AlertDialogDescription className="text-gray-400">
-                            Você receberá 50% do valor de volta. Após vender, você poderá comprar uma nova arma.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel className="border-orange-500/50 hover:bg-orange-500/10">Cancelar</AlertDialogCancel>
-                          <AlertDialogAction 
-                            onClick={() => onSell(weapon)}
-                            className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700"
-                          >
-                            Confirmar Venda
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                ) : (
-                    <Button 
-                        className={cn(
-                            "w-full",
-                            canBuy && !hasWeapon && "bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 shadow-lg shadow-orange-500/50"
-                        )}
-                        onClick={() => onBuy(weapon)} 
-                        disabled={!canBuy || hasWeapon}
-                    >
-                        <Coins className="mr-2 h-4 w-4" />
+    {isOwned ? (
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+             <Button 
+                variant="destructive" 
+                className="w-full h-auto min-h-[56px] py-3 bg-red-600 hover:bg-red-700 whitespace-normal"
+            >
+                <div className="flex flex-col items-center gap-1 w-full">
+                    <div className="flex items-center gap-2">
+                        <Trash2 className="h-4 w-4 flex-shrink-0" />
+                        <span className="font-semibold">Vender</span>
+                    </div>
+                    <span className="text-xs text-white/90">
+                        {(weapon.price / 2).toLocaleString()} Ryo
+                    </span>
+                </div>
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent className="bg-gradient-to-br from-gray-900 to-gray-800 border-orange-500/20">
+            <AlertDialogHeader>
+              <AlertDialogTitle className="text-orange-400">Vender {weapon.name}?</AlertDialogTitle>
+              <AlertDialogDescription className="text-gray-400">
+                Você receberá 50% do valor de volta. Após vender, você poderá comprar uma nova arma.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel className="border-orange-500/50 hover:bg-orange-500/10">Cancelar</AlertDialogCancel>
+              <AlertDialogAction 
+                onClick={() => onSell(weapon)}
+                className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700"
+              >
+                Confirmar Venda
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+    ) : (
+        <Button 
+            className={cn(
+                "w-full h-auto min-h-[56px] py-3 whitespace-normal text-center",
+                canBuy && !hasWeapon && "bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 shadow-lg shadow-orange-500/50"
+            )}
+            onClick={() => onBuy(weapon)} 
+            disabled={!canBuy || hasWeapon}
+        >
+            <div className="flex flex-col items-center gap-1 w-full">
+                <div className="flex items-center gap-2">
+                    <Coins className="h-4 w-4 flex-shrink-0" />
+                    <span className="font-semibold">
                         {hasWeapon ? 'Arma já equipada' : 
                          weapon.isPremium && !isPremium ? 'Apenas Premium' :
-                         canUse ? (canAfford ? `Comprar (${weapon.price.toLocaleString()} Ryo)` : 'Ryo Insuficiente') : 
+                         canUse ? (canAfford ? 'Comprar' : 'Ryo Insuficiente') : 
                          `Requer Nível ${weapon.requiredLevel}`}
-                    </Button>
+                    </span>
+                </div>
+                {canBuy && !hasWeapon && (
+                    <span className="text-xs text-white/80">
+                        {weapon.price.toLocaleString()} Ryo
+                    </span>
                 )}
-            </CardFooter>
+            </div>
+        </Button>
+    )}
+</CardFooter>
         </Card>
     );
 };

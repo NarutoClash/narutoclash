@@ -34,7 +34,9 @@ export default function MercadoPremiumPage() {
   // Buscar itens premium
   const itemsQuery = useMemoSupabase(() => ({
     table: 'premium_items',
-    query: (builder: any) => builder.eq('is_active', true).order('category', { ascending: true }),
+    query: (builder: any) => builder
+      .eq('is_active', true)
+      .order('sort_order', { ascending: true }), // 👈 ORDENAR POR sort_order
   }), []);
   const { data: premiumItems, isLoading: areItemsLoading } = useCollection<WithId<PremiumItem>>(itemsQuery);
 
@@ -50,250 +52,271 @@ export default function MercadoPremiumPage() {
     ? premiumItems 
     : premiumItems?.filter(item => item.category === selectedCategory);
 
-  const handlePurchase = async (item: WithId<PremiumItem>) => {
-    if (!user || !supabase || !userProfile) return;
-
-    console.log('🛒 Iniciando compra:', item.name);
-    console.log('💰 CP do usuário:', userProfile.clash_points);
-    console.log('💎 Preço do item:', item.price_cp);
-    console.log('🆔 Premium Item ID:', item.id);
-
-    if (userProfile.clash_points < item.price_cp) {
-      toast({
-        variant: 'destructive',
-        title: 'Clash Points Insuficientes',
-        description: `Você precisa de ${item.price_cp} CP, mas só tem ${userProfile.clash_points} CP.`,
-      });
-      return;
-    }
-
-    setIsLoading(true);
-
-    try {
-      // ✅ 1. Verificar se o item existe e está ativo
-      const { data: premiumItemCheck, error: itemCheckError } = await supabase
-        .from('premium_items')
-        .select('*')
-        .eq('id', item.id)
-        .eq('is_active', true)
-        .single();
-
-      if (itemCheckError || !premiumItemCheck) {
+    const handlePurchase = async (item: WithId<PremiumItem>) => {
+      if (!user || !supabase || !userProfile) return;
+    
+      console.log('🛒 Iniciando compra:', item.name);
+    
+      if (userProfile.clash_points < item.price_cp) {
         toast({
           variant: 'destructive',
-          title: 'Item Indisponível',
-          description: 'Este item não está mais disponível para compra.',
+          title: 'Clash Points Insuficientes',
+          description: `Você precisa de ${item.price_cp} CP, mas só tem ${userProfile.clash_points} CP.`,
         });
-        setIsLoading(false);
         return;
       }
-
-      // ✅ 2. VERIFICAR SE JÁ POSSUI ESTE ITEM (usando premium_item_id)
-      console.log('🔍 Verificando se já possui o item...');
-
-      // Para Premium Pass - verificar se já tem um ativo
-      if (item.item_type === 'premium_pass') {
-        const { data: existingPass, error: checkError } = await supabase
-          .from('user_premium_inventory')
-          .select('*')
-          .eq('user_id', user.id)
-          .eq('premium_item_id', item.id) // ✅ Usar premium_item_id
-          .gte('expires_at', new Date().toISOString())
-          .maybeSingle();
-
-        if (checkError && checkError.code !== 'PGRST116') {
-          console.error('❌ Erro ao verificar Premium Pass:', checkError);
-          throw new Error(`Erro ao verificar Premium Pass: ${checkError.message}`);
-        }
-
-        if (existingPass) {
-          toast({
-            variant: 'destructive',
-            title: 'Premium Pass Ativo',
-            description: `Você já possui um Premium Pass ativo até ${new Date(existingPass.expires_at).toLocaleDateString('pt-BR')}`,
-          });
-          setIsLoading(false);
-          return;
-        }
-      }
-
-      // Para Boosts - verificar se já tem este boost específico ativo
-      if (item.item_type === 'boost' || item.item_type === 'ryo_boost' || item.item_type === 'xp_boost') {
-        const { data: existingBoost, error: checkError } = await supabase
-          .from('user_premium_inventory')
-          .select('*')
-          .eq('user_id', user.id)
-          .eq('premium_item_id', item.id) // ✅ Usar premium_item_id para verificar o item específico
-          .gte('expires_at', new Date().toISOString())
-          .maybeSingle();
-
-        if (checkError && checkError.code !== 'PGRST116') {
-          console.error('❌ Erro ao verificar boost:', checkError);
-          throw new Error(`Erro ao verificar boost: ${checkError.message}`);
-        }
-
-        if (existingBoost) {
-          const expiresAt = new Date(existingBoost.expires_at);
-          toast({
-            variant: 'destructive',
-            title: 'Boost Ativo',
-            description: `Você já possui este boost ativo até ${expiresAt.toLocaleString('pt-BR')}`,
-          });
-          setIsLoading(false);
-          return;
-        }
-      }
-
-      // ✅ 3. Descontar Clash Points
-      console.log('💸 Descontando Clash Points...');
-      const { error: updateError } = await supabase
-        .from('profiles')
-        .update({ clash_points: userProfile.clash_points - item.price_cp })
-        .eq('id', user.id);
-
-      if (updateError) {
-        console.error('❌ Erro ao descontar CP:', updateError);
-        throw new Error(`Erro ao descontar CP: ${updateError.message}`);
-      }
-
-      // ✅ 4. Preparar dados do inventário
-      const now = new Date();
-      const inventoryData: any = {
-        user_id: user.id,
-        item_id: crypto.randomUUID(), // ✅ UUID único para esta compra
-        premium_item_id: item.id, // ✅ FK para premium_items
-        item_type: item.item_type,
-        item_data: {
-          ...item.item_data,
-          name: item.name,
-          description: item.description,
-        },
-        quantity: null,
-        is_equipped: false,
-        acquired_at: now.toISOString(),
-      };
-
-      // ✅ 5. Calcular expires_at baseado no tipo
-      if (item.item_type === 'premium_pass') {
-        const durationDays = item.item_data?.duration_days || 30;
-        const expiresAt = new Date(now);
-        expiresAt.setDate(expiresAt.getDate() + durationDays);
-        inventoryData.expires_at = expiresAt.toISOString();
+    
+      setIsLoading(true);
+    
+      try {
+        // ✅ 1. VERIFICAR SE JÁ POSSUI ITEM DO MESMO TIPO ATIVO (APENAS PARA NÃO-STACKABLE)
         
-        inventoryData.item_data = {
-          name: item.name || 'Premium Pass - 30 Dias',
-          description: item.description || 'Acesso premium completo por 30 dias',
-          benefits: item.item_data?.benefits || {
-            mission_refreshes: 3,
-            max_jutsus_per_element: 5,
-            exclusive_weapons: true,
-            exclusive_summons: true,
-          },
-          duration_days: durationDays,
-          premium_item_id: item.id,
-        };
-      } 
-      else if (item.item_type === 'boost' || item.item_type === 'ryo_boost' || item.item_type === 'xp_boost') {
-        let durationInHours = 24;
-        
-        if (item.item_data?.duration_hours) {
-          durationInHours = item.item_data.duration_hours;
-        } else if (item.item_data?.duration_days) {
-          durationInHours = item.item_data.duration_days * 24;
+        // Para Premium Pass - só pode ter 1 ativo
+        if (item.item_type === 'premium_pass') {
+          const { data: existingPass, error: checkError } = await supabase
+            .from('user_premium_inventory')
+            .select('*')
+            .eq('user_id', user.id)
+            .eq('item_type', 'premium_pass')
+            .gte('expires_at', new Date().toISOString())
+            .maybeSingle();
+    
+          if (checkError && checkError.code !== 'PGRST116') {
+            throw new Error(`Erro ao verificar Premium Pass: ${checkError.message}`);
+          }
+    
+          if (existingPass) {
+            toast({
+              variant: 'destructive',
+              title: 'Premium Pass Ativo',
+              description: `Você já possui um Premium Pass ativo até ${new Date(existingPass.expires_at).toLocaleDateString('pt-BR')}`,
+            });
+            setIsLoading(false);
+            return;
+          }
         }
-        
-        const expiresAt = new Date(now);
-        expiresAt.setHours(expiresAt.getHours() + durationInHours);
-        inventoryData.expires_at = expiresAt.toISOString();
-        inventoryData.quantity = 1;
-      } 
-      else if (item.item_type === 'chakra_potion' || item.item_type === 'health_potion') {
-        const expiresAt = new Date(now);
-        expiresAt.setFullYear(expiresAt.getFullYear() + 10);
-        inventoryData.expires_at = expiresAt.toISOString();
-        inventoryData.quantity = 1;
-      }
-
-      // ✅ 6. Adicionar ao inventário
-      console.log('📦 Dados para inserir:', JSON.stringify(inventoryData, null, 2));
-
-      const { data: insertedData, error: inventoryError } = await supabase
-        .from('user_premium_inventory')
-        .insert(inventoryData)
-        .select();
-
-      console.log('✅ Dados inseridos:', insertedData);
-
-      if (inventoryError) {
-        console.error('❌ Erro ao adicionar ao inventário:', inventoryError);
-        console.error('📋 Detalhes completos:', JSON.stringify(inventoryError, null, 2));
-        
-        // ✅ Tentar reverter o desconto de CP
-        await supabase
+    
+        // Para XP Boost - só pode ter 1 ativo (qualquer um dos 3)
+        if (item.item_type === 'xp_boost') {
+          const { data: existingBoost, error: checkError } = await supabase
+            .from('user_premium_inventory')
+            .select('*')
+            .eq('user_id', user.id)
+            .eq('item_type', 'xp_boost')
+            .gte('expires_at', new Date().toISOString())
+            .maybeSingle();
+    
+          if (checkError && checkError.code !== 'PGRST116') {
+            throw new Error(`Erro ao verificar XP Boost: ${checkError.message}`);
+          }
+    
+          if (existingBoost) {
+            const expiresAt = new Date(existingBoost.expires_at);
+            toast({
+              variant: 'destructive',
+              title: 'XP Boost Ativo',
+              description: `Você já possui um Pergaminho de Sabedoria ativo até ${expiresAt.toLocaleString('pt-BR')}`,
+            });
+            setIsLoading(false);
+            return;
+          }
+        }
+    
+        // Para Ryo Boost - só pode ter 1 ativo (qualquer um dos 3)
+        if (item.item_type === 'ryo_boost') {
+          const { data: existingBoost, error: checkError } = await supabase
+            .from('user_premium_inventory')
+            .select('*')
+            .eq('user_id', user.id)
+            .eq('item_type', 'ryo_boost')
+            .gte('expires_at', new Date().toISOString())
+            .maybeSingle();
+    
+          if (checkError && checkError.code !== 'PGRST116') {
+            throw new Error(`Erro ao verificar Ryo Boost: ${checkError.message}`);
+          }
+    
+          if (existingBoost) {
+            const expiresAt = new Date(existingBoost.expires_at);
+            toast({
+              variant: 'destructive',
+              title: 'Ryo Boost Ativo',
+              description: `Você já possui uma Bolsa de Riqueza ativa até ${expiresAt.toLocaleString('pt-BR')}`,
+            });
+            setIsLoading(false);
+            return;
+          }
+        }
+    
+        // ✅ 2. Descontar Clash Points
+        const { error: updateError } = await supabase
           .from('profiles')
-          .update({ clash_points: userProfile.clash_points })
+          .update({ clash_points: userProfile.clash_points - item.price_cp })
           .eq('id', user.id);
-        
-        throw new Error(`Erro ao adicionar ao inventário: ${inventoryError.message || JSON.stringify(inventoryError)}`);
-      }
-
-      // ✅ 7. Registrar compra
-      console.log('📝 Registrando compra...');
-      const { error: purchaseError } = await supabase
-        .from('premium_purchases')
-        .insert({
+    
+        if (updateError) throw new Error(`Erro ao descontar CP: ${updateError.message}`);
+    
+        // ✅ 3. Preparar dados do inventário
+        const now = new Date();
+        const isStackable = item.item_data?.stackable === true;
+    
+        // 🆕 VERIFICAR SE JÁ EXISTE ITEM STACKABLE DO MESMO TIPO
+        if (isStackable && (item.item_type === 'chakra_potion' || item.item_type === 'health_potion')) {
+          const { data: existingItem, error: findError } = await supabase
+            .from('user_premium_inventory')
+            .select('*')
+            .eq('user_id', user.id)
+            .eq('premium_item_id', item.id)
+            .gte('expires_at', new Date().toISOString())
+            .maybeSingle();
+    
+          if (findError && findError.code !== 'PGRST116') {
+            throw new Error(`Erro ao buscar item existente: ${findError.message}`);
+          }
+    
+          if (existingItem) {
+            // ✅ INCREMENTAR QUANTIDADE DO ITEM EXISTENTE
+            const newQuantity = (existingItem.quantity || 1) + 1;
+            
+            const { error: updateItemError } = await supabase
+              .from('user_premium_inventory')
+              .update({ quantity: newQuantity })
+              .eq('id', existingItem.id);
+    
+            if (updateItemError) {
+              // Reverter desconto de CP
+              await supabase
+                .from('profiles')
+                .update({ clash_points: userProfile.clash_points })
+                .eq('id', user.id);
+              
+              throw new Error(`Erro ao atualizar quantidade: ${updateItemError.message}`);
+            }
+    
+            // ✅ Registrar compra e transação
+            await supabase.from('premium_purchases').insert({
+              user_id: user.id,
+              item_id: item.id,
+              item_name: item.name,
+              price_paid: item.price_cp,
+            });
+    
+            await supabase.from('cp_transactions').insert({
+              user_id: user.id,
+              amount: -item.price_cp,
+              transaction_type: 'purchase',
+              description: `Compra: ${item.name}`,
+            });
+    
+            toast({
+              title: '✅ Compra Realizada!',
+              description: `${item.name} adicionado! Quantidade total: ${newQuantity}`,
+            });
+    
+            setTimeout(() => window.location.reload(), 1000);
+            setIsLoading(false);
+            return;
+          }
+        }
+    
+        // ✅ 4. CRIAR NOVO ITEM NO INVENTÁRIO
+        const inventoryData: any = {
+          user_id: user.id,
+          item_id: crypto.randomUUID(),
+          premium_item_id: item.id,
+          item_type: item.item_type,
+          item_data: {
+            ...item.item_data,
+            name: item.name,
+            description: item.description,
+          },
+          quantity: 1,
+          is_equipped: false,
+          acquired_at: now.toISOString(),
+        };
+    
+        // ✅ 5. Calcular expires_at baseado no tipo
+        if (item.item_type === 'premium_pass') {
+          const durationDays = item.item_data?.duration_days || 30;
+          const expiresAt = new Date(now);
+          expiresAt.setDate(expiresAt.getDate() + durationDays);
+          inventoryData.expires_at = expiresAt.toISOString();
+          inventoryData.quantity = null;
+          
+          inventoryData.item_data = {
+            name: item.name,
+            description: item.description,
+            benefits: [
+              "3x atualizações de missões",
+              "5 jutsus por elemento",
+              "Armas exclusivas",
+              "Equipamentos exclusivos"
+            ],
+            duration_days: durationDays,
+          };
+        } 
+        else if (item.item_type === 'xp_boost' || item.item_type === 'ryo_boost') {
+          const durationDays = item.item_data?.duration_days || 1;
+          const expiresAt = new Date(now);
+          expiresAt.setDate(expiresAt.getDate() + durationDays);
+          inventoryData.expires_at = expiresAt.toISOString();
+        } 
+        else if (item.item_type === 'chakra_potion' || item.item_type === 'health_potion') {
+          const expiresAt = new Date(now);
+          expiresAt.setFullYear(expiresAt.getFullYear() + 10);
+          inventoryData.expires_at = expiresAt.toISOString();
+        }
+    
+        // ✅ 6. Adicionar ao inventário
+        const { error: inventoryError } = await supabase
+          .from('user_premium_inventory')
+          .insert(inventoryData);
+    
+        if (inventoryError) {
+          // Reverter desconto de CP
+          await supabase
+            .from('profiles')
+            .update({ clash_points: userProfile.clash_points })
+            .eq('id', user.id);
+          
+          throw new Error(`Erro ao adicionar ao inventário: ${inventoryError.message}`);
+        }
+    
+        // ✅ 7. Registrar compra
+        await supabase.from('premium_purchases').insert({
           user_id: user.id,
           item_id: item.id,
           item_name: item.name,
           price_paid: item.price_cp,
         });
-
-      if (purchaseError) {
-        console.warn('⚠️ Erro ao registrar compra (não crítico):', purchaseError);
-      }
-
-      // ✅ 8. Registrar transação
-      console.log('💳 Registrando transação...');
-      const { error: transactionError } = await supabase
-        .from('cp_transactions')
-        .insert({
+    
+        // ✅ 8. Registrar transação
+        await supabase.from('cp_transactions').insert({
           user_id: user.id,
           amount: -item.price_cp,
           transaction_type: 'purchase',
           description: `Compra: ${item.name}`,
         });
-
-      if (transactionError) {
-        console.warn('⚠️ Erro ao registrar transação (não crítico):', transactionError);
+    
+        toast({
+          title: '✅ Compra Realizada!',
+          description: `${item.name} foi adicionado ao seu inventário!`,
+        });
+    
+        setTimeout(() => window.location.reload(), 1000);
+        
+      } catch (error: any) {
+        console.error('❌ Erro ao comprar item:', error);
+        
+        toast({
+          variant: 'destructive',
+          title: 'Erro na compra',
+          description: error?.message || 'Ocorreu um erro desconhecido.',
+        });
+      } finally {
+        setIsLoading(false);
       }
-
-      console.log('✅ Compra realizada com sucesso!');
-      toast({
-        title: '✅ Compra Realizada!',
-        description: `${item.name} foi adicionado ao seu inventário!`,
-      });
-
-      setTimeout(() => window.location.reload(), 1000);
-      
-    } catch (error: any) {
-      console.error('❌ Erro ao comprar item:', error);
-      console.error('📋 Detalhes do erro:', {
-        message: error?.message,
-        code: error?.code,
-        details: error?.details,
-        hint: error?.hint,
-        full: error,
-      });
-      
-      toast({
-        variant: 'destructive',
-        title: 'Erro na compra',
-        description: error?.message || 'Ocorreu um erro desconhecido. Tente novamente.',
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    };
 
   if (!user || !userProfile) {
     return (
@@ -359,38 +382,53 @@ export default function MercadoPremiumPage() {
         ) : filteredItems && filteredItems.length > 0 ? (
           filteredItems.map(item => (
             <Card 
-              key={item.id} 
-              className="hover:shadow-xl hover:shadow-orange-500/20 transition-all bg-gradient-to-br from-gray-900 to-gray-800 border-orange-500/30"
-            >
-              <CardHeader>
-                <div className="flex justify-between items-start">
-                  <CardTitle className="text-lg text-orange-400">{item.name}</CardTitle>
-                  <Badge className="bg-orange-500">{item.category}</Badge>
-                </div>
-                <CardDescription className="text-gray-400">{item.description}</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-2xl font-bold text-yellow-500">
-                    💎 {item.price_cp} CP
-                  </span>
-                  <Button
-                    onClick={() => handlePurchase(item)}
-                    disabled={isLoading || userProfile.clash_points < item.price_cp}
-                    className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700"
-                  >
-                    {isLoading ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <>
-                        <ShoppingCart className="mr-2 h-4 w-4" />
-                        Comprar
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+  key={item.id} 
+  className="hover:shadow-xl hover:shadow-orange-500/20 transition-all bg-gradient-to-br from-gray-900 to-gray-800 border-orange-500/30 flex flex-col min-h-[320px]" // 👈 min-h-[320px] para cards maiores
+>
+  <CardHeader className="flex-grow pb-2"> {/* 👈 pb-2 para reduzir espaço */}
+    <div className="flex justify-between items-start gap-2 mb-3">
+      <CardTitle className="text-xl text-orange-400 leading-tight"> {/* 👈 text-xl e sem line-clamp */}
+        {item.name}
+      </CardTitle>
+      <Badge className="bg-orange-500 shrink-0 text-xs">{item.category}</Badge>
+    </div>
+    <CardDescription className="text-gray-400 text-sm leading-relaxed"> {/* 👈 sem line-clamp, leading-relaxed */}
+      {item.description}
+    </CardDescription>
+  </CardHeader>
+  
+  <CardContent className="space-y-3 mt-auto pt-4"> {/* 👈 space-y-3 e pt-4 */}
+    {/* Preço */}
+    <div className="text-center pb-2 border-b border-orange-500/20">
+      <span className="text-3xl font-bold text-yellow-500"> {/* 👈 text-3xl para destaque */}
+        💎 {item.price_cp} CP
+      </span>
+    </div>
+    
+    {/* Informação de quantidade (se aplicável) */}
+    {item.item_data?.stackable && (
+      <div className="text-center text-sm text-gray-400">
+        ✨ Item empilhável
+      </div>
+    )}
+    
+    {/* Botão de Comprar */}
+    <Button
+      onClick={() => handlePurchase(item)}
+      disabled={isLoading || userProfile.clash_points < item.price_cp}
+      className="w-full bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 h-12 text-base font-semibold" // 👈 w-full, h-12, text-base
+    >
+      {isLoading ? (
+        <Loader2 className="h-5 w-5 animate-spin" />
+      ) : (
+        <>
+          <ShoppingCart className="mr-2 h-5 w-5" />
+          Comprar
+        </>
+      )}
+    </Button>
+  </CardContent>
+</Card>
           ))
         ) : (
           <div className="col-span-full text-center py-12 text-gray-400">
