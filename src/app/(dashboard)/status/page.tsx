@@ -2734,6 +2734,147 @@ const BattleReportModal = () => {
     </div>
   </div>
 )}
+{/* 🆕 SEÇÃO DE ARMA EQUIPADA */}
+<div className="mt-6 border-t pt-6">
+  <h3 className="mb-4 text-lg font-semibold text-center flex items-center justify-center gap-2">
+    <Swords className="h-5 w-5 text-orange-500" />
+    Arma Equipada
+  </h3>
+  <div className="flex justify-center">
+    {equippedWeapon ? (
+      <Card className="w-full max-w-sm flex flex-col items-center p-4 border-orange-500/50 bg-gradient-to-br from-orange-500/10 to-red-500/5">
+        <div className="relative w-24 h-24 mb-4 rounded-md overflow-hidden bg-black/20">
+          <Image 
+            src={equippedWeapon.imageUrl} 
+            alt={equippedWeapon.name}
+            fill
+            className="object-contain"
+            unoptimized
+          />
+        </div>
+        <CardTitle className="text-xl mb-2 text-center text-orange-400">
+          {equippedWeapon.name}
+        </CardTitle>
+        <CardDescription className="text-center mb-4">
+          {equippedWeapon.description}
+        </CardDescription>
+        <CardContent className="w-full p-0 mt-2 space-y-1">
+          <h4 className="font-semibold text-sm mb-2 text-center text-orange-400">Bônus de Atributos</h4>
+          {Object.entries(equippedWeapon.buffs).map(([stat, value]) => (
+            value !== 0 && (
+              <div key={stat} className="flex justify-between items-center text-sm">
+                <span className="text-muted-foreground capitalize">{stat}:</span>
+                <span className={cn("font-semibold", value > 0 ? "text-green-400" : "text-red-500")}>
+                  {value > 0 ? '+' : ''}{value}
+                </span>
+              </div>
+            )
+          ))}
+        </CardContent>
+        <Button asChild className="w-full mt-4" variant="outline">
+          <Link href="/weapons">
+            Trocar Arma
+          </Link>
+        </Button>
+      </Card>
+    ) : (
+      <Card className="w-full max-w-sm flex flex-col items-center p-6 border-dashed border-2">
+        <Swords className="h-12 w-12 text-muted-foreground mb-4" />
+        <p className="text-center text-muted-foreground mb-4">
+          Nenhuma arma equipada.
+        </p>
+        <Button asChild className="mt-4" size="sm">
+          <Link href="/weapons">
+            Equipar Arma
+          </Link>
+        </Button>
+      </Card>
+    )}
+  </div>
+</div>
+
+{/* 🆕 SEÇÃO DE INVOCAÇÃO */}
+<div className="mt-6 border-t pt-6">
+  <h3 className="mb-4 text-lg font-semibold text-center flex items-center justify-center gap-2">
+    <Footprints className="h-5 w-5 text-purple-500" />
+    Animal de Invocação
+  </h3>
+  <div className="flex justify-center">
+    {equippedSummon ? (
+      <Card className="w-full max-w-sm flex flex-col items-center p-4 border-purple-500/50 bg-gradient-to-br from-purple-500/10 to-indigo-500/5">
+        <div className="relative w-24 h-24 mb-4 rounded-md overflow-hidden bg-black/20">
+          <Image 
+            src={equippedSummon.imageUrl} 
+            alt={equippedSummon.name}
+            fill
+            className="object-contain"
+            unoptimized
+          />
+        </div>
+        <CardTitle className="text-xl mb-2 text-center text-purple-400 flex items-center gap-2">
+          {equippedSummon.name}
+          <Badge variant="secondary" className="text-xs">
+            Nv. {userProfile.summon_level || 1}
+          </Badge>
+        </CardTitle>
+        <CardDescription className="text-center mb-4">
+          {equippedSummon.description}
+        </CardDescription>
+        <CardContent className="w-full p-0 mt-2 space-y-1">
+          <h4 className="font-semibold text-sm mb-2 text-center text-purple-400">Bônus de Atributos</h4>
+          {Object.entries(equippedSummon.buffs).map(([stat, baseValue]) => {
+            const trainedStat = userProfile.summon_trained_stat;
+            const summonLevel = userProfile.summon_level || 1;
+            const bonus = (trainedStat === stat && summonLevel > 1) 
+              ? ((summonLevel - 1) * TRAINING_BONUS_PER_LEVEL) 
+              : 0;
+            const finalValue = baseValue + bonus;
+            
+            return finalValue !== 0 && (
+              <div key={stat} className="flex justify-between items-center text-sm">
+                <span className={cn(
+                  "capitalize",
+                  trainedStat === stat ? "text-orange-400 font-bold" : "text-muted-foreground"
+                )}>
+                  {stat} {trainedStat === stat && '⭐'}
+                </span>
+                <span className={cn("font-semibold", finalValue > 0 ? "text-green-400" : "text-red-500")}>
+                  {finalValue > 0 ? '+' : ''}{finalValue}
+                  {bonus > 0 && <span className="text-xs text-orange-400 ml-1">(+{bonus})</span>}
+                </span>
+              </div>
+            );
+          })}
+        </CardContent>
+        {userProfile.summon_trained_stat && (
+          <div className="w-full mt-3 p-2 bg-orange-500/10 rounded-md border border-orange-500/20">
+            <p className="text-xs text-center">
+              <span className="font-bold text-orange-400 capitalize">{userProfile.summon_trained_stat}</span> em treinamento
+            </p>
+          </div>
+        )}
+        <Button asChild className="w-full mt-4" variant="outline">
+          <Link href="/summons">
+            Gerenciar Invocação
+          </Link>
+        </Button>
+      </Card>
+    ) : (
+      <Card className="w-full max-w-sm flex flex-col items-center p-6 border-dashed border-2">
+        <Footprints className="h-12 w-12 text-muted-foreground mb-4" />
+        <p className="text-center text-muted-foreground mb-4">
+          Nenhuma invocação contratada.
+        </p>
+        <Button asChild className="mt-4" size="sm">
+          <Link href="/summons">
+            Formar Contrato
+          </Link>
+        </Button>
+      </Card>
+    )}
+  </div>
+</div>
+
 {/* Seção de Dōjutsu */}
 <div className="mt-6 border-t pt-6">
   <h3 className="mb-4 text-lg font-semibold text-center">Dōjutsu</h3>
