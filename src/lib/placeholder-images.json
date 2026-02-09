@@ -1706,27 +1706,27 @@
   "doujutsuImages": [
     {
       "id": "Sharingan",
-      "imageUrl": "https://i.imgur.com/0ziZPEt.gif"
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto/Doujutsus/sharingan.png"
     },
     {
       "id": "Mangekyō Sharingan",
-      "imageUrl": "https://i.giphy.com/media/v1.Y2lkPTc5MGI3NjExYTlwZzFzeWl5ZGI5eDR4dGNpZmdudnBsc3hvbzFzaHNkZGcyY2Z6aiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/CePT9ywqtEgyQ/giphy.gif"
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto/Doujutsus/mangekeyo.png"
     },
     {
       "id": "Rinnegan",
-      "imageUrl": "https://res.cloudinary.com/dqojdkhig/image/upload/v1768229250/rinegan_jiyhjw.gif"
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto/Doujutsus/rinnegan.png"
     },
     {
       "id": "Byakugan",
-      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/naruto-players-2-0.appspot.com/o/doujutsu%2Fbyakugan.svg?alt=media&token=1df1e159-5778-4339-a9a7-47b2c04b8682"
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto/doujutsu2/byakugan.png"
     },
     {
       "id": "Tenseigan",
-      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/naruto-players-2-0.appspot.com/o/doujutsu%2Ftenseigan.svg?alt=media&token=b7337c76-3c2b-4228-a405-e405e3f42c2f"
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto/doujutsu2/teseigan.png"
     },
     {
       "id": "Jōgan",
-      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/naruto-players-2-0.appspot.com/o/doujutsu%2Fjogan.svg?alt=media&token=b7e71c99-79f9-4d6d-8848-f6a6237885b7"
+      "imageUrl": "https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto/doujutsu2/jogan.png"
     }
   ],
   "summonImages": [

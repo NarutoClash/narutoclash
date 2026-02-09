@@ -89,6 +89,28 @@ export default function CreateCharacterPage() {
     setIsSubmitting(true);
     
     try {
+      // ✅ VERIFICAR SE O NOME JÁ EXISTE NO BANCO DE DADOS
+      const { data: existingProfiles, error: checkError } = await supabase
+        .from('profiles')
+        .select('name')
+        .ilike('name', values.name) // Case-insensitive
+        .limit(1);
+
+      if (checkError) {
+        throw new Error('Erro ao verificar disponibilidade do nome.');
+      }
+
+      if (existingProfiles && existingProfiles.length > 0) {
+        toast({
+          variant: "destructive",
+          title: "Nome já existe!",
+          description: `O nome "${values.name}" já está sendo usado. Por favor, escolha outro nome.`,
+        });
+        setIsSubmitting(false);
+        return;
+      }
+
+      // ✅ NOME DISPONÍVEL - PROSSEGUIR COM CRIAÇÃO
       const initialProfileData = {
         id: user.id,
         name: values.name,
@@ -109,7 +131,6 @@ export default function CreateCharacterPage() {
         current_chakra: 150,
         max_chakra: 150,
         ryo: 1000,
-        // Inicializando objetos JSONB vazios conforme o seu SQL
         element_levels: {},
         element_experience: {},
         jutsus: {},
@@ -136,10 +157,8 @@ export default function CreateCharacterPage() {
           description: `Bem-vindo, ${values.name}! Sua jornada começou.`,
       });
 
-      // Força o sistema a revalidar os dados do perfil
       router.refresh();
       
-      // Pequeno delay para garantir sincronia do banco antes de mudar de página
       setTimeout(() => {
         router.push('/status');
       }, 800);

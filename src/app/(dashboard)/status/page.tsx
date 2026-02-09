@@ -33,6 +33,7 @@ import { missionsData } from '@/lib/missions-data';
 import { useActiveMission } from '@/hooks/use-active-mission';
 import { doujutsuData } from '@/lib/dojutsu-data';
 import { doujutsuImages } from '@/lib/dojutsu-images';
+import { ShieldQuestion } from 'lucide-react';
 import { ichirakuMenu, IchirakuItem } from '@/lib/ichiraku-data';
 import { weaponsData, type Weapon } from '@/lib/weapons-data';
 import { summonsData, type Summon, TRAINING_BONUS_PER_LEVEL } from '@/lib/summons-data';
@@ -339,6 +340,12 @@ const elementIconMap: { [key: string]: LucideIcon } = {
 };
 
 const allElements = ['Katon', 'Futon', 'Raiton', 'Doton', 'Suiton'];
+
+// 🆕 ADICIONAR ESTAS LINHAS
+const SEAL_IMAGES = {
+  level1: 'https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto/Selo/selo1.png',
+  level2: 'https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto/Selo/selo3%20.png',
+};
 
 const formatDuration = (totalSeconds: number) => {
     if (totalSeconds < 0) totalSeconds = 0;
@@ -1442,21 +1449,49 @@ const handleCloseBattleReport = async () => {
   
 
   const handleActivateSeal = () => {
-      if (!userProfileRef || sealData?.level === 0 || isSealCurrentlyActive || sealCooldownRemaining > 0 || !supabase) return;
+    if (!userProfileRef || sealData?.level === 0 || sealCooldownRemaining > 0 || !supabase) return;
+    
+    // Se está ativo, desativa
+    if (isSealCurrentlyActive) {
+      updateDocumentNonBlocking(userProfileRef, {
+        cursed_seal: {
+          ...userProfile?.cursed_seal,
+          isActive: false,
+          activationTime: null,
+          cooldownUntil: Date.now() + SEAL_COOLDOWN,
+        },
+      }, supabase);
       
-       updateDocumentNonBlocking(userProfileRef, {
+      toast({
+        title: 'Selo Amaldiçoado Desativado',
+        description: 'O poder sombrio recua. O selo entrou em cooldown.',
+      });
+      
+      setTimeout(() => {
+        window.location.reload();
+      }, 1500);
+      
+    } else {
+      // Se está inativo, ativa
+      updateDocumentNonBlocking(userProfileRef, {
         cursed_seal: {
           ...userProfile?.cursed_seal,
           isActive: true,
           activationTime: Date.now(),
         },
       }, supabase);
+      
       toast({
         title: 'Selo Amaldiçoado Ativado!',
         description: 'Você sente o poder sombrio fluindo...',
         variant: 'destructive'
       });
-  };
+      
+      setTimeout(() => {
+        window.location.reload();
+      }, 1500);
+    }
+};
 
   const handleCompleteMission = async () => {
     if (!userProfile || !activeMissionDetails || !userProfileRef || !supabase) return;
@@ -2771,10 +2806,18 @@ const BattleReportModal = () => {
             )
           ))}
         </CardContent>
-        <Button asChild className="w-full mt-4" variant="outline">
-          <Link href="/weapons">
-            Trocar Arma
-          </Link>
+        <Button 
+          className="w-full mt-4" 
+          variant={isSealCurrentlyActive ? "destructive" : "default"}
+          onClick={handleActivateSeal}
+          disabled={sealCooldownRemaining > 0}
+        >
+          {isSealCurrentlyActive 
+            ? "Desativar Selo" 
+            : sealCooldownRemaining > 0 
+              ? `Cooldown: ${Math.ceil(sealCooldownRemaining / (60 * 1000))} min`
+              : "Ativar Selo"
+          }
         </Button>
       </Card>
     ) : (
@@ -2928,6 +2971,96 @@ const BattleReportModal = () => {
         <Button asChild className="mt-4" size="sm">
           <Link href="/doujutsu">
             Despertar Poder
+          </Link>
+        </Button>
+      </Card>
+    )}
+  </div>
+</div>
+
+{/* 🆕 SEÇÃO DO SELO AMALDIÇOADO */}
+<div className="mt-6 border-t pt-6">
+  <h3 className="mb-4 text-lg font-semibold text-center flex items-center justify-center gap-2">
+    <ShieldQuestion className="h-5 w-5 text-red-500" />
+    Selo Amaldiçoado
+  </h3>
+  <div className="flex justify-center">
+    {sealLevel > 0 ? (
+      <Card className="w-full max-w-sm flex flex-col items-center p-4 border-red-500/50 bg-gradient-to-br from-red-500/10 to-purple-500/5">
+        <div className="w-32 h-32 mb-4 flex items-center justify-center">
+          <img 
+            src={sealLevel === 1 ? SEAL_IMAGES.level1 : SEAL_IMAGES.level2}
+            alt={`Selo Amaldiçoado Nível ${sealLevel}`}
+            className="w-full h-full object-contain"
+          />
+        </div>
+        <CardTitle className="text-xl mb-2 text-center text-red-400 flex items-center gap-2">
+          Selo Nível {sealLevel}
+          {isSealCurrentlyActive && (
+            <Badge variant="destructive" className="text-xs animate-pulse">
+              ATIVO
+            </Badge>
+          )}
+        </CardTitle>
+        <CardDescription className="text-center mb-4">
+          {sealLevel === 1 ? 'Primeiro estágio do selo amaldiçoado' : 'Transformação completa do selo'}
+        </CardDescription>
+        <CardContent className="w-full p-0 mt-2 space-y-1">
+          <h4 className="font-semibold text-sm mb-2 text-center text-red-400">
+            {isSealCurrentlyActive ? 'Efeitos Ativos' : 'Efeitos (quando ativo)'}
+          </h4>
+          {sealLevel === 1 ? (
+            <>
+              <StatBuffDisplay label="Ninjutsu" value="+20%" />
+              <StatBuffDisplay label="Taijutsu" value="+20%" />
+              <StatBuffDisplay label="Selo" value="+15%" />
+              <div className="flex justify-between items-center text-sm">
+                <span className="text-muted-foreground">Vida Máxima</span>
+                <span className="font-semibold text-red-500">-15%</span>
+              </div>
+            </>
+          ) : (
+            <>
+              <StatBuffDisplay label="Ninjutsu" value="+40%" />
+              <StatBuffDisplay label="Taijutsu" value="+40%" />
+              <StatBuffDisplay label="Selo" value="+30%" />
+              <div className="flex justify-between items-center text-sm">
+                <span className="text-muted-foreground">Vida Máxima</span>
+                <span className="font-semibold text-red-500">-30%</span>
+              </div>
+            </>
+          )}
+        </CardContent>
+        {isSealCurrentlyActive && (
+          <div className="w-full mt-3 p-2 bg-red-500/10 rounded-md border border-red-500/20">
+            <p className="text-xs text-center text-red-400 font-bold">
+              ⚠️ Poder sombrio ativo
+            </p>
+          </div>
+        )}
+        <Button 
+          className="w-full mt-4" 
+          variant={isSealCurrentlyActive ? "destructive" : "default"}
+          onClick={handleActivateSeal}
+          disabled={sealCooldownRemaining > 0}
+        >
+          {isSealCurrentlyActive 
+            ? "Desativar Selo" 
+            : sealCooldownRemaining > 0 
+              ? `Cooldown: ${Math.ceil(sealCooldownRemaining / (60 * 1000))} min`
+              : "Ativar Selo"
+          }
+        </Button>
+      </Card>
+    ) : (
+      <Card className="w-full max-w-sm flex flex-col items-center p-6 border-dashed border-2">
+        <ShieldQuestion className="h-12 w-12 text-muted-foreground mb-4" />
+        <p className="text-center text-muted-foreground mb-4">
+          Nenhum selo amaldiçoado obtido.
+        </p>
+        <Button asChild className="mt-4" size="sm">
+          <Link href="/cursed-seal">
+            Buscar Poder
           </Link>
         </Button>
       </Card>
