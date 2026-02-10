@@ -21,7 +21,7 @@ export const JUTSUS_BY_ELEMENT: Record<Element, readonly string[]> = {
   ],
   Suiton: [
     'Suiton: Bakusui Shōha',
-    'Suiton: Daibaku no Jutsu',
+    'Suiton: Daibaku no Jutsu no Jutsu',  // ✅ JÁ ESTÁ CORRETO
     'Suiton: Goshokuzame',
     'Suiton: Suijinheki',
     'Suiton: Suiryūdan no Jutsu',

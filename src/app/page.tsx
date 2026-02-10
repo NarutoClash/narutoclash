@@ -104,7 +104,7 @@ export default function LandingPage() {
         <header className="border-b border-orange-500/20 backdrop-blur-sm bg-black/50 fixed top-0 left-0 lg:left-64 xl:left-80 right-0 lg:right-64 xl:right-80 z-50">
           <div className="px-2 py-4 flex justify-center">
             <img 
-              src="https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto/Telas/nome%20site.png"
+              src="https://i.ibb.co/HL5XbjTV/nome-site.png"
               alt="Naruto Clash"
               className="h-32 md:h-40 lg:h-48 w-auto object-contain"
             />

@@ -1,36 +1,36 @@
 export const JUTSU_GIFS: Record<string, string> = {
   // ===== KATON (FOGO) =====
-  'Katon: Endan': 'https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto/Jutsus/Katon%20Endan.gif',
-  'Katon: Gōkakyū no Jutsu': 'https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto/Jutsus/Katon%20Gokakyu%20no%20Jutsu.gif',
-  'Katon: Gōryūka no Jutsu': 'https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto/Jutsus/Katon%20Goryuka%20no%20Jutsu.gif',
-  'Katon: Haisekishō': 'https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto/Jutsus/Katon%20Haisekisho.gif',
-  'Katon: Hōsenka no Jutsu': 'https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto/Jutsus/Katon%20Hosenka%20no%20Jutsu.gif',
+  'Katon: Endan': 'https://i.ibb.co/mFGBv8kF/Katon-Endan.gif',
+  'Katon: Gōkakyū no Jutsu': 'https://i.ibb.co/cSy2CQkV/Katon-Gokakyu-no-Jutsu.gif',
+  'Katon: Gōryūka no Jutsu': 'https://i.ibb.co/nsmxQzd4/Katon-Goryuka-no-Jutsu.gif',
+  'Katon: Haisekishō': 'https://i.ibb.co/xqGdWXfy/Katon-Haisekisho.gif',
+  'Katon: Hōsenka no Jutsu': 'https://i.ibb.co/VWY9LYX9/Katon-Hosenka-no-Jutsu.gif',
   
   // ===== SUITON (ÁGUA) =====
-  'Suiton: Bakusui Shōha': 'https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto/Jutsus/Suiton%20Bakusui%20Shoha.gif',
-  'Suiton: Daibaku no Jutsu': 'https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto/Jutsus/Suiton%20Daibaku%20no%20Jutsu.gif',
-  'Suiton: Goshokuzame': 'https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto/Jutsus/Suiton%20Goshokuzame.gif',
-  'Suiton: Suijinheki': 'https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto/Jutsus/Suiton%20Suijinheki%20.gif',
-  'Suiton: Suiryūdan no Jutsu': 'https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto/Jutsus/Suiton%20Suiryudan%20no%20Jutsu%20.gif',
+  'Suiton: Bakusui Shōha': 'https://i.ibb.co/LdCBydZW/Suiton-Bakusui-Shoha.gif',
+  'Suiton: Daibaku no Jutsu no Jutsu': 'https://res.cloudinary.com/dwvntw5un/image/upload/v1770758284/Suiton_Daibaku_no_Jutsu_kajcoj.gif',
+  'Suiton: Goshokuzame': 'https://i.ibb.co/DgbjWDHc/Suiton-Goshokuzame.gif',
+  'Suiton: Suijinheki': 'https://i.ibb.co/7tybjzK0/Suiton-Suijinheki.gif',
+  'Suiton: Suiryūdan no Jutsu': 'https://i.ibb.co/393McSvx/Suiton-Suiryudan-no-Jutsu.gif',
   
   // ===== RAITON (RAIO) =====
-  'Raiton: Senbon Chidori': 'https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Jutsus/Raiton%20Senbon%20Chidori.gif',
-  'Raiton: Raijū Tsuiga': 'https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Jutsus/Raiton%20Raiju%20Tsuiga.gif',
-  'Raiton: Liger Bomb': 'https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Jutsus/Raiton%20Liger%20Bomb.gif',
-  'Raiton: Kuroi Panther': 'https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Jutsus/Raiton%20Kuroi%20Panther.gif',
-  'Raiton: Kirin': 'https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Jutsus/Raiton%20Kirin.gif',
+  'Raiton: Senbon Chidori': 'https://i.ibb.co/5WMtt6vN/Raiton-Senbon-Chidori.gif',
+  'Raiton: Raijū Tsuiga': 'https://i.ibb.co/ymj2TVwb/Raiton-Raiju-Tsuiga.gif',
+  'Raiton: Liger Bomb': 'https://i.ibb.co/BKytqdCT/Raiton-Liger-Bomb.gif',
+  'Raiton: Kuroi Panther': 'https://i.ibb.co/zHfpg9RW/Raiton-Kuroi-Panther.gif',
+  'Raiton: Kirin': 'https://i.ibb.co/ks5Vn1m1/Raiton-Kirin.gif',
   
   // ===== FUTON (VENTO) =====
   'Futon: Atsugai': 'https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Jutsus/Futon%20%20Atsugai.gif',
-  'Futon: Daitoppa': 'https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Jutsus/Futon%20Daitoppa.gif',
-  'Futon: Shinkūha': 'https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Jutsus/Futon%20Shinkuha.gif',
-  'Futon: Rasenshuriken': 'https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Jutsus/Futon%20Rasenshuriken.gif',
-  'Futon: Shinkū Renpa': 'https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Jutsus/Futon%20ShinkuRenpa.gif',
+  'Futon: Daitoppa': 'https://i.ibb.co/TBGZLdKH/Futon-Daitoppa.gif',
+  'Futon: Shinkūha': 'https://i.ibb.co/9m431mhf/Futon-Shinkuha.gif',
+  'Futon: Rasenshuriken': 'https://i.ibb.co/Vc4GMQ39/Futon-Rasenshuriken.gif',
+  'Futon: Shinkū Renpa': 'https://i.ibb.co/SDcp5JTg/Futon-Shinku-Renpa.gif',
   
   // ===== DOTON (TERRA) =====
-  'Doton: Arijigoku': 'https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Jutsus/Doton%20Arijigoku.gif',
-  'Doton: Doryūtaiga': 'https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Jutsus/Doton%20Doryutaiga.gif',
-  'Doton: Doryūheki': 'https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Jutsus/Doton%20Doryuheki%20.gif',
-  'Doton: Sando': 'https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Jutsus/Doton%20Sando.gif',
-  'Doton: Doryūdan': 'https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto2/Jutsus/Doton%20Doryuudan.gif',
+  'Doton: Arijigoku': 'https://res.cloudinary.com/dwvntw5un/image/upload/v1770758281/Doton_Arijigoku_ispxsi.gif',
+  'Doton: Doryūtaiga': 'https://i.ibb.co/21WHf6MZ/Doton-Doryutaiga.gif',
+  'Doton: Doryūheki': 'https://i.ibb.co/4R3CGbRJ/Doton-Doryuheki.gif',
+  'Doton: Sando': 'https://i.ibb.co/prfp32zK/Doton-Sando.gif',
+  'Doton: Doryūdan': 'https://i.ibb.co/zWj73sRk/Doton-Doryuudan.gif',
 };

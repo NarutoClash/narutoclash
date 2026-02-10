@@ -84,7 +84,7 @@ export const allJutsus: {name: string, element: string, requiredLevel: number}[]
   
   // ===== SUITON (ÁGUA) =====
   { name: 'Suiton: Bakusui Shōha', element: 'Suiton', requiredLevel: 1 },
-  { name: 'Suiton: Daibaku no Jutsu', element: 'Suiton', requiredLevel: 4 },
+  { name: 'Suiton: Daibaku no Jutsu no Jutsu', element: 'Suiton', requiredLevel: 4 },
   { name: 'Suiton: Goshokuzame', element: 'Suiton', requiredLevel: 6 },
   { name: 'Suiton: Suijinheki', element: 'Suiton', requiredLevel: 8 },
   { name: 'Suiton: Suiryūdan no Jutsu', element: 'Suiton', requiredLevel: 10 },
@@ -395,13 +395,13 @@ const missionsDataRaw: Mission[] = [
   {
     id: 'medium-7',
     name: 'Tsunami Local',
-    description: 'Uma seca severa atingiu uma área agrícola. Use o Suiton: Daibaku no Jutsu para criar uma onda controlada e irrigar os campos.',
+    description: 'Uma seca severa atingiu uma área agrícola. Use o Suiton: Daibaku no Jutsu no Jutsu para criar uma onda controlada e irrigar os campos.',
     difficulty: 'Média',
     requiredLevel: 12,
     durationSeconds: 7800,
     ryoReward: 360,
     experienceReward: 620,
-    jutsuExperienceReward: { jutsuName: 'Suiton: Daibaku no Jutsu', xp: 75 },
+    jutsuExperienceReward: { jutsuName: 'Suiton: Daibaku no Jutsu no Jutsu', xp: 75 },
   },
   {
     id: 'medium-8',
@@ -1963,7 +1963,7 @@ const missionsDataRaw: Mission[] = [
     experienceReward: 7300,
     jutsuExperienceReward: { jutsuName: 'Suiton: Suiryūdan', xp: 260 }
   },
-  // Suiton: Daibaku
+  // Suiton: Daibaku no Jutsu
   {
     id: 'easy-daibakufu-1',
     name: 'Criando Corredeiras',
@@ -1973,7 +1973,7 @@ const missionsDataRaw: Mission[] = [
     durationSeconds: 2300,
     ryoReward: 220,
     experienceReward: 310,
-    jutsuExperienceReward: { jutsuName: 'Suiton: Daibaku', xp: 60 }
+    jutsuExperienceReward: { jutsuName: 'Suiton: Daibaku no Jutsu', xp: 60 }
   },
   {
     id: 'easy-daibakufu-2',
@@ -1984,7 +1984,7 @@ const missionsDataRaw: Mission[] = [
     durationSeconds: 3400,
     ryoReward: 280,
     experienceReward: 380,
-    jutsuExperienceReward: { jutsuName: 'Suiton: Daibaku', xp: 65 }
+    jutsuExperienceReward: { jutsuName: 'Suiton: Daibaku no Jutsu', xp: 65 }
   },
   {
     id: 'medium-daibakufu-1',
@@ -1995,7 +1995,7 @@ const missionsDataRaw: Mission[] = [
     durationSeconds: 21000,
     ryoReward: 700,
     experienceReward: 1000,
-    jutsuExperienceReward: { jutsuName: 'Suiton: Daibaku', xp: 95 }
+    jutsuExperienceReward: { jutsuName: 'Suiton: Daibaku no Jutsu', xp: 95 }
   },
   {
     id: 'difficult-daibakufu-1',
@@ -2006,7 +2006,7 @@ const missionsDataRaw: Mission[] = [
     durationSeconds: 60000,
     ryoReward: 1800,
     experienceReward: 2500,
-    jutsuExperienceReward: { jutsuName: 'Suiton: Daibaku', xp: 160 }
+    jutsuExperienceReward: { jutsuName: 'Suiton: Daibaku no Jutsu', xp: 160 }
   },
   {
     id: 'heroic-daibakufu-1',
@@ -2017,7 +2017,7 @@ const missionsDataRaw: Mission[] = [
     durationSeconds: 172800,
     ryoReward: 8900,
     experienceReward: 8600,
-    jutsuExperienceReward: { jutsuName: 'Suiton: Daibaku', xp: 290 }
+    jutsuExperienceReward: { jutsuName: 'Suiton: Daibaku no Jutsu', xp: 290 }
   },
   // Suiton: Suijinheki
   {
