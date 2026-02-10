@@ -1,7 +1,7 @@
 export const elementImages = {
-    Suiton: 'https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto/Elementos/Agua.png',
-    Katon: 'https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto/Elementos/Fogo.png',
-    Raiton: 'https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto/Elementos/Raio.png',
-    Doton: 'https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto/Elementos/Terra.png',
-    Futon: 'https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto/Elementos/Vento.png',
-  };
+  Suiton: 'https://i.ibb.co/mV9zD42C/Agua.png',
+  Katon: 'https://i.ibb.co/whPCJGrf/Fogo.png',
+  Raiton: 'https://i.ibb.co/Q3q5Wc13/Raio.png',
+  Doton: 'https://i.ibb.co/Tx49xK5T/Terra.png',
+  Futon: 'https://i.ibb.co/Hf3hy15h/Vento.png',
+};

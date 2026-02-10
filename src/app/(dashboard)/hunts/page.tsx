@@ -32,6 +32,7 @@ import {
 } from '@/lib/battle-system';
 
 import { EQUIPMENT_DATA } from '@/lib/battle-system/equipment-data';
+import { useCollection } from '@/supabase';
 
 type BattleLogEntry = string | {
   turn: number;
@@ -45,7 +46,8 @@ type BattleLogEntry = string | {
   opponentHealth?: string;
 };
 
-const DAILY_HUNT_LIMIT_SECONDS = 3600; // 1 hour
+const DAILY_HUNT_LIMIT_SECONDS = 3600; // 1 hour (base)
+const DAILY_HUNT_LIMIT_SECONDS_VIP = 7200; // 2 hours (VIP)
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 const SEARCH_COOLDOWN_SECONDS = 10; // 10 segundos de cooldown
 
@@ -65,6 +67,23 @@ export default function HuntsPage() {
   }, [user]);
 
   const { data: userProfile, isLoading: isUserLoading } = useDoc(userProfileRef);
+
+// 🆕 BUSCAR PREMIUM PASS ATIVO
+const premiumPassQuery = useMemoSupabase(() => {
+  if (!user) return null;
+  return {
+    table: 'user_premium_inventory',
+    query: (builder: any) => 
+      builder
+        .eq('user_id', user.id)
+        .eq('item_type', 'premium_pass')
+        .gte('expires_at', new Date().toISOString())
+        .order('expires_at', { ascending: false })
+  };
+}, [user]);
+
+const { data: activePremiumPass } = useCollection(premiumPassQuery);
+const hasPremiumPass = activePremiumPass && activePremiumPass.length > 0;
 
   const [isSearching, setIsSearching] = useState(false);
   const [opponent, setOpponent] = useState<any | null>(null);
@@ -666,8 +685,9 @@ useEffect(() => {
   const handleCompleteHunt = async () => {
     if (!userProfileRef || !userProfile || !activeHunt || !supabase) return;
     
-    const ryoReward = Math.floor((activeHunt.duration / 60) * 20);
-    const xpReward = Math.floor((activeHunt.duration / 60) * 30);
+    // Recompensas fixas independente do tempo
+const ryoReward = 100;
+const xpReward = 10;
 
     try {
       const updatePayload: any = {
@@ -702,9 +722,15 @@ useEffect(() => {
     }
   };
 
-  const timeOptions = Array.from({ length: 12 }, (_, i) => (i + 1) * 5);
-  const dailyHuntTimeUsed = userProfile?.daily_hunt_time_used || 0;
-  const remainingHuntTime = Math.max(0, DAILY_HUNT_LIMIT_SECONDS - dailyHuntTimeUsed);
+  // 🆕 CALCULAR LIMITE BASEADO NO VIP
+const huntLimit = hasPremiumPass ? DAILY_HUNT_LIMIT_SECONDS_VIP : DAILY_HUNT_LIMIT_SECONDS;
+
+// 🆕 CALCULAR OPÇÕES DE TEMPO (12 slots para base, 24 para VIP)
+const maxSlots = hasPremiumPass ? 24 : 12;
+const timeOptions = Array.from({ length: maxSlots }, (_, i) => (i + 1) * 5);
+
+const dailyHuntTimeUsed = userProfile?.daily_hunt_time_used || 0;
+const remainingHuntTime = Math.max(0, huntLimit - dailyHuntTimeUsed);
   const isHuntComplete = activeHunt && huntTimeRemaining !== null && huntTimeRemaining <= 0;
 
   if (isUserLoading) {
@@ -889,10 +915,18 @@ useEffect(() => {
             <CardDescription>Envie seu personagem para caçar por um período. Você não poderá fazer outras ações durante este tempo.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="p-3 rounded-md border text-center">
-              <p className="text-sm text-muted-foreground">Tempo diário de caçada restante</p>
-              <p className="text-2xl font-bold text-primary">{Math.floor(remainingHuntTime/60)} minutos</p>
-            </div>
+          <div className="p-3 rounded-md border text-center">
+  <p className="text-sm text-muted-foreground">
+    Tempo diário de caçada restante
+    {hasPremiumPass && (
+      <span className="ml-2 text-xs font-bold text-yellow-500">⭐ VIP (120 min)</span>
+    )}
+  </p>
+  <p className="text-2xl font-bold text-primary">
+    {Math.floor(remainingHuntTime/60)} minutos
+  </p>
+</div>
+            
             <div className="space-y-2">
   <label className="text-sm font-medium">Selecione a duração</label>
   <Select value={huntDuration} onValueChange={setHuntDuration}>
@@ -914,8 +948,8 @@ useEffect(() => {
           <div className="flex items-center justify-between w-full gap-4">
             <span className="font-bold">{time} minutos</span>
             <span className="text-xs text-muted-foreground">
-              ({Math.floor((time * 20))} Ryo / {Math.floor((time * 30))} XP)
-            </span>
+  (100 Ryo / 10 XP)
+</span>
           </div>
         </SelectItem>
       ))}

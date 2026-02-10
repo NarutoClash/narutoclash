@@ -16,7 +16,7 @@ import {
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Plus, UserPlus, LucideIcon, Trash2, CheckCircle, ScrollText, Utensils, Swords, Footprints, Shirt, Hand, User, Loader2, Crown, Eye, Sparkles, Clock, Award, Coins, Star, X, Layers } from 'lucide-react';
+import { Plus, UserPlus, LucideIcon, Trash2, CheckCircle, ScrollText, Utensils, Swords, Footprints, Shirt, Hand, User, Loader2, Crown, Eye, Sparkles, Clock, Award, Coins, Star, X, Layers, Users,  } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
@@ -44,6 +44,10 @@ import { usePlayerRank } from '@/hooks/use-player-rank';
 import { calculateRank } from '@/lib/rank-calculator';
 import { Gift } from 'lucide-react'
 import { usePathname } from 'next/navigation';
+import { InviteSection } from '@/components/invite-section';
+import { StudentsList } from '@/components/students-list';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+
 
 
 const bossDrops = {
@@ -2440,9 +2444,11 @@ const BattleReportModal = () => {
     </Button>
   )}
   {isHuntComplete && (
-    <Button className="w-full" onClick={handleCompleteHunt}>
-      <CheckCircle className="mr-2 h-4 w-4" />
-      Concluir Caçada
+    <Button className="w-full" asChild>
+      <Link href="/hunts">
+        <CheckCircle className="mr-2 h-4 w-4" />
+        Concluir Caçada
+      </Link>
     </Button>
   )}
 </CardFooter>
@@ -2779,14 +2785,14 @@ const BattleReportModal = () => {
     {equippedWeapon ? (
       <Card className="w-full max-w-sm flex flex-col items-center p-4 border-orange-500/50 bg-gradient-to-br from-orange-500/10 to-red-500/5">
         <div className="relative w-24 h-24 mb-4 rounded-md overflow-hidden bg-black/20">
-          <Image 
-            src={equippedWeapon.imageUrl} 
-            alt={equippedWeapon.name}
-            fill
-            className="object-contain"
-            unoptimized
-          />
-        </div>
+  <Image 
+    src={equippedWeapon.imageUrl} 
+    alt={equippedWeapon.name}
+    fill
+    className="object-contain"
+    unoptimized
+  />
+</div>
         <CardTitle className="text-xl mb-2 text-center text-orange-400">
           {equippedWeapon.name}
         </CardTitle>
@@ -2806,18 +2812,11 @@ const BattleReportModal = () => {
             )
           ))}
         </CardContent>
-        <Button 
-          className="w-full mt-4" 
-          variant={isSealCurrentlyActive ? "destructive" : "default"}
-          onClick={handleActivateSeal}
-          disabled={sealCooldownRemaining > 0}
-        >
-          {isSealCurrentlyActive 
-            ? "Desativar Selo" 
-            : sealCooldownRemaining > 0 
-              ? `Cooldown: ${Math.ceil(sealCooldownRemaining / (60 * 1000))} min`
-              : "Ativar Selo"
-          }
+        {/* ✅ ADICIONAR ESTE BOTÃO */}
+        <Button asChild className="w-full mt-4" variant="outline">
+          <Link href="/weapons">
+            Gerenciar Arma
+          </Link>
         </Button>
       </Card>
     ) : (
@@ -3110,19 +3109,24 @@ const BattleReportModal = () => {
           </div>
 
           <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground pt-3 border-t">
-            <Clock className="h-4 w-4" />
-            <span>
-              Expira em: {(() => {
-                const expiresAt = new Date(premiumPassData.expires_at);
-                const now = new Date();
-                const timeRemaining = expiresAt.getTime() - now.getTime();
-                const daysRemaining = Math.floor(timeRemaining / (1000 * 60 * 60 * 24));
-                const hoursRemaining = Math.floor((timeRemaining % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-                
-                return `${daysRemaining}d ${hoursRemaining}h`;
-              })()}
-            </span>
-          </div>
+  <Clock className="h-4 w-4" />
+  <span>
+    Expira em: {(() => {
+      const expiresAt = new Date(premiumPassData.expires_at);
+      const now = new Date();
+      const timeRemaining = expiresAt.getTime() - now.getTime();
+      const daysRemaining = Math.floor(timeRemaining / (1000 * 60 * 60 * 24));
+      const hoursRemaining = Math.floor((timeRemaining % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      
+      // ✅ Mostrar apenas dias se for mais de 1 dia, senão mostrar horas
+      if (daysRemaining > 0) {
+        return `${daysRemaining} dia${daysRemaining > 1 ? 's' : ''}`;
+      } else {
+        return `${hoursRemaining} hora${hoursRemaining > 1 ? 's' : ''}`;
+      }
+    })()}
+  </span>
+</div>
 
           <div className="space-y-1">
             <Progress 
@@ -3435,7 +3439,43 @@ const BattleReportModal = () => {
   })()}
 </div>
 
-          </CardContent>
+</CardContent>
+        </Card>
+      </div>
+
+      {/* 🆕 SEÇÃO DE CONVITES E ALUNOS */}
+      <div className="mt-8">
+        <Card className="mx-auto max-w-4xl">
+          <Tabs defaultValue="invite" className="w-full">
+            <CardHeader className="border-b">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="invite" className="flex items-center gap-2">
+                  <Gift className="h-4 w-4" />
+                  Link de Convite
+                </TabsTrigger>
+                <TabsTrigger value="students" className="flex items-center gap-2">
+                  <Users className="h-4 w-4" />
+                  Meus Alunos ({userProfile.total_students || 0})
+                </TabsTrigger>
+              </TabsList>
+            </CardHeader>
+
+            <CardContent className="pt-6">
+              <TabsContent value="invite" className="mt-0">
+                <InviteSection 
+                  inviteCode={userProfile.invite_code || 'CARREGANDO'} 
+                  totalStudents={userProfile.total_students || 0}
+                />
+              </TabsContent>
+
+              <TabsContent value="students" className="mt-0">
+                <StudentsList 
+                  userId={user!.id}
+                  claimedRewards={userProfile.student_rewards_claimed || []}
+                />
+              </TabsContent>
+            </CardContent>
+          </Tabs>
         </Card>
       </div>
 

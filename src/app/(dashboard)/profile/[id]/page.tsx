@@ -12,7 +12,7 @@ import {
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Swords, ScrollText, Footprints, Shirt, Hand, Crown } from 'lucide-react';
+import { Loader2, Swords, ScrollText, Footprints, Shirt, Hand, Crown, Users } from 'lucide-react';
 import * as LucideIcons from 'lucide-react';
 import Image from 'next/image';
 import { useSupabase } from '@/supabase';
@@ -185,25 +185,35 @@ export default function ProfilePage() {
                 </div>
                 
                 <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 mt-3">
-                  <Badge variant="default" className="text-md">
-                    Nível {profile.level ?? 0}
-                  </Badge>
-                  <Badge variant="outline" className="text-md">
-                    {profile.village || 'Sem Vila'}
-                  </Badge>
-                  {!isRankLoading && (
-                    <Badge 
-                      variant={isKage ? "default" : "secondary"} 
-                      className={cn(
-                        "text-md font-semibold",
-                        isKage && "bg-gradient-to-r from-yellow-400 to-amber-600 text-white shadow-lg"
-                      )}
-                    >
-                      {isKage && <Crown className="h-3 w-3 mr-1" />}
-                      {playerRank}
-                    </Badge>
-                  )}
-                </div>
+  <Badge variant="default" className="text-md">
+    Nível {profile.level ?? 0}
+  </Badge>
+  <Badge variant="outline" className="text-md">
+    {profile.village || 'Sem Vila'}
+  </Badge>
+  {!isRankLoading && playerRank && (
+    <>
+      {/* Badge do Rank (sempre aparece) */}
+      <Badge 
+        variant="secondary"
+        className="text-md font-semibold"
+      >
+        {playerRank}
+      </Badge>
+      
+      {/* Badge de Kage (só aparece se for Kage) */}
+      {isKage && (
+        <Badge 
+          variant="default"
+          className="text-md font-semibold bg-gradient-to-r from-yellow-400 to-amber-600 text-white shadow-lg"
+        >
+          <Crown className="h-3 w-3 mr-1" />
+          Kage
+        </Badge>
+      )}
+    </>
+  )}
+</div>
               </div>
             </div>
           </CardHeader>
@@ -461,6 +471,26 @@ export default function ProfilePage() {
                     );
                   })}
                 </div>
+              </div>
+            )}
+
+            {/* 🆕 SEÇÃO DE ALUNOS (PÚBLICO - SÓ MOSTRA QUANTIDADE) */}
+            {(profile.total_students ?? 0) > 0 && (
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold border-b pb-2">Alunos</h3>
+                <Card className="p-4 bg-gradient-to-r from-purple-500/10 to-indigo-500/10 border-purple-500/20">
+                  <div className="flex items-center justify-center gap-4">
+                    <Users className="h-12 w-12 text-purple-500" />
+                    <div className="text-center">
+                      <p className="text-4xl font-bold text-purple-500">
+                        {profile.total_students}
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        Aluno{profile.total_students > 1 ? 's' : ''} Treinado{profile.total_students > 1 ? 's' : ''}
+                      </p>
+                    </div>
+                  </div>
+                </Card>
               </div>
             )}
           </CardContent>

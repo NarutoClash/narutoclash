@@ -8,17 +8,13 @@ export type BossData = {
 };
 
 export const bossesData: BossData[] = [
-  // ========================================
-  // TIER 1: BOSSES FRACOS (Nível 92-94)
-  // HP: 2M | Multiplicador: x9-10
-  // ========================================
   {
     id: 'zetsu',
     name: 'Zetsu',
     description: 'O espião da Akatsuki. Capaz de se fundir com o ambiente e criar clones, ele é um mestre da infiltração e da enganação.',
     totalHealth: 2000000,
     bossLevel: 92,
-    imageUrl: 'https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto/bosses/zetsu.png',
+    imageUrl: 'https://i.ibb.co/RTDbjJrX/zetsu.png',
   },
   {
     id: 'hidan',
@@ -26,20 +22,15 @@ export const bossesData: BossData[] = [
     description: 'O imortal seguidor de Jashin. Qualquer dano que ele recebe é transferido para sua vítima através de um ritual de maldição.',
     totalHealth: 2000000,
     bossLevel: 94,
-    imageUrl: 'https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto/bosses/hidan.png',
+    imageUrl: 'https://i.ibb.co/PzhBPzjQ/hidan.png',
   },
-
-  // ========================================
-  // TIER 2: BOSSES MÉDIOS (Nível 95-97)
-  // HP: 3M | Multiplicador: x9-10
-  // ========================================
   {
     id: 'konan',
     name: 'Konan',
     description: 'O "Anjo de Deus" da Akatsuki. Ela pode transformar seu corpo em incontáveis folhas de papel, criando ataques e defesas mortais.',
     totalHealth: 3000000,
     bossLevel: 95,
-    imageUrl: 'https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto/bosses/konan.png',
+    imageUrl: 'https://i.ibb.co/215L2g3t/konan.png',
   },
   {
     id: 'deidara',
@@ -47,165 +38,150 @@ export const bossesData: BossData[] = [
     description: 'O artista terrorista da Akatsuki. Sua argila explosiva toma várias formas, e sua arte final é uma explosão catastrófica.',
     totalHealth: 3000000,
     bossLevel: 96,
-    imageUrl: 'https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto/bosses/deidara.png',
+    imageUrl: 'https://i.ibb.co/KjgkHnf1/deidara.png',
   },
   {
     id: 'sasori',
     name: 'Sasori da Areia Vermelha',
-    description: 'Um mestre de marionetes que transformou a si mesmo em uma. Ele comanda centenas de marionetes humanas, cada uma com suas próprias técnicas.',
+    description: 'Um mestre de marionetes que transformou a si mesmo em uma.',
     totalHealth: 3000000,
     bossLevel: 96,
-    imageUrl: 'https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto/bosses/sasori.png',
+    imageUrl: 'https://i.ibb.co/zTnCMG0z/sasori.png',
   },
   {
     id: 'kisame',
     name: 'Kisame Hoshigaki',
-    description: 'A "Besta sem Cauda". Com sua espada Samehada, ele pode absorver chakra e fundir-se a ela, tornando-se um tubarão humano.',
+    description: 'A "Besta sem Cauda". Com sua espada Samehada, ele pode absorver chakra.',
     totalHealth: 3000000,
     bossLevel: 97,
-    imageUrl: 'https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto/bosses/kisame.png',
+    imageUrl: 'https://i.ibb.co/WvSbDJqM/kisame.png',
   },
   {
     id: 'tsunade',
     name: 'Tsunade (Quinta Hokage)',
-    description: 'Uma dos Sannin Lendários e a maior ninja médica do mundo. Sua força sobre-humana e a técnica de regeneração Byakugou a tornam uma oponente formidável.',
+    description: 'Uma dos Sannin Lendários e a maior ninja médica do mundo.',
     totalHealth: 3000000,
     bossLevel: 97,
-    imageUrl: 'https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto/bosses/tsunade.png',
+    imageUrl: 'https://i.ibb.co/Fp3qKBG/tsunade.png',
   },
   {
     id: 'mei',
     name: 'Mei Terumī (Quinta Mizukage)',
-    description: 'Mestra de duas Kekkei Genkai, Estilo Lava e Estilo Fervura, capaz de derreter qualquer defesa e preencher o campo de batalha com uma névoa ácida.',
+    description: 'Mestra de duas Kekkei Genkai.',
     totalHealth: 3000000,
     bossLevel: 97,
-    imageUrl: 'https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto/bosses/Mei_Terumi.png',
+    imageUrl: 'https://i.ibb.co/F4s3pNvv/Mei-Terumi.png',
   },
-
-  // ========================================
-  // TIER 3: BOSSES FORTES (Nível 98-99)
-  // HP: 4M | Multiplicador: x9-10
-  // ========================================
   {
     id: 'onoki',
     name: 'Ōnoki (Terceiro Tsuchikage)',
-    description: 'O mestre do Estilo Poeira, uma Kekkei Tōta que lhe permite desintegrar qualquer coisa a nível molecular.',
+    description: 'O mestre do Estilo Poeira.',
     totalHealth: 4000000,
     bossLevel: 98,
-    imageUrl: 'https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto/bosses/onoki.png',
+    imageUrl: 'https://i.ibb.co/60XJsZmp/onoki.png',
   },
   {
     id: 'hiruzen',
     name: 'Hiruzen Sarutobi (Terceiro Hokage)',
-    description: 'Conhecido como "O Professor", ele dominou todos os jutsus de Konoha e pode invocar o Rei Macaco Enma.',
+    description: 'Conhecido como "O Professor".',
     totalHealth: 4000000,
     bossLevel: 98,
-    imageUrl: 'https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto/bosses/hiruzen.png',
+    imageUrl: 'https://i.ibb.co/VcPrNTHj/hiruzen.png',
   },
   {
     id: 'gaara',
     name: 'Gaara (Quinto Kazekage)',
-    description: 'Ex-jinchuuriki do Shukaku, Gaara comanda a areia com uma vontade de ferro, criando defesas absolutas e ataques esmagadores.',
+    description: 'Ex-jinchuuriki do Shukaku.',
     totalHealth: 4000000,
     bossLevel: 98,
-    imageUrl: 'https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto/bosses/gaara.png',
+    imageUrl: 'https://i.ibb.co/1fZppJM4/gaara.png',
   },
   {
     id: 'kakuzu',
     name: 'Kakuzu',
-    description: 'O tesoureiro da Akatsuki. Ele possui cinco corações e pode usar jutsus dos cinco elementos, tornando-o quase imortal.',
+    description: 'O tesoureiro da Akatsuki.',
     totalHealth: 4000000,
     bossLevel: 98,
-    imageUrl: 'https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto/bosses/kakuzu.png',
+    imageUrl: 'https://i.ibb.co/zVZ2hqQS/kakuzu.png',
   },
   {
     id: 'ay_fourth',
     name: 'A (Quarto Raikage)',
-    description: 'Um shinobi de força e velocidade brutais, envolto em uma armadura de chakra de raio que o torna quase invulnerável.',
+    description: 'Força e velocidade brutais.',
     totalHealth: 4000000,
     bossLevel: 98,
-    imageUrl: 'https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto/bosses/ay_fourth.png',
+    imageUrl: 'https://i.ibb.co/ZzWcpG6g/ay-fourth.png',
   },
   {
     id: 'itachi',
     name: 'Itachi Uchiha',
-    description: 'Um prodígio do clã Uchiha, mestre do Sharingan e de genjutsus aterrorizantes como o Tsukuyomi e chamas negras do Amaterasu.',
+    description: 'Mestre do Sharingan.',
     totalHealth: 4000000,
     bossLevel: 99,
-    imageUrl: 'https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto/bosses/itachi.png',
+    imageUrl: 'https://i.ibb.co/BpwPzmJ/itachi.png',
   },
   {
     id: 'tobirama',
-    name: 'Tobirama Senju (Segundo Hokage)',
-    description: 'Criador de inúmeros jutsus proibidos, incluindo o Hiraishin e o Edo Tensei. Um mestre do Estilo Água incomparável.',
+    name: 'Tobirama Senju',
+    description: 'Criador de inúmeros jutsus.',
     totalHealth: 4000000,
     bossLevel: 99,
-    imageUrl: 'https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto/bosses/tobirama.png',
+    imageUrl: 'https://i.ibb.co/mCKKD4ZD/tobirama.png',
   },
   {
     id: 'mu',
-    name: 'Mū (Segundo Tsuchikage)',
-    description: 'O "Não-Humano". Usuário do Estilo Poeira como seu sucessor, ele também pode se tornar completamente invisível e indetectável.',
+    name: 'Mū',
+    description: 'O "Não-Humano".',
     totalHealth: 4000000,
     bossLevel: 99,
-    imageUrl: 'https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto/bosses/mu.png',
+    imageUrl: 'https://i.ibb.co/PG99PqdB/mu.png',
   },
-
-  // ========================================
-  // TIER 4: BOSSES ELITE (Nível 100)
-  // HP: 4.5M-5M | Multiplicador: x10
-  // ========================================
   {
     id: 'pain',
     name: 'Pain (Caminho Deva)',
-    description: 'O líder da Akatsuki e portador do Rinnegan. Seus poderes divinos podem repelir qualquer ataque e atrair a destruição.',
+    description: 'Portador do Rinnegan.',
     totalHealth: 4500000,
     bossLevel: 100,
-    imageUrl: 'https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto/bosses/pain_deva.png',
+    imageUrl: 'https://i.ibb.co/zTtCKZJJ/pain-deva.png',
   },
   {
     id: 'obito_akatsuki',
     name: 'Tobi (Obito Uchiha)',
-    description: 'O verdadeiro líder da Akatsuki, manipulando os eventos das sombras. Com o Kamui, ele pode se tornar intangível e teleportar.',
+    description: 'Usuário do Kamui.',
     totalHealth: 4500000,
     bossLevel: 100,
-    imageUrl: 'https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto/bosses/Tobi__Obito_Uchiha.png',
+    imageUrl: 'https://i.ibb.co/d0hJ3b1Z/Tobi-Obito-Uchiha.png',
   },
   {
     id: 'minato',
-    name: 'Minato Namikaze (Quarto Hokage)',
-    description: 'O Relâmpago Amarelo de Konoha. Usando o Hiraishin no Jutsu, ele se move em velocidades instantâneas, tornando-o o ninja mais rápido de sua era.',
+    name: 'Minato Namikaze',
+    description: 'O Relâmpago Amarelo de Konoha.',
     totalHealth: 4500000,
     bossLevel: 100,
-    imageUrl: 'https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto/bosses/minato.png',
+    imageUrl: 'https://i.ibb.co/Lhb7vmZ6/minato.png',
   },
   {
     id: 'madara_juubi',
-    name: 'Madara Uchiha (Jinchūriki do Dez-Caudas)',
-    description: 'O lendário Uchiha em sua forma mais poderosa, controlando o poder do Dez-Caudas e buscando aprisionar o mundo em uma ilusão eterna.',
+    name: 'Madara Uchiha (Jinchūriki)',
+    description: 'Forma mais poderosa.',
     totalHealth: 5000000,
     bossLevel: 100,
-    imageUrl: 'https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto/bosses/Madara_Uchiha__Jinchuriki_do_Dez-Caudas.png',
+    imageUrl: 'https://i.ibb.co/zVRqSsmX/Madara-Uchiha-Jinchuriki-do-Dez-Caudas.png',
   },
   {
     id: 'hashirama',
-    name: 'Hashirama Senju (Primeiro Hokage)',
-    description: 'O Deus dos Shinobi. Fundador de Konoha e mestre do Estilo Madeira, capaz de criar florestas e subjugar Bestas com Cauda.',
+    name: 'Hashirama Senju',
+    description: 'O Deus dos Shinobi.',
     totalHealth: 5000000,
     bossLevel: 100,
-    imageUrl: 'https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto/bosses/Hashirama_Senju__Primeiro_Hokage.png',
+    imageUrl: 'https://i.ibb.co/dwk6Z521/Hashirama-Senju-Primeiro-Hokage.png',
   },
-
-  // ========================================
-  // TIER 5: BOSS DEUS (Nível 100)
-  // HP: 5.5M | Multiplicador: x10
-  // ========================================
   {
     id: 'kaguya',
     name: 'Kaguya Ōtsutsuki',
-    description: 'A deusa ancestral do chakra. Um ser de poder imensurável que ameaça a própria existência do mundo shinobi.',
+    description: 'A deusa ancestral do chakra.',
     totalHealth: 5500000,
     bossLevel: 100,
-    imageUrl: 'https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto/bosses/Kaguya_Otsutsuki.png',
+    imageUrl: 'https://i.ibb.co/N6dDyCsF/Kaguya-Otsutsuki.png',
   },
 ];

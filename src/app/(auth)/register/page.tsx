@@ -22,10 +22,11 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Loader2, MailCheck, Send, Flame } from 'lucide-react';
+import { Loader2, MailCheck, Send, Flame, UserPlus } from 'lucide-react';
 import Link from 'next/link';
 import { useSupabase } from '@/supabase';
 import { useToast } from '@/hooks/use-toast';
+import { useSearchParams } from 'next/navigation';
 
 const registerSchema = z
   .object({
@@ -51,8 +52,11 @@ type RegisterValues = z.infer<typeof registerSchema>;
 export default function RegisterPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
+  const [inviterName, setInviterName] = useState<string | null>(null);
   const { supabase, user } = useSupabase();
   const { toast } = useToast();
+  const searchParams = useSearchParams();
+  const inviteCode = searchParams?.get('invite');
 
   const form = useForm<RegisterValues>({
     resolver: zodResolver(registerSchema),
@@ -60,19 +64,54 @@ export default function RegisterPage() {
   });
 
   const onSubmit = async (values: RegisterValues) => {
+    if (!supabase) return;
+    
     setIsSubmitting(true);
     try {
-      const { data, error } = await supabase.auth.signUp({
+      // ✅ VERIFICAR CÓDIGO DE CONVITE (se fornecido)
+      let invitedByUserId = null;
+      if (inviteCode) {
+        const { data: inviter, error: inviteError } = await supabase
+          .from('profiles')
+          .select('id, name')
+          .eq('invite_code', inviteCode.toUpperCase())
+          .single();
+
+        if (inviteError || !inviter) {
+          toast({
+            variant: "destructive",
+            title: "Código de Convite Inválido",
+            description: `O código "${inviteCode}" não é válido ou expirou.`,
+          });
+          setIsSubmitting(false);
+          return;
+        }
+
+        invitedByUserId = inviter.id;
+        setInviterName(inviter.name);
+        
+        toast({
+          title: "Convite Aceito!",
+          description: `Você foi convidado por ${inviter.name}!`,
+        });
+      }
+
+      // ✅ CRIAR CONTA NO SUPABASE AUTH
+      const { data: authData, error: authError } = await supabase.auth.signUp({
         email: values.email,
         password: values.password,
         options: {
           emailRedirectTo: `${window.location.origin}/login`,
+          data: {
+            invite_code: inviteCode || null,
+            invited_by: invitedByUserId || null,
+          }
         },
       });
 
-      if (error) throw error;
+      if (authError) throw authError;
 
-      // Supabase automatically sends verification email
+      // ✅ Supabase envia email de verificação automaticamente
       setEmailSent(true);
       toast({
         title: 'Verificação Necessária',
@@ -154,6 +193,14 @@ export default function RegisterPage() {
               Enviamos um link de ativação para sua caixa de entrada. Por favor,
               clique no link para verificar sua conta e então faça o login.
             </CardDescription>
+            {inviterName && (
+              <div className="mt-4 p-3 rounded-lg bg-purple-500/10 border border-purple-500/30">
+                <p className="text-sm text-purple-400 flex items-center justify-center gap-2">
+                  <UserPlus className="h-4 w-4" />
+                  Convidado por: <span className="font-bold">{inviterName}</span>
+                </p>
+              </div>
+            )}
           </CardHeader>
           <CardContent className="flex flex-col gap-2">
             <p className="text-xs text-gray-400">Não recebeu o email?</p>
@@ -199,6 +246,16 @@ export default function RegisterPage() {
               <CardDescription className="text-gray-400">
                 Comece sua lenda no mundo Shinobi.
               </CardDescription>
+              
+              {/* ✅ MOSTRAR CÓDIGO DE CONVITE SE PRESENTE */}
+              {inviteCode && (
+                <div className="mt-4 p-3 rounded-lg bg-purple-500/10 border border-purple-500/30">
+                  <p className="text-sm text-purple-400 flex items-center justify-center gap-2">
+                    <UserPlus className="h-4 w-4" />
+                    Código de Convite: <span className="font-bold">{inviteCode.toUpperCase()}</span>
+                  </p>
+                </div>
+              )}
             </CardHeader>
             <CardContent className="space-y-4">
               <FormField

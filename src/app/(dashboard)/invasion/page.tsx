@@ -33,6 +33,7 @@ import { calculateFinalStats } from '@/lib/stats-calculator';
 const BOSS_DOC_ID = 'current_boss';
 const ATTACK_COOLDOWN = 10 * 60 * 1000; // 10 minutes in milliseconds
 const BOSS_DURATION = 7 * 24 * 60 * 60 * 1000; // 7 days
+const BOSS_RESPAWN_TIME = 24 * 60 * 60 * 1000; // 24 hours after defeat
 
 // ✅ MILESTONES DE DANO
 const DAMAGE_MILESTONES = [
@@ -379,7 +380,7 @@ await supabase
         .single();
       
       const now = Date.now();
-      const RESPAWN_TIME = 24 * 60 * 60 * 1000;
+      
   
       if (error || !bossData) {
           await setupNewBoss(bossRef, setBossData);
@@ -698,7 +699,7 @@ if (unlockedMilestones.length > 0) {
         bossUpdate.status = 'defeated';
         bossUpdate.last_defeated_at = Date.now();
         bossUpdate.last_defeated_by = userProfile.character_name;
-        bossUpdate.respawn_at = Date.now() + (24 * 60 * 60 * 1000);
+        bossUpdate.respawn_at = Date.now() + BOSS_RESPAWN_TIME;
         battleLog.push(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
         battleLog.push(`🎉 VITÓRIA! VOCÊ DERROTOU ${boss?.name?.toUpperCase()}! 🎉`);
         battleLog.push(`Vida final do boss: ${newBossHealth.toFixed(0)} HP`);
