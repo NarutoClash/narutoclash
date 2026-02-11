@@ -101,7 +101,7 @@ export default function RegisterPage() {
         email: values.email,
         password: values.password,
         options: {
-          emailRedirectTo: `${window.location.origin}/login`,
+          emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/login`,
           data: {
             invite_code: inviteCode || null,
             invited_by: invitedByUserId || null,
