@@ -1,4 +1,6 @@
 'use client';
+    
+    export const dynamic = 'force-dynamic';
 
 import { useState, useEffect, useMemo } from 'react';
 import { PageHeader } from '@/components/common/page-header';

@@ -1,5 +1,6 @@
 'use client';
-
+   
+export const dynamic = 'force-dynamic';
 import { PageHeader } from '@/components/common/page-header';
 import {
   Card,

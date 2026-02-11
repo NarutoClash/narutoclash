@@ -1,4 +1,6 @@
 'use client';
+   
+   export const dynamic = 'force-dynamic';
 
 import { PageHeader } from '@/components/common/page-header';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
