@@ -5,6 +5,7 @@ export const JUTSU_GIFS: Record<string, string> = {
   'Doton: Doryūtaiga': 'https://i.ibb.co/21WHf6MZ/Doton-Doryutaiga.gif',
   'Doton: Doryūdan': 'https://i.ibb.co/zWj73sRk/Doton-Doryuudan.gif',
   'Doton: Sando': 'https://i.ibb.co/prfp32zK/Doton-Sando.gif',
+  'Doton: Arijigoku': 'https://res.cloudinary.com/dwvntw5un/image/upload/v1770758281/Doton_Arijigoku_ispxsi.gif',
 
   // ===== FUTON (VENTO) =====
   'Futon: Daitoppa': 'https://i.ibb.co/TBGZLdKH/Futon-Daitoppa.gif',

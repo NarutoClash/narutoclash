@@ -242,10 +242,10 @@ function CreateCharacterContent() {
       });
 
       router.refresh();
-      
-      setTimeout(() => {
-        router.push('/status');
-      }, 800);
+
+setTimeout(() => {
+  router.push('/manual-ninja');
+}, 800);
 
     } catch (error: any) {
       console.error("Error creating character:", error);

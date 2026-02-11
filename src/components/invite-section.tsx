@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Copy, Check, Users } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
-export function InviteSection({ inviteCode, totalStudents }: { inviteCode: string; totalStudents: number }) {
+export function InviteSection({ inviteCode }: { inviteCode: string }) {
   const [copied, setCopied] = useState(false);
   const { toast } = useToast();
   
@@ -68,13 +68,6 @@ export function InviteSection({ inviteCode, totalStudents }: { inviteCode: strin
             >
               {copied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
             </Button>
-          </div>
-        </div>
-
-        <div className="pt-4 border-t">
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-muted-foreground">Total de Alunos:</span>
-            <span className="text-2xl font-bold text-purple-500">{totalStudents}</span>
           </div>
         </div>
       </CardContent>

@@ -3456,19 +3456,18 @@ const BattleReportModal = () => {
                   Link de Convite
                 </TabsTrigger>
                 <TabsTrigger value="students" className="flex items-center gap-2">
-                  <Users className="h-4 w-4" />
-                  Meus Alunos ({userProfile.total_students || 0})
-                </TabsTrigger>
+  <Users className="h-4 w-4" />
+  Meus Alunos
+</TabsTrigger>
               </TabsList>
             </CardHeader>
 
             <CardContent className="pt-6">
-              <TabsContent value="invite" className="mt-0">
-                <InviteSection 
-                  inviteCode={userProfile.invite_code || 'CARREGANDO'} 
-                  totalStudents={userProfile.total_students || 0}
-                />
-              </TabsContent>
+            <TabsContent value="invite" className="mt-0">
+  <InviteSection 
+    inviteCode={userProfile.invite_code || 'CARREGANDO'}
+  />
+</TabsContent>
 
               <TabsContent value="students" className="mt-0">
                 <StudentsList 
