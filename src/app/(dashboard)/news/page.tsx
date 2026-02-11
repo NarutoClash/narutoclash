@@ -1,32 +1,18 @@
 import { PageHeader } from "@/components/common/page-header";
-import { supabase } from "@/lib/supabase";
 import { NewsClient } from "@/app/(dashboard)/news/news-client";
 
-async function getNews() {
-  const { data, error } = await supabase
-    .from('news')
-    .select('*')
-    .eq('published', true)
-    .order('created_at', { ascending: false });
-  
-  if (error) {
-    console.error('Erro ao buscar notícias:', error);
-    return [];
-  }
-  
-  return data || [];
-}
+// FORÇA o Next.js a NÃO cachear esta página
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
-export default async function NewsPage() {
-  const news = await getNews();
-
+export default function NewsPage() {
   return (
     <div>
       <PageHeader
         title="News"
         description="Fique por dentro das últimas notícias e atualizações do Naruto Clash."
       />
-      <NewsClient news={news} />
+      <NewsClient />
     </div>
   );
 }
