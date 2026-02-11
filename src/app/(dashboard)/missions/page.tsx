@@ -160,6 +160,52 @@ const generateNewMissions = (rngSeed: string): {id: string, difficulty: string}[
     return newMissions;
 }
 
+// 🆕 NOVA FUNÇÃO - ADICIONAR APÓS generateNewMissions
+const generateNewMissionsExcludingCompleted = (rngSeed: string, completedIds: string[]): {id: string, difficulty: string}[] => {
+  const rng = seedrandom(rngSeed);
+  const newMissions: {id: string, difficulty: string}[] = [];
+  const usedIds = new Set<string>(completedIds); // ✅ Começa com IDs completados
+
+  // Primeira missão nível 1 (se não foi completada)
+  const levelOneMissions = missionsData.filter(m => m.requiredLevel === 1 && !usedIds.has(m.id));
+  if (levelOneMissions.length > 0) {
+      const firstMission = levelOneMissions[Math.floor(rng() * levelOneMissions.length)];
+      newMissions.push({ id: firstMission.id, difficulty: firstMission.difficulty });
+      usedIds.add(firstMission.id);
+  }
+
+  const missionsByDifficulty = {
+      'Fácil': missionsData.filter(m => m.difficulty === 'Fácil' && !usedIds.has(m.id)),
+      'Média': missionsData.filter(m => m.difficulty === 'Média' && !usedIds.has(m.id)),
+      'Difícil': missionsData.filter(m => m.difficulty === 'Difícil' && !usedIds.has(m.id)),
+      'Heróica': missionsData.filter(m => m.difficulty === 'Heróica' && !usedIds.has(m.id)),
+  };
+
+  const missionDistribution = [
+      'Fácil', 'Fácil', 'Fácil', 'Fácil',
+      'Média', 'Média', 'Média', 'Média',
+      'Difícil', 'Difícil', 'Difícil',
+      'Heróica', 'Heróica', 'Heróica'
+  ];
+  
+  while (newMissions.length < 15 && missionDistribution.length > 0) {
+      const difficultyIndex = Math.floor(rng() * missionDistribution.length);
+      const difficulty = missionDistribution.splice(difficultyIndex, 1)[0];
+
+      const availableMissions = missionsByDifficulty[difficulty as keyof typeof missionsByDifficulty].filter(m => !usedIds.has(m.id));
+      
+      if (availableMissions.length > 0) {
+          const mission = availableMissions[Math.floor(rng() * availableMissions.length)];
+          newMissions.push({ id: mission.id, difficulty: mission.difficulty });
+          usedIds.add(mission.id);
+      } else {
+          missionDistribution.push(difficulty);
+      }
+  }
+
+  return newMissions;
+}
+
 const useActiveBoosts = (supabase: any, userId: string | undefined) => {
     const [activeBoosts, setActiveBoosts] = useState<any[] | null>(null);
     
@@ -448,7 +494,14 @@ useEffect(() => {
         
         if (!userProfileRef || refreshesUsed >= maxRefreshes || !supabase) return;
         
-        const newMissions = generateNewMissions(Date.now().toString());
+        // 🆕 PEGAR IDs DAS MISSÕES JÁ COMPLETADAS
+        const completedMissionIds = userProfile?.daily_mission_state?.completedMissionIds || [];
+        
+        // 🆕 GERAR NOVAS MISSÕES EXCLUINDO AS COMPLETADAS
+        const newMissions = generateNewMissionsExcludingCompleted(
+            Date.now().toString(), 
+            completedMissionIds
+        );
     
         updateDocumentNonBlocking(userProfileRef, {
             daily_mission_state: {
@@ -458,15 +511,15 @@ useEffect(() => {
             }
         }, supabase);
         
-            toast({
-                title: "Missões Atualizadas!",
-                description: `Sua lista de missões foi atualizada.`,
-            });
-        
-            setTimeout(() => {
-                window.location.reload();
-            }, 1500);
-        };
+        toast({
+            title: "Missões Atualizadas!",
+            description: `Sua lista de missões foi atualizada com novas opções.`,
+        });
+    
+        setTimeout(() => {
+            window.location.reload();
+        }, 1500);
+    };
     
         const handleCompleteMission = async () => {
             if (!userProfile || !activeMissionDetails || !userProfileRef || !supabase) {

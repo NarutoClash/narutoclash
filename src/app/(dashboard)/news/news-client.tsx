@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useSupabase } from '@/supabase';
 import { Badge } from '@/components/ui/badge';
-import { Bell, Sparkles, Check, Loader2 } from 'lucide-react';
+import { Bell, Sparkles, Check, Loader2, Mail } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import type { News } from '@/lib/supabase';
@@ -14,6 +14,7 @@ export function NewsClient() {
   const [news, setNews] = useState<News[]>([]);
   const [readNews, setReadNews] = useState<Set<string>>(new Set());
   const [unreadCount, setUnreadCount] = useState(0);
+  const [unreadMessages, setUnreadMessages] = useState(0);
   const [loading, setLoading] = useState(true);
 
   // Função para mostrar notificação do navegador
@@ -21,7 +22,7 @@ export function NewsClient() {
     if ('Notification' in window && Notification.permission === 'granted') {
       new Notification(title, {
         body: body,
-        icon: '/icon.png', // Adicione um ícone do seu jogo aqui
+        icon: '/icon.png',
         badge: '/badge.png',
         tag: 'naruto-clash-news',
         requireInteraction: false,
@@ -29,12 +30,57 @@ export function NewsClient() {
     }
   };
 
-  // Pedir permissão para notificações ao carregar
+  // 🆕 Buscar mensagens não lidas
   useEffect(() => {
-    if ('Notification' in window && Notification.permission === 'default') {
-      Notification.requestPermission();
-    }
-  }, []);
+    if (!user) return;
+
+    const fetchUnreadMessages = async () => {
+      const { count: messagesCount } = await supabase
+        .from('messages')
+        .select('*', { count: 'exact', head: true })
+        .eq('receiver_id', user.id)
+        .eq('read', false);
+
+      const { count: reportsCount } = await supabase
+        .from('battle_reports')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id)
+        .eq('viewed', false);
+
+      setUnreadMessages((messagesCount || 0) + (reportsCount || 0));
+    };
+
+    fetchUnreadMessages();
+
+    // Subscrever mudanças em tempo real
+    const messagesChannel = supabase
+      .channel('messages_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'messages',
+          filter: `receiver_id=eq.${user.id}`,
+        },
+        () => fetchUnreadMessages()
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'battle_reports',
+          filter: `user_id=eq.${user.id}`,
+        },
+        () => fetchUnreadMessages()
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(messagesChannel);
+    };
+  }, [user, supabase]);
 
   // Buscar notícias do Supabase
   useEffect(() => {
@@ -124,14 +170,10 @@ export function NewsClient() {
 
           // Tocar som de notificação (opcional)
           try {
-            const audio = new Audio('/notification.mp3'); // Adicione um arquivo de som
+            const audio = new Audio('/notification.mp3');
             audio.volume = 0.3;
-            audio.play().catch(() => {
-              // Ignora erro se não conseguir tocar
-            });
-          } catch (e) {
-            // Ignora erro se arquivo não existir
-          }
+            audio.play().catch(() => {});
+          } catch (e) {}
         }
       )
       .subscribe();
@@ -192,25 +234,27 @@ export function NewsClient() {
 
   return (
     <div className="mt-8">
-      {/* Banner de notificação */}
-      {'Notification' in window && Notification.permission === 'default' && (
-        <div className="mb-6 p-4 rounded-lg bg-blue-500/20 border border-blue-500/30">
+      {/* 🆕 Banner de mensagens não lidas */}
+      {unreadMessages > 0 && user && (
+        <div className="mb-6 p-4 rounded-lg bg-gradient-to-r from-blue-500/20 to-cyan-500/20 border border-blue-500/30">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <Bell className="h-5 w-5 text-blue-500" />
+              <Mail className="h-5 w-5 text-blue-500 animate-pulse" />
               <div>
-                <p className="text-sm font-semibold">Ative as notificações!</p>
+                <p className="text-sm font-semibold">
+                  Você tem {unreadMessages} {unreadMessages === 1 ? 'mensagem não lida' : 'mensagens não lidas'}!
+                </p>
                 <p className="text-xs text-muted-foreground">
-                  Receba alertas quando houver novas atualizações
+                  Confira suas mensagens e relatórios de batalha
                 </p>
               </div>
             </div>
             <Button 
               size="sm" 
-              onClick={() => Notification.requestPermission()}
+              onClick={() => window.location.href = '/messages'}
               className="bg-blue-500 hover:bg-blue-600"
             >
-              Ativar
+              Ver Mensagens
             </Button>
           </div>
         </div>
@@ -254,6 +298,7 @@ export function NewsClient() {
               <article 
                 key={item.id}
                 className={`
+                  relative
                   border rounded-lg p-6 bg-card transition-all cursor-pointer
                   ${isUnread 
                     ? 'border-orange-500/50 shadow-lg shadow-orange-500/20 ring-2 ring-orange-500/30' 
@@ -262,6 +307,11 @@ export function NewsClient() {
                 `}
                 onClick={() => isUnread && markAsRead(item.id)}
               >
+                {/* 🆕 BOLINHA DE NÃO LIDA */}
+                {isUnread && (
+                  <span className="absolute -top-2 -right-2 h-5 w-5 rounded-full bg-orange-500 animate-pulse border-2 border-background z-10" />
+                )}
+
                 {/* Badge de nova atualização */}
                 {isUnread && (
                   <Badge className="mb-3 bg-gradient-to-r from-orange-500 to-red-600 animate-pulse">
