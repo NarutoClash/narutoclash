@@ -79,8 +79,8 @@ const UPGRADE_ELEMENT_REQ = 30;
 
 // 🆕 URLs DAS IMAGENS DOS SELOS
 const SEAL_IMAGES = {
-  level1: 'https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto/Selo/selo1.png',
-  level2: 'https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto/Selo/selo3%20.png',
+  level1: 'https://i.ibb.co/pBn3CwPB/selo1.png',
+  level2: 'https://i.ibb.co/H1RKX4p/selo3.png',
 };
 
 

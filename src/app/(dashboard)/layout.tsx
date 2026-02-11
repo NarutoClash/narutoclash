@@ -274,7 +274,7 @@ const sidebarItems = [
         <SidebarHeader className="border-b border-sidebar-border p-0 overflow-hidden">
           <Link href="/status" className="block hover:opacity-80 transition-opacity">
             <img 
-              src="https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto/Telas/Naruto%20Clash.png" 
+              src="https://i.ibb.co/SXgtP2F7/Naruto-Clash.png" 
               alt="Naruto Clash"
               className="w-full h-20 object-cover scale-110"
             />

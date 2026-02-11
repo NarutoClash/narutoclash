@@ -1,3 +1,4 @@
+import { bossesData } from './bosses-data';
 const SUPABASE_STORAGE_URL = 'https://nsenzuptpdudbswyxqfc.supabase.co/storage/v1/object/public/projeto';
 
 export const getBossImage = (bossId: string) => {
