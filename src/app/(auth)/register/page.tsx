@@ -2,7 +2,7 @@
 
 export const dynamic = 'force-dynamic';
 
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -51,7 +51,8 @@ const registerSchema = z
 
 type RegisterValues = z.infer<typeof registerSchema>;
 
-export default function RegisterPage() {
+// ✅ COMPONENTE QUE USA useSearchParams
+function RegisterForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
   const [inviterName, setInviterName] = useState<string | null>(null);
@@ -335,5 +336,20 @@ export default function RegisterPage() {
         </Form>
       </Card>
     </div>
+  );
+}
+
+// ✅ COMPONENTE PRINCIPAL COM SUSPENSE
+export default function RegisterPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex items-center justify-center min-h-screen bg-gradient-to-b from-black via-gray-900 to-orange-950">
+        <div className="text-orange-500">
+          <Loader2 className="h-8 w-8 animate-spin" />
+        </div>
+      </div>
+    }>
+      <RegisterForm />
+    </Suspense>
   );
 }
