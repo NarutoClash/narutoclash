@@ -2,7 +2,7 @@
 
 export const dynamic = 'force-dynamic';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -62,7 +62,8 @@ const createCharacterSchema = z.object({
 
 type CreateCharacterValues = z.infer<typeof createCharacterSchema>;
 
-export default function CreateCharacterPage() {
+// ✅ COMPONENTE INTERNO QUE USA useSearchParams
+function CreateCharacterContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { supabase, user, isUserLoading } = useSupabase();
@@ -434,5 +435,22 @@ export default function CreateCharacterPage() {
         </Card>
       </div>
     </div>
+  );
+}
+
+// ✅ COMPONENTE PRINCIPAL COM SUSPENSE
+export default function CreateCharacterPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex flex-col items-center justify-center h-full text-center">
+        <PageHeader
+          title="Carregando..."
+          description="Preparando criação de personagem..."
+        />
+        <Loader2 className="h-8 w-8 animate-spin mt-4" />
+      </div>
+    }>
+      <CreateCharacterContent />
+    </Suspense>
   );
 }
