@@ -267,9 +267,15 @@ export const summonsData: Summon[] = [
 
 // ✅ Função para calcular custo de treinamento
 export const getTrainingCost = (currentLevel: number): number => {
-    return 500 * currentLevel;
+    if (currentLevel >= MAX_SUMMON_LEVEL) return 0;
+    
+    const BASE_TRAINING_COST = 10000;  // Começa em 10 mil
+    const COST_MULTIPLIER = 1.5;       // Aumenta 50% a cada nível
+    
+    // Progressão exponencial
+    return Math.floor(BASE_TRAINING_COST * Math.pow(COST_MULTIPLIER, currentLevel - 1));
 };
 
 // ✅ Constantes
 export const MAX_SUMMON_LEVEL = 10;
-export const TRAINING_BONUS_PER_LEVEL = 2;
+export const TRAINING_BONUS_PER_LEVEL = 5;
