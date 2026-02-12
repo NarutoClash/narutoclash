@@ -24,6 +24,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { DadosAdicionaisForm } from '@/components/forms/DadosAdicionaisForm';
+
 
 // ✅ Declaração global do MercadoPago
 declare global {
