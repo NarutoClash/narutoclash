@@ -65,19 +65,35 @@ export default function ComprarCPPage() {
   }), []);
   const { data: pacotes, isLoading: arePacotesLoading } = useCollection<WithId<PacoteCP>>(pacotesQuery);
 
-  // ✅ Marcar sistema como pronto após 2 segundos (tempo para carregar MP SDK)
+  // ✅ RESETAR TUDO QUANDO USUÁRIO MUDAR
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setSystemReady(true);
-      console.log('✅ Sistema pronto para compras');
-    }, 2000);
+    console.log('🔄 Usuário mudou, resetando estados...');
+    setIsLoading(false);
+    setSelectedPackage(null);
+    setShowConfirmDialog(false);
+    setMpReady(false);
+    setSystemReady(false);
+  }, [user?.id]); // ← Quando user.id mudar, reseta tudo
 
-    return () => clearTimeout(timer);
-  }, []);
+  // ✅ Marcar sistema como pronto após carregar dados
+  useEffect(() => {
+    // Só marcar como pronto se:
+    // 1. Usuário existe
+    // 2. Perfil carregado
+    // 3. Pacotes carregados
+    if (user && userProfile && pacotes && pacotes.length > 0) {
+      const timer = setTimeout(() => {
+        setSystemReady(true);
+        console.log('✅ Sistema pronto para compras');
+      }, 1000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [user, userProfile, pacotes]);
 
   // ✅ Inicializar Mercado Pago
   useEffect(() => {
-    if (mpReady) return;
+    if (mpReady || !user) return; // Só inicializa se tiver usuário
 
     const initMP = () => {
       if (typeof window !== 'undefined' && window.MercadoPago) {
@@ -124,7 +140,7 @@ export default function ComprarCPPage() {
     }, 500);
 
     return () => clearInterval(interval);
-  }, [mpReady, toast]);
+  }, [mpReady, toast, user]);
 
   // 🎨 Cores para cada pacote
   const getPackageTheme = (nome: string) => {
@@ -147,7 +163,18 @@ export default function ComprarCPPage() {
       return;
     }
 
+    if (!user) {
+      toast({
+        variant: 'destructive',
+        title: 'Erro',
+        description: 'Você precisa estar logado para comprar.',
+      });
+      return;
+    }
+
     console.log('🛒 Pacote selecionado:', pacote.nome);
+    console.log('👤 Usuário:', user.id);
+    
     setSelectedPackage(pacote);
     setShowConfirmDialog(true);
   };
@@ -247,10 +274,21 @@ export default function ComprarCPPage() {
     }
   };
 
-  if (!user || !userProfile) {
+  // ✅ Loading state melhorado
+  if (!user) {
     return (
-      <div className="flex justify-center items-center h-full">
+      <div className="flex flex-col justify-center items-center h-full gap-4">
         <Loader2 className="h-8 w-8 animate-spin text-orange-500" />
+        <p className="text-gray-400">Carregando usuário...</p>
+      </div>
+    );
+  }
+
+  if (!userProfile) {
+    return (
+      <div className="flex flex-col justify-center items-center h-full gap-4">
+        <Loader2 className="h-8 w-8 animate-spin text-orange-500" />
+        <p className="text-gray-400">Carregando perfil...</p>
       </div>
     );
   }
@@ -506,9 +544,11 @@ export default function ComprarCPPage() {
           <Card className="mt-4 max-w-4xl mx-auto bg-gray-900/50 border-gray-700">
             <CardContent className="pt-6">
               <div className="text-xs font-mono text-gray-500 space-y-1">
+                <p>👤 User ID: {user.id.substring(0, 8)}...</p>
                 <p>📡 Sistema Pronto: {systemReady ? '✅ Sim' : '⏳ Não'}</p>
                 <p>💳 MP Ready: {mpReady ? '✅ Sim' : '⏳ Não'}</p>
                 <p>🔄 Loading: {isLoading ? '🔄 Sim' : '✅ Não'}</p>
+                <p>📦 Pacotes: {pacotes?.length || 0}</p>
               </div>
             </CardContent>
           </Card>
