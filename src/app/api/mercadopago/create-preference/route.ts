@@ -84,10 +84,25 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
     }
 
-    // 2️⃣ Validar estrutura básica
-    if (!body || !body.type || !body.data) {
-      console.error('❌ Body inválido - faltam campos obrigatórios');
-      return NextResponse.json({ error: 'Invalid payload' }, { status: 400 });
+    // 2️⃣ Validar estrutura básica (mais flexível)
+    if (!body) {
+      console.error('❌ Body vazio');
+      return NextResponse.json({ error: 'Empty body' }, { status: 400 });
+    }
+
+    // Aceitar diferentes formatos de notificação
+    const type = body.type || body.topic;
+    const data = body.data || body.resource;
+    
+    if (!type || !data) {
+      console.error('❌ Body inválido - campos:', { 
+        hasType: !!body.type, 
+        hasTopic: !!body.topic,
+        hasData: !!body.data,
+        hasResource: !!body.resource,
+        body: body
+      });
+      return NextResponse.json({ error: 'Invalid payload structure' }, { status: 400 });
     }
 
     // 3️⃣ Validar assinatura
@@ -109,9 +124,9 @@ export async function POST(request: NextRequest) {
     }
 
     // 4️⃣ Verificar tipo de notificação
-    const { type, action, data } = body;
+    const action = body.action;
 
-    console.log('📋 Tipo de notificação:', { type, action });
+    console.log('📋 Tipo de notificação:', { type, action, dataId: data?.id });
 
     // Só processar notificações de pagamento
     if (type !== 'payment') {
@@ -120,7 +135,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 5️⃣ Extrair ID do pagamento
-    const paymentId = data?.id;
+    const paymentId = data?.id || data;
 
     if (!paymentId) {
       console.error('❌ Payment ID não encontrado no webhook');
