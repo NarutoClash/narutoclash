@@ -94,20 +94,21 @@ export async function POST(request: NextRequest) {
 
     // 8️⃣ Criar registro no banco (status: pending)
     const { data: pagamento, error: insertError } = await supabase
-      .from('pagamentos_mercadopago')
-      .insert({
-        user_id: userId,
-        pacote_id: pacoteId,
-        pacote_nome: pacote.nome,
-        quantidade_cp: cpTotal,
-        valor_brl: parseFloat(pacote.preco_brl),
-        status: 'pending',
-        cp_creditado: false,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      })
-      .select()
-      .single();
+  .from('payment_transactions')
+  .insert({
+    user_id: userId,
+    package_id: pacoteId, // ← mudou de pacote_id
+    cp_amount: pacote.quantidade_cp, // ← só o base
+    bonus_cp: pacote.bonus_cp || 0, // ← bônus separado
+    price_paid: parseFloat(pacote.preco_brl), // ← mudou de valor_brl
+    payment_method: 'pending', // ← vai ser atualizado depois
+    payment_provider: 'mercadopago', // ← NOVO campo
+    status: 'pending',
+    created_at: new Date().toISOString(),
+    // NÃO precisa de updated_at, cp_creditado, pacote_nome
+  })
+  .select()
+  .single();
 
     if (insertError || !pagamento) {
       console.error('❌ Erro ao criar registro:', insertError);
@@ -174,9 +175,9 @@ export async function POST(request: NextRequest) {
       
       // Deletar registro criado
       await supabase
-        .from('pagamentos_mercadopago')
-        .delete()
-        .eq('id', pagamento.id);
+  .from('payment_transactions')
+  .delete()
+  .eq('id', pagamento.id);
 
       return NextResponse.json(
         { 
@@ -192,12 +193,12 @@ export async function POST(request: NextRequest) {
 
     // 1️⃣1️⃣ Atualizar registro com preference_id
     await supabase
-      .from('pagamentos_mercadopago')
-      .update({
-        preference_id: mpData.id,
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', pagamento.id);
+  .from('payment_transactions')
+  .update({
+    external_payment_id: mpData.id, // ← mudou de preference_id
+    payment_url: mpData.init_point, // ← NOVO: salvar link
+  })
+  .eq('id', pagamento.id);
 
     console.log('✅ ===== SUCESSO =====');
 
