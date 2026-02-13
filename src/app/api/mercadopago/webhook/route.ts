@@ -1,14 +1,17 @@
+// src/app/api/mercadopago/webhook/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import crypto from 'crypto';
 
-// Configurar Supabase (Service Role para API Routes)
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
+  process.env.SUPABASE_SERVICE_ROLE_KEY!,
+  {
+    auth: { autoRefreshToken: false, persistSession: false },
+  }
 );
 
-// ✅ Validar assinatura do Mercado Pago
+// Validar assinatura do Mercado Pago
 function validateMercadoPagoSignature(
   xSignature: string | null,
   xRequestId: string | null,
@@ -22,13 +25,11 @@ function validateMercadoPagoSignature(
   try {
     const secret = process.env.MERCADOPAGO_WEBHOOK_SECRET;
     
-    // Se você não tem o secret configurado, pular validação (NÃO RECOMENDADO EM PRODUÇÃO)
     if (!secret) {
       console.warn('⚠️ MERCADOPAGO_WEBHOOK_SECRET não configurado - pulando validação');
       return true;
     }
 
-    // Extrair hash da assinatura
     const parts = xSignature.split(',');
     let ts = '';
     let hash = '';
@@ -48,7 +49,6 @@ function validateMercadoPagoSignature(
       return false;
     }
 
-    // Gerar hash esperado
     const manifest = `id:${dataId};request-id:${xRequestId};ts:${ts};`;
     const hmac = crypto.createHmac('sha256', secret);
     hmac.update(manifest);
@@ -68,44 +68,63 @@ function validateMercadoPagoSignature(
 }
 
 export async function POST(request: NextRequest) {
+  console.log('🔔 ===== WEBHOOK MERCADO PAGO INICIADO =====');
+  
   try {
-    const body = await request.json();
-    
-    console.log('🔔 Webhook recebido do Mercado Pago:', JSON.stringify(body, null, 2));
+    // 1️⃣ Ler o body
+    let body;
+    try {
+      body = await request.json();
+      console.log('📦 Body recebido:', JSON.stringify(body, null, 2));
+    } catch (parseError) {
+      console.error('❌ Erro ao fazer parse do JSON:', parseError);
+      return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
+    }
 
-    // ✅ Validar assinatura (segurança)
+    if (!body) {
+      console.error('❌ Body vazio');
+      return NextResponse.json({ error: 'Empty body' }, { status: 400 });
+    }
+
+    // 2️⃣ Extrair tipo e ID (múltiplos formatos do MP)
+    const type = body.type || body.topic || body.action;
+    let dataId = body.data?.id || body.resource || body.id;
+    
+    console.log('🔍 Valores extraídos:', { type, dataId });
+    
+    if (!type) {
+      console.log('⚠️ Tipo não identificado - aceitando mesmo assim');
+      return NextResponse.json({ received: true, warning: 'Unknown type' });
+    }
+    
+    if (!dataId) {
+      console.log('⚠️ ID não encontrado - aceitando mesmo assim');
+      return NextResponse.json({ received: true, warning: 'No ID' });
+    }
+
+    // 3️⃣ Validar assinatura
     const xSignature = request.headers.get('x-signature');
     const xRequestId = request.headers.get('x-request-id');
     
-    if (body.data?.id) {
-      const isValid = validateMercadoPagoSignature(xSignature, xRequestId, body.data.id);
+    if (dataId) {
+      const isValid = validateMercadoPagoSignature(xSignature, xRequestId, String(dataId));
       
       if (!isValid && process.env.NODE_ENV === 'production') {
-        console.error('❌ Assinatura inválida - requisição rejeitada');
+        console.error('❌ Assinatura inválida');
         return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
       }
     }
 
-    // O Mercado Pago envia diferentes tipos de notificações
-    const { type, data } = body;
-
-    // Só processar notificações de pagamento
+    // 4️⃣ Só processar notificações de pagamento
     if (type !== 'payment') {
-      console.log('ℹ️ Tipo de notificação ignorado:', type);
-      return NextResponse.json({ received: true });
+      console.log('ℹ️ Tipo ignorado:', type);
+      return NextResponse.json({ received: true, ignored: type });
     }
 
-    // ID do pagamento no Mercado Pago
-    const paymentId = data?.id;
+    const paymentId = dataId;
+    console.log('💳 Processando pagamento ID:', paymentId);
 
-    if (!paymentId) {
-      console.error('❌ Payment ID não encontrado no webhook');
-      return NextResponse.json({ error: 'Payment ID não encontrado' }, { status: 400 });
-    }
-
-    console.log('💳 Processando pagamento:', paymentId);
-
-    // Buscar informações do pagamento usando a API do Mercado Pago
+    // 5️⃣ Buscar dados do pagamento no Mercado Pago
     const paymentResponse = await fetch(
       `https://api.mercadopago.com/v1/payments/${paymentId}`,
       {
@@ -116,10 +135,12 @@ export async function POST(request: NextRequest) {
     );
 
     if (!paymentResponse.ok) {
-      console.error('❌ Erro ao buscar dados do pagamento no Mercado Pago');
       const errorText = await paymentResponse.text();
-      console.error('Resposta da API:', errorText);
-      return NextResponse.json({ error: 'Erro ao consultar pagamento' }, { status: 500 });
+      console.error('❌ Erro ao buscar pagamento no MP:', {
+        status: paymentResponse.status,
+        error: errorText,
+      });
+      return NextResponse.json({ error: 'Erro ao consultar MP' }, { status: 500 });
     }
 
     const paymentData = await paymentResponse.json();
@@ -130,20 +151,20 @@ export async function POST(request: NextRequest) {
       status_detail: paymentData.status_detail,
       external_reference: paymentData.external_reference,
       transaction_amount: paymentData.transaction_amount,
-      date_approved: paymentData.date_approved,
     });
 
     const status = paymentData.status;
-    const externalReference = paymentData.external_reference; // ID do nosso registro
+    const externalReference = paymentData.external_reference;
     const paymentMethod = paymentData.payment_method_id;
 
-    // ✅ Verificar se o external_reference existe
     if (!externalReference) {
-      console.error('❌ external_reference não encontrado no pagamento');
-      return NextResponse.json({ error: 'External reference não encontrado' }, { status: 400 });
+      console.error('❌ external_reference não encontrado');
+      return NextResponse.json({ error: 'External reference ausente' }, { status: 400 });
     }
 
-    // Atualizar registro no banco
+    console.log('🔗 External Reference (ID do banco):', externalReference);
+
+    // 6️⃣ Atualizar registro no banco
     const { error: updateError } = await supabase
       .from('pagamentos_mercadopago')
       .update({
@@ -156,81 +177,147 @@ export async function POST(request: NextRequest) {
       .eq('id', externalReference);
 
     if (updateError) {
-      console.error('❌ Erro ao atualizar pagamento no banco:', updateError);
-      return NextResponse.json({ error: 'Erro ao atualizar registro' }, { status: 500 });
+      console.error('❌ Erro ao atualizar no banco:', updateError);
+      return NextResponse.json({ 
+        error: 'Erro ao atualizar registro',
+        details: updateError.message,
+      }, { status: 500 });
     }
 
     console.log('✅ Pagamento atualizado no banco');
 
-    // Se o pagamento foi aprovado, creditar CP
+    // 7️⃣ Se aprovado, creditar CP
     if (status === 'approved') {
-      console.log('💰 Pagamento aprovado! Creditando CP...');
+      console.log('💰 Pagamento APROVADO! Iniciando crédito de CP...');
 
-      // ✅ Verificar se já foi processado (evitar duplicação)
-      const { data: existingPayment, error: checkError } = await supabase
+      // Verificar se já foi creditado
+      const { data: pagamento, error: checkError } = await supabase
         .from('pagamentos_mercadopago')
-        .select('status, user_id, quantidade_cp')
-        .eq('payment_id', paymentId.toString())
+        .select('cp_creditado, user_id, quantidade_cp')
+        .eq('id', externalReference)
         .single();
 
       if (checkError) {
         console.error('❌ Erro ao verificar pagamento:', checkError);
+        return NextResponse.json({ error: 'Erro ao verificar status' }, { status: 500 });
       }
 
-      if (existingPayment && existingPayment.status === 'credited') {
-        console.log('⚠️ Pagamento já foi creditado anteriormente - pulando');
-        return NextResponse.json({ received: true, status: 'already_credited' });
+      if (pagamento.cp_creditado) {
+        console.log('⚠️ CP já creditado anteriormente - pulando');
+        return NextResponse.json({ 
+          received: true, 
+          status: 'already_credited',
+        });
       }
 
-      // Chamar a função SQL que criamos
-      const { error: creditError } = await supabase.rpc('processar_pagamento_aprovado', {
-        p_payment_id: paymentId.toString(),
-      });
+      // Creditar CP no profile
+      const { error: creditError } = await supabase
+        .from('profiles')
+        .update({
+          clash_points: supabase.rpc('increment_clash_points', {
+            user_id: pagamento.user_id,
+            amount: pagamento.quantidade_cp,
+          }),
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', pagamento.user_id);
 
+      // Se a função RPC não funcionar, fazer update direto
       if (creditError) {
-        console.error('❌ Erro ao creditar CP:', creditError);
-        return NextResponse.json({ error: 'Erro ao creditar CP', details: creditError }, { status: 500 });
+        console.log('⚠️ Tentando crédito direto...');
+        
+        const { data: currentProfile } = await supabase
+          .from('profiles')
+          .select('clash_points')
+          .eq('id', pagamento.user_id)
+          .single();
+
+        const currentCP = currentProfile?.clash_points || 0;
+        const newCP = currentCP + pagamento.quantidade_cp;
+
+        const { error: directCreditError } = await supabase
+          .from('profiles')
+          .update({
+            clash_points: newCP,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', pagamento.user_id);
+
+        if (directCreditError) {
+          console.error('❌ Erro ao creditar CP:', directCreditError);
+          return NextResponse.json({ 
+            error: 'Erro ao creditar CP',
+            details: directCreditError.message,
+          }, { status: 500 });
+        }
       }
 
-      // ✅ Marcar como creditado
+      // Registrar na tabela de transações
+      await supabase
+        .from('cp_transactions')
+        .insert({
+          user_id: pagamento.user_id,
+          amount: pagamento.quantidade_cp,
+          type: 'purchase',
+          description: `Compra via Mercado Pago - Pagamento #${paymentId}`,
+          created_at: new Date().toISOString(),
+        });
+
+      // Marcar como creditado
       await supabase
         .from('pagamentos_mercadopago')
-        .update({ status: 'credited' })
-        .eq('payment_id', paymentId.toString());
+        .update({ 
+          cp_creditado: true,
+          status: 'credited',
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', externalReference);
 
-      console.log('✅ CP creditado com sucesso!');
+      console.log(`✅ ${pagamento.quantidade_cp} CP creditados com sucesso!`);
+      
     } else if (status === 'rejected') {
-      console.log(`❌ Pagamento rejeitado: ${paymentData.status_detail}`);
+      console.log(`❌ Pagamento REJEITADO: ${paymentData.status_detail}`);
     } else if (status === 'pending') {
-      console.log(`⏳ Pagamento pendente: ${paymentData.status_detail}`);
+      console.log(`⏳ Pagamento PENDENTE: ${paymentData.status_detail}`);
     } else {
-      console.log(`ℹ️ Pagamento com status: ${status} (não creditado)`);
+      console.log(`ℹ️ Status: ${status}`);
     }
 
-    return NextResponse.json({ received: true, status });
+    console.log('🔔 ===== WEBHOOK FINALIZADO COM SUCESSO =====');
+    
+    return NextResponse.json({ 
+      received: true, 
+      status,
+      payment_id: paymentId,
+    });
 
   } catch (error: any) {
-    console.error('❌ Erro no webhook:', error);
-    console.error('Stack trace:', error.stack);
+    console.error('❌ ===== ERRO CRÍTICO NO WEBHOOK =====');
+    console.error('Erro:', error);
+    console.error('Stack:', error.stack);
+    
     return NextResponse.json(
       { 
-        error: 'Erro interno', 
+        error: 'Erro interno do servidor',
         message: error.message,
-        stack: process.env.NODE_ENV === 'development' ? error.stack : undefined,
+        timestamp: new Date().toISOString(),
       },
       { status: 500 }
     );
   }
 }
 
-// GET para teste (opcional)
+// GET para teste
 export async function GET() {
   return NextResponse.json({ 
-    message: 'Webhook do Mercado Pago funcionando!',
+    message: 'Webhook do Mercado Pago - Naruto Clash',
+    status: 'online',
     timestamp: new Date().toISOString(),
     config: {
       has_webhook_secret: !!process.env.MERCADOPAGO_WEBHOOK_SECRET,
       has_access_token: !!process.env.MERCADOPAGO_ACCESS_TOKEN,
+      has_supabase_url: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
+      has_service_key: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
     }
   });
 }
