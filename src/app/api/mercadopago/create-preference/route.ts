@@ -79,31 +79,59 @@ export async function POST(request: NextRequest) {
     try {
       body = await request.json();
       console.log('📦 Body recebido:', JSON.stringify(body, null, 2));
+      console.log('🔍 Estrutura do body:', {
+        keys: Object.keys(body),
+        type: body.type,
+        topic: body.topic,
+        action: body.action,
+        data: body.data,
+        resource: body.resource,
+        id: body.id,
+      });
     } catch (parseError) {
       console.error('❌ Erro ao fazer parse do JSON:', parseError);
       return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
     }
 
-    // 2️⃣ Validar estrutura básica (mais flexível)
+    // 2️⃣ Validar estrutura básica (aceitar múltiplos formatos)
     if (!body) {
       console.error('❌ Body vazio');
       return NextResponse.json({ error: 'Empty body' }, { status: 400 });
     }
 
-    // Aceitar diferentes formatos de notificação
-    const type = body.type || body.topic;
-    const data = body.data || body.resource;
+    // O Mercado Pago pode enviar em diferentes formatos:
+    // Formato 1: { type, data: { id } }
+    // Formato 2: { topic, resource, id }
+    // Formato 3: { action, data: { id } }
     
-    if (!type || !data) {
-      console.error('❌ Body inválido - campos:', { 
-        hasType: !!body.type, 
-        hasTopic: !!body.topic,
-        hasData: !!body.data,
-        hasResource: !!body.resource,
-        body: body
+    const type = body.type || body.topic || body.action;
+    let dataId = body.data?.id || body.resource || body.id;
+    
+    console.log('🔍 Valores extraídos:', { type, dataId });
+    
+    if (!type) {
+      console.error('❌ Tipo de notificação não identificado');
+      console.error('Body completo:', body);
+      // ACEITAR MESMO ASSIM e retornar sucesso para não ficar em loop
+      return NextResponse.json({ 
+        received: true, 
+        warning: 'Unknown notification type',
+        body: body 
       });
-      return NextResponse.json({ error: 'Invalid payload structure' }, { status: 400 });
     }
+    
+    if (!dataId) {
+      console.error('❌ ID do recurso não encontrado');
+      console.error('Body completo:', body);
+      // ACEITAR MESMO ASSIM e retornar sucesso
+      return NextResponse.json({ 
+        received: true, 
+        warning: 'Resource ID not found',
+        body: body 
+      });
+    }
+    
+    const data = { id: dataId };
 
     // 3️⃣ Validar assinatura
     const xSignature = request.headers.get('x-signature');
@@ -114,8 +142,8 @@ export async function POST(request: NextRequest) {
       hasRequestId: !!xRequestId,
     });
 
-    if (body.data?.id) {
-      const isValid = validateMercadoPagoSignature(xSignature, xRequestId, body.data.id);
+    if (dataId) {
+      const isValid = validateMercadoPagoSignature(xSignature, xRequestId, String(dataId));
       
       if (!isValid && process.env.NODE_ENV === 'production') {
         console.error('❌ Assinatura inválida - requisição rejeitada');
@@ -126,7 +154,7 @@ export async function POST(request: NextRequest) {
     // 4️⃣ Verificar tipo de notificação
     const action = body.action;
 
-    console.log('📋 Tipo de notificação:', { type, action, dataId: data?.id });
+    console.log('📋 Tipo de notificação:', { type, action, dataId });
 
     // Só processar notificações de pagamento
     if (type !== 'payment') {
@@ -135,7 +163,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 5️⃣ Extrair ID do pagamento
-    const paymentId = data?.id || data;
+    const paymentId = dataId;
 
     if (!paymentId) {
       console.error('❌ Payment ID não encontrado no webhook');
