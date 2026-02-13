@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 4️⃣ Buscar dados do pacote
+    // 4️⃣ Buscar dados do PACOTE no banco
     const { data: pacote, error: pacoteError } = await supabase
       .from('pacotes_cp')
       .select('*')
@@ -62,41 +62,44 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log('📦 Pacote encontrado:', pacote.nome, '-', pacote.quantidade_cp, 'CP');
+    console.log('📦 Pacote encontrado:', pacote.nome);
 
-    // 5️⃣ Buscar email do usuário (da tabela auth.users)
-    const { data: authUser, error: authError } = await supabase.auth.admin.getUserById(userId);
+    // 5️⃣ Buscar dados do USUÁRIO no banco (profiles)
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('id, name')
+      .eq('id', userId)
+      .single();
 
-    if (authError || !authUser) {
-      console.error('❌ Erro ao buscar usuário:', authError);
+    if (profileError || !profile) {
+      console.error('❌ Usuário não encontrado:', profileError);
       return NextResponse.json(
         { error: 'Usuário não encontrado' },
         { status: 404 }
       );
     }
 
-    const userEmail = authUser.user.email;
-    const userName = authUser.user.user_metadata?.name || 'Jogador';
+    console.log('👤 Usuário encontrado:', profile.name);
 
-    console.log('👤 Usuário encontrado:', userEmail);
+    // 6️⃣ Buscar EMAIL do usuário (auth.users)
+    const { data: authUser } = await supabase.auth.admin.getUserById(userId);
+    
+    const userEmail = authUser?.user?.email || `${userId}@narutoclash.com`;
+    const userName = profile.name || 'Jogador';
 
-    // 6️⃣ Buscar dados do profile (para pegar o nome do personagem)
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('name')
-      .eq('id', userId)
-      .single();
+    console.log('📧 Email:', userEmail);
 
-    const characterName = profile?.name || userName;
+    // 7️⃣ Calcular CP total (base + bônus)
+    const cpTotal = pacote.quantidade_cp + (pacote.bonus_cp || 0);
 
-    // 7️⃣ Criar registro inicial no banco (status: pending)
+    // 8️⃣ Criar registro no banco (status: pending)
     const { data: pagamento, error: insertError } = await supabase
       .from('pagamentos_mercadopago')
       .insert({
         user_id: userId,
         pacote_id: pacoteId,
         pacote_nome: pacote.nome,
-        quantidade_cp: pacote.quantidade_cp + (pacote.bonus_cp || 0),
+        quantidade_cp: cpTotal,
         valor_brl: parseFloat(pacote.preco_brl),
         status: 'pending',
         cp_creditado: false,
@@ -117,10 +120,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log('✅ Registro criado no banco com ID:', pagamento.id);
+    console.log('✅ Pagamento registrado no banco - ID:', pagamento.id);
 
-    // 8️⃣ Criar preferência de pagamento no Mercado Pago
-    const cpTotal = pacote.quantidade_cp + (pacote.bonus_cp || 0);
+    // 9️⃣ Criar preferência no Mercado Pago
     const bonusText = pacote.bonus_cp > 0 ? ` +${pacote.bonus_cp} BÔNUS` : '';
     
     const preference = {
@@ -130,12 +132,12 @@ export async function POST(request: NextRequest) {
           quantity: 1,
           unit_price: parseFloat(pacote.preco_brl),
           currency_id: 'BRL',
-          description: pacote.descricao || `Pacote de ${cpTotal} Clash Points`,
+          description: `Pacote ${pacote.nome} - ${cpTotal} Clash Points`,
         },
       ],
       payer: {
         email: userEmail,
-        name: characterName,
+        name: userName,
       },
       external_reference: pagamento.id.toString(), // ⚠️ IMPORTANTE: ID do banco
       notification_url: `${process.env.NEXT_PUBLIC_APP_URL}/api/mercadopago/webhook`,
@@ -150,14 +152,13 @@ export async function POST(request: NextRequest) {
         user_id: userId,
         pacote_id: pacoteId,
         quantidade_cp: cpTotal,
-        character_name: characterName,
+        character_name: userName,
       },
     };
 
-    console.log('📤 Enviando preferência para o Mercado Pago...');
-    console.log('External Reference:', pagamento.id);
+    console.log('📤 Criando preferência no Mercado Pago...');
 
-    // 9️⃣ Fazer requisição para API do Mercado Pago
+    // 🔟 Chamar API do Mercado Pago
     const mpResponse = await fetch('https://api.mercadopago.com/checkout/preferences', {
       method: 'POST',
       headers: {
@@ -169,13 +170,9 @@ export async function POST(request: NextRequest) {
 
     if (!mpResponse.ok) {
       const errorText = await mpResponse.text();
-      console.error('❌ Erro na API do Mercado Pago:', {
-        status: mpResponse.status,
-        statusText: mpResponse.statusText,
-        error: errorText,
-      });
+      console.error('❌ Erro do Mercado Pago:', errorText);
       
-      // Deletar registro criado se falhou
+      // Deletar registro criado
       await supabase
         .from('pagamentos_mercadopago')
         .delete()
@@ -185,19 +182,16 @@ export async function POST(request: NextRequest) {
         { 
           error: 'Erro ao criar preferência no Mercado Pago', 
           details: errorText,
-          status: mpResponse.status,
         },
         { status: 500 }
       );
     }
 
     const mpData = await mpResponse.json();
-    console.log('✅ Preferência criada com sucesso!');
-    console.log('Preference ID:', mpData.id);
-    console.log('Init Point:', mpData.init_point);
+    console.log('✅ Preferência criada - ID:', mpData.id);
 
-    // 🔟 Atualizar registro com preference_id
-    const { error: updateError } = await supabase
+    // 1️⃣1️⃣ Atualizar registro com preference_id
+    await supabase
       .from('pagamentos_mercadopago')
       .update({
         preference_id: mpData.id,
@@ -205,13 +199,9 @@ export async function POST(request: NextRequest) {
       })
       .eq('id', pagamento.id);
 
-    if (updateError) {
-      console.error('⚠️ Erro ao atualizar preference_id:', updateError);
-    }
+    console.log('✅ ===== SUCESSO =====');
 
-    console.log('✅ ===== PREFERÊNCIA CRIADA COM SUCESSO =====');
-
-    // 1️⃣1️⃣ Retornar link de pagamento
+    // 1️⃣2️⃣ Retornar link de pagamento
     return NextResponse.json({
       success: true,
       payment_id: pagamento.id,
@@ -226,7 +216,7 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error: any) {
-    console.error('❌ ===== ERRO CRÍTICO AO CRIAR PREFERÊNCIA =====');
+    console.error('❌ ===== ERRO CRÍTICO =====');
     console.error('Erro:', error);
     console.error('Stack:', error.stack);
     
@@ -234,14 +224,13 @@ export async function POST(request: NextRequest) {
       { 
         error: 'Erro interno do servidor',
         message: error.message,
-        stack: process.env.NODE_ENV === 'development' ? error.stack : undefined,
       },
       { status: 500 }
     );
   }
 }
 
-// GET para teste de configuração
+// GET para teste
 export async function GET() {
   return NextResponse.json({ 
     message: 'API de criação de preferência - Mercado Pago',
