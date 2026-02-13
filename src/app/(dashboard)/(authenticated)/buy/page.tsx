@@ -164,6 +164,7 @@ export default function ComprarCPPage() {
     setShowConfirmDialog(true);
   };
 
+
    // ✅ SUBSTITUA A FUNÇÃO handleConfirmarCompra COMPLETA POR ESTA:
    const handleConfirmarCompra = async () => {
     if (!user || !supabase || !selectedPackage) {
