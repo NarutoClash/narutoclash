@@ -166,16 +166,14 @@ export async function POST(request: NextRequest) {
 
     // 6️⃣ Atualizar registro no banco
     const { error: updateError } = await supabase
-  .from('payment_transactions')
-  .update({
-    external_payment_id: paymentId.toString(), // ← mudou de payment_id
-    status: status,
-    payment_method: paymentMethod, // ← mudou de metodo_pagamento
-    webhook_received_at: new Date().toISOString(), // ← NOVO
-    // dados_pagamento não existe mais na nova tabela
-    // Se precisar guardar, crie um registro em payment_transaction_history
-  })
-  .eq('id', externalReference);
+      .from('payment_transactions')
+      .update({
+        external_payment_id: paymentId.toString(),
+        status: status,
+        payment_method: paymentMethod,
+        webhook_received_at: new Date().toISOString(),
+      })
+      .eq('id', externalReference);
 
     if (updateError) {
       console.error('❌ Erro ao atualizar no banco:', updateError);
@@ -192,106 +190,85 @@ export async function POST(request: NextRequest) {
       console.log('💰 Pagamento APROVADO! Iniciando crédito de CP...');
 
       // Verificar se já foi creditado
-      // Verificar se já foi creditado
-const { data: pagamento, error: checkError } = await supabase
-.from('payment_transactions')
-.select('user_id, cp_amount, bonus_cp, status')
-.eq('id', externalReference)
-.single();
+      const { data: pagamento, error: checkError } = await supabase
+        .from('payment_transactions')
+        .select('user_id, cp_amount, bonus_cp, status')
+        .eq('id', externalReference)
+        .single();
 
-if (checkError) {
-console.error('❌ Erro ao verificar pagamento:', checkError);
-return NextResponse.json({ error: 'Erro ao verificar status' }, { status: 500 });
-}
+      if (checkError) {
+        console.error('❌ Erro ao verificar pagamento:', checkError);
+        return NextResponse.json({ error: 'Erro ao verificar status' }, { status: 500 });
+      }
 
-// ✅ DECLARE totalCP AQUI, UMA ÚNICA VEZ
-const totalCP = pagamento.cp_amount + (pagamento.bonus_cp || 0);
+      // Calcular CP total UMA VEZ
+      const totalCP = pagamento.cp_amount + (pagamento.bonus_cp || 0);
 
-if (pagamento.status === 'completed') {
-console.log('⚠️ CP já creditado anteriormente - pulando');
-return NextResponse.json({ 
-  received: true, 
-  status: 'already_credited',
-});
-}
+      if (pagamento.status === 'completed') {
+        console.log('⚠️ CP já creditado anteriormente - pulando');
+        return NextResponse.json({ 
+          received: true, 
+          status: 'already_credited',
+        });
+      }
 
-// Creditar CP no profile
-const { error: creditError } = await supabase
-.from('profiles')
-.update({
-  clash_points: supabase.rpc('increment_clash_points', {
-    user_id: pagamento.user_id,
-    amount: totalCP, // ← usar aqui
-  }),
-  updated_at: new Date().toISOString(),
-})
-.eq('id', pagamento.user_id);
+      // Creditar CP no profile
+      const { error: creditError } = await supabase.rpc('increment_clash_points', {
+        user_id: pagamento.user_id,
+        amount: totalCP,
+      });
 
-// Se a função RPC não funcionar, fazer update direto
-if (creditError) {
-console.log('⚠️ Tentando crédito direto...');
+      // Se a função RPC não funcionar, fazer update direto
+      if (creditError) {
+        console.log('⚠️ RPC falhou, tentando crédito direto...');
+        
+        const { data: currentProfile } = await supabase
+          .from('profiles')
+          .select('clash_points')
+          .eq('id', pagamento.user_id)
+          .single();
 
-const { data: currentProfile } = await supabase
-  .from('profiles')
-  .select('clash_points')
-  .eq('id', pagamento.user_id)
-  .single();
+        const currentCP = currentProfile?.clash_points || 0;
+        const newCP = currentCP + totalCP;
 
-const currentCP = currentProfile?.clash_points || 0;
-const newCP = currentCP + totalCP; // ← usar aqui (SEM redeclarar totalCP)
+        const { error: directCreditError } = await supabase
+          .from('profiles')
+          .update({
+            clash_points: newCP,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', pagamento.user_id);
 
-const { error: directCreditError } = await supabase
-  .from('profiles')
-  .update({
-    clash_points: newCP,
-    updated_at: new Date().toISOString(),
-  })
-  .eq('id', pagamento.user_id);
+        if (directCreditError) {
+          console.error('❌ Erro ao creditar CP:', directCreditError);
+          return NextResponse.json({ 
+            error: 'Erro ao creditar CP',
+            details: directCreditError.message,
+          }, { status: 500 });
+        }
+      }
 
-if (directCreditError) {
-  console.error('❌ Erro ao creditar CP:', directCreditError);
-  return NextResponse.json({ 
-    error: 'Erro ao creditar CP',
-    details: directCreditError.message,
-  }, { status: 500 });
-}
-}
+      // Registrar na tabela de transações
+      await supabase
+        .from('cp_transactions')
+        .insert({
+          user_id: pagamento.user_id,
+          amount: totalCP,
+          type: 'purchase',
+          description: `Compra via Mercado Pago - Pagamento #${paymentId}`,
+          created_at: new Date().toISOString(),
+        });
 
-// Registrar na tabela de transações
-await supabase
-.from('cp_transactions')
-.insert({
-  user_id: pagamento.user_id,
-  amount: totalCP, // ← usar aqui (SEM redeclarar totalCP)
-  type: 'purchase',
-  description: `Compra via Mercado Pago - Pagamento #${paymentId}`,
-  created_at: new Date().toISOString(),
-});
+      // Marcar como creditado
+      await supabase
+        .from('payment_transactions')
+        .update({ 
+          status: 'completed',
+          paid_at: new Date().toISOString(),
+        })
+        .eq('id', externalReference);
 
-// Marcar como creditado
-await supabase
-.from('payment_transactions')
-.update({ 
-  status: 'completed',
-  paid_at: new Date().toISOString(),
-})
-.eq('id', externalReference);
-
-// Registrar no histórico
-await supabase
-.from('payment_transaction_history')
-.insert({
-  transaction_id: externalReference,
-  event_type: 'payment_completed',
-  old_status: 'approved',
-  new_status: 'completed',
-  details: { 
-    cp_credited: totalCP, // ← usar aqui (SEM redeclarar totalCP)
-    credited_at: new Date().toISOString() 
-  },
-});
-
-console.log(`✅ ${totalCP} CP creditados com sucesso! (${pagamento.cp_amount} base + ${pagamento.bonus_cp || 0} bônus)`); // ← usar aqui
+      console.log(`✅ ${totalCP} CP creditados com sucesso! (${pagamento.cp_amount} base + ${pagamento.bonus_cp || 0} bônus)`);
       
     } else if (status === 'rejected') {
       console.log(`❌ Pagamento REJEITADO: ${paymentData.status_detail}`);
