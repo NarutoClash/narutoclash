@@ -164,9 +164,9 @@ export default function ComprarCPPage() {
     setShowConfirmDialog(true);
   };
 
-  // ✅ Confirmar compra e abrir checkout
-  const handleConfirmarCompra = async () => {
-    if (!user || !supabase || !selectedPackage || !deviceSessionId) {
+   // ✅ SUBSTITUA A FUNÇÃO handleConfirmarCompra COMPLETA POR ESTA:
+   const handleConfirmarCompra = async () => {
+    if (!user || !supabase || !selectedPackage) {
       toast({
         variant: 'destructive',
         title: 'Erro',
@@ -181,14 +181,12 @@ export default function ComprarCPPage() {
     try {
       console.log('🛒 Iniciando compra:', selectedPackage.nome);
       console.log('👤 Usuário:', user.id);
-      console.log('🔐 Device Session ID:', deviceSessionId);
       console.log('📦 Pacote ID:', selectedPackage.id);
 
-      // 1️⃣ Criar preferência de pagamento
+      // ✅ CORRETO: enviar userId e pacoteId (camelCase)
       const requestBody = {
-        pacote_id: selectedPackage.id,
-        user_id: user.id,
-        device_session_id: deviceSessionId, // ✅ SEMPRE ENVIA
+        userId: user.id,
+        pacoteId: selectedPackage.id,
       };
 
       console.log('📤 Enviando requisição:', JSON.stringify(requestBody, null, 2));
@@ -206,23 +204,21 @@ export default function ComprarCPPage() {
       if (!response.ok) {
         const error = await response.json();
         console.error('❌ Erro da API:', error);
-        throw new Error(error.message || error.error || 'Erro ao criar pagamento');
+        throw new Error(error.error || 'Erro ao criar pagamento');
       }
 
       const data = await response.json();
-      console.log('📦 Resposta completa da API:', data);
+      console.log('📦 Resposta da API:', data);
 
-      // 2️⃣ Verificar se o init_point foi retornado
+      // ✅ Verificar se o init_point foi retornado
       if (!data.init_point) {
-        console.error('❌ init_point não retornado. Resposta completa:', data);
+        console.error('❌ init_point não retornado. Resposta:', data);
         throw new Error('Link de pagamento não foi gerado. Tente novamente.');
       }
 
-      console.log('✅ Link de pagamento gerado:', data.init_point);
+      console.log('✅ Link de pagamento:', data.init_point);
 
-      // 3️⃣ Abrir checkout
-      console.log('🌐 Abrindo checkout...');
-      
+      // ✅ Abrir checkout em nova aba
       const checkoutWindow = window.open(
         data.init_point, 
         '_blank', 
@@ -230,44 +226,43 @@ export default function ComprarCPPage() {
       );
       
       if (!checkoutWindow || checkoutWindow.closed || typeof checkoutWindow.closed === 'undefined') {
-        console.warn('⚠️ Popup bloqueado pelo navegador');
+        console.warn('⚠️ Popup bloqueado');
         
         toast({
           title: 'Popup Bloqueado',
-          description: 'Permita popups para este site ou abra o link manualmente.',
+          description: 'Permita popups para este site.',
           variant: 'destructive',
         });
         
-        // Perguntar se quer abrir na mesma aba
         const openInSameTab = window.confirm(
-          'Os popups estão bloqueados.\n\nDeseja abrir o pagamento nesta aba? (Você será redirecionado)'
+          'Popups bloqueados.\n\nAbrir pagamento nesta aba?'
         );
         
         if (openInSameTab) {
           window.location.href = data.init_point;
         }
       } else {
-        console.log('✅ Checkout aberto em nova aba');
+        console.log('✅ Checkout aberto');
         toast({
           title: '✅ Checkout Aberto!',
-          description: 'Complete o pagamento na nova aba. Você pode continuar navegando aqui!',
+          description: 'Complete o pagamento na nova aba.',
         });
       }
 
     } catch (error: any) {
-      console.error('❌ Erro ao processar compra:', error);
-      console.error('Stack trace:', error.stack);
+      console.error('❌ Erro:', error);
       
       toast({
         variant: 'destructive',
         title: 'Erro ao processar pagamento',
-        description: error.message || 'Ocorreu um erro. Tente novamente.',
+        description: error.message || 'Tente novamente.',
       });
     } finally {
       setIsLoading(false);
       setSelectedPackage(null);
     }
   };
+
 
   if (!user || !userProfile) {
     return (
