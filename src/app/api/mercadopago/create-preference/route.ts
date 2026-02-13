@@ -1,7 +1,8 @@
-// src/app/api/mercadopago/create-preference/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import crypto from 'crypto';
 
+// Configurar Supabase (Service Role para API Routes)
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!,
@@ -10,213 +11,310 @@ const supabase = createClient(
   }
 );
 
+// ✅ Validar assinatura do Mercado Pago
+function validateMercadoPagoSignature(
+  xSignature: string | null,
+  xRequestId: string | null,
+  dataId: string
+): boolean {
+  if (!xSignature || !xRequestId) {
+    console.warn('⚠️ Headers de assinatura ausentes');
+    return false;
+  }
+
+  try {
+    const secret = process.env.MERCADOPAGO_WEBHOOK_SECRET;
+    
+    // Se você não tem o secret configurado, pular validação
+    if (!secret) {
+      console.warn('⚠️ MERCADOPAGO_WEBHOOK_SECRET não configurado - pulando validação');
+      return true;
+    }
+
+    // Extrair hash da assinatura
+    const parts = xSignature.split(',');
+    let ts = '';
+    let hash = '';
+
+    for (const part of parts) {
+      const [key, value] = part.split('=');
+      if (key && value) {
+        const trimmedKey = key.trim();
+        const trimmedValue = value.trim();
+        if (trimmedKey === 'ts') ts = trimmedValue;
+        if (trimmedKey === 'v1') hash = trimmedValue;
+      }
+    }
+
+    if (!ts || !hash) {
+      console.error('❌ Assinatura malformada');
+      return false;
+    }
+
+    // Gerar hash esperado
+    const manifest = `id:${dataId};request-id:${xRequestId};ts:${ts};`;
+    const hmac = crypto.createHmac('sha256', secret);
+    hmac.update(manifest);
+    const expectedHash = hmac.digest('hex');
+
+    const isValid = hash === expectedHash;
+    
+    if (!isValid) {
+      console.error('❌ Assinatura inválida:', { hash, expectedHash });
+    }
+
+    return isValid;
+  } catch (error) {
+    console.error('❌ Erro ao validar assinatura:', error);
+    return false;
+  }
+}
+
 export async function POST(request: NextRequest) {
-  console.log('💳 ===== CRIANDO PREFERÊNCIA DE PAGAMENTO =====');
+  console.log('🔔 ===== WEBHOOK INICIADO =====');
   
   try {
-    // 1️⃣ Ler dados da requisição
-    const body = await request.json();
-    const { userId, pacoteId } = body;
-
-    console.log('📦 Dados recebidos:', { userId, pacoteId });
-
-    // 2️⃣ Validar dados obrigatórios
-    if (!userId || !pacoteId) {
-      console.error('❌ Dados incompletos');
-      return NextResponse.json(
-        { error: 'userId e pacoteId são obrigatórios' },
-        { status: 400 }
-      );
+    // 1️⃣ Ler o body
+    let body;
+    try {
+      body = await request.json();
+      console.log('📦 Body recebido:', JSON.stringify(body, null, 2));
+      console.log('🔍 Estrutura do body:', {
+        keys: Object.keys(body),
+        type: body.type,
+        topic: body.topic,
+        action: body.action,
+        data: body.data,
+        resource: body.resource,
+        id: body.id,
+      });
+    } catch (parseError) {
+      console.error('❌ Erro ao fazer parse do JSON:', parseError);
+      return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
     }
 
-    // 3️⃣ Verificar variáveis de ambiente
-    if (!process.env.MERCADOPAGO_ACCESS_TOKEN) {
-      console.error('❌ MERCADOPAGO_ACCESS_TOKEN não configurado');
-      return NextResponse.json(
-        { error: 'Mercado Pago não configurado no servidor' },
-        { status: 500 }
-      );
+    // 2️⃣ Validar estrutura básica (aceitar múltiplos formatos)
+    if (!body) {
+      console.error('❌ Body vazio');
+      return NextResponse.json({ error: 'Empty body' }, { status: 400 });
     }
 
-    if (!process.env.NEXT_PUBLIC_APP_URL) {
-      console.error('❌ NEXT_PUBLIC_APP_URL não configurado');
-      return NextResponse.json(
-        { error: 'URL do app não configurada' },
-        { status: 500 }
-      );
-    }
-
-    // 4️⃣ Buscar dados do PACOTE no banco
-    const { data: pacote, error: pacoteError } = await supabase
-      .from('pacotes_cp')
-      .select('*')
-      .eq('id', pacoteId)
-      .eq('ativo', true)
-      .single();
-
-    if (pacoteError || !pacote) {
-      console.error('❌ Pacote não encontrado:', pacoteError);
-      return NextResponse.json(
-        { error: 'Pacote não encontrado ou inativo' },
-        { status: 404 }
-      );
-    }
-
-    console.log('📦 Pacote encontrado:', pacote.nome);
-
-    // 5️⃣ Buscar dados do USUÁRIO no banco (profiles)
-    const { data: profile, error: profileError } = await supabase
-      .from('profiles')
-      .select('id, name')
-      .eq('id', userId)
-      .single();
-
-    if (profileError || !profile) {
-      console.error('❌ Usuário não encontrado:', profileError);
-      return NextResponse.json(
-        { error: 'Usuário não encontrado' },
-        { status: 404 }
-      );
-    }
-
-    console.log('👤 Usuário encontrado:', profile.name);
-
-    // 6️⃣ Buscar EMAIL do usuário (auth.users)
-    const { data: authUser } = await supabase.auth.admin.getUserById(userId);
+    // O Mercado Pago pode enviar em diferentes formatos:
+    // Formato 1: { type, data: { id } }
+    // Formato 2: { topic, resource, id }
+    // Formato 3: { action, data: { id } }
     
-    const userEmail = authUser?.user?.email || `${userId}@narutoclash.com`;
-    const userName = profile.name || 'Jogador';
-
-    console.log('📧 Email:', userEmail);
-
-    // 7️⃣ Calcular CP total (base + bônus)
-    const cpTotal = pacote.quantidade_cp + (pacote.bonus_cp || 0);
-
-    // 8️⃣ Criar registro no banco (status: pending)
-    const { data: pagamento, error: insertError } = await supabase
-      .from('pagamentos_mercadopago')
-      .insert({
-        user_id: userId,
-        pacote_id: pacoteId,
-        pacote_nome: pacote.nome,
-        quantidade_cp: cpTotal,
-        valor_brl: parseFloat(pacote.preco_brl),
-        status: 'pending',
-        cp_creditado: false,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      })
-      .select()
-      .single();
-
-    if (insertError || !pagamento) {
-      console.error('❌ Erro ao criar registro:', insertError);
-      return NextResponse.json(
-        { 
-          error: 'Erro ao criar registro de pagamento',
-          details: insertError?.message 
-        },
-        { status: 500 }
-      );
-    }
-
-    console.log('✅ Pagamento registrado no banco - ID:', pagamento.id);
-
-    // 9️⃣ Criar preferência no Mercado Pago
-    const bonusText = pacote.bonus_cp > 0 ? ` +${pacote.bonus_cp} BÔNUS` : '';
+    const type = body.type || body.topic || body.action;
+    let dataId = body.data?.id || body.resource || body.id;
     
-    const preference = {
-      items: [
-        {
-          title: `${pacote.nome} - ${cpTotal} CP${bonusText}`,
-          quantity: 1,
-          unit_price: parseFloat(pacote.preco_brl),
-          currency_id: 'BRL',
-          description: `Pacote ${pacote.nome} - ${cpTotal} Clash Points`,
-        },
-      ],
-      payer: {
-        email: userEmail,
-        name: userName,
-      },
-      external_reference: pagamento.id.toString(), // ⚠️ IMPORTANTE: ID do banco
-      notification_url: `${process.env.NEXT_PUBLIC_APP_URL}/api/mercadopago/webhook`,
-      back_urls: {
-        success: `${process.env.NEXT_PUBLIC_APP_URL}/loja?status=success`,
-        failure: `${process.env.NEXT_PUBLIC_APP_URL}/loja?status=failure`,
-        pending: `${process.env.NEXT_PUBLIC_APP_URL}/loja?status=pending`,
-      },
-      auto_return: 'approved',
-      statement_descriptor: 'NARUTO CLASH',
-      metadata: {
-        user_id: userId,
-        pacote_id: pacoteId,
-        quantidade_cp: cpTotal,
-        character_name: userName,
-      },
-    };
+    console.log('🔍 Valores extraídos:', { type, dataId });
+    
+    if (!type) {
+      console.error('❌ Tipo de notificação não identificado');
+      console.error('Body completo:', body);
+      // ACEITAR MESMO ASSIM e retornar sucesso para não ficar em loop
+      return NextResponse.json({ 
+        received: true, 
+        warning: 'Unknown notification type',
+        body: body 
+      });
+    }
+    
+    if (!dataId) {
+      console.error('❌ ID do recurso não encontrado');
+      console.error('Body completo:', body);
+      // ACEITAR MESMO ASSIM e retornar sucesso
+      return NextResponse.json({ 
+        received: true, 
+        warning: 'Resource ID not found',
+        body: body 
+      });
+    }
+    
+    const data = { id: dataId };
 
-    console.log('📤 Criando preferência no Mercado Pago...');
-
-    // 🔟 Chamar API do Mercado Pago
-    const mpResponse = await fetch('https://api.mercadopago.com/checkout/preferences', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${process.env.MERCADOPAGO_ACCESS_TOKEN}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(preference),
+    // 3️⃣ Validar assinatura
+    const xSignature = request.headers.get('x-signature');
+    const xRequestId = request.headers.get('x-request-id');
+    
+    console.log('🔐 Headers de segurança:', {
+      hasSignature: !!xSignature,
+      hasRequestId: !!xRequestId,
     });
 
-    if (!mpResponse.ok) {
-      const errorText = await mpResponse.text();
-      console.error('❌ Erro do Mercado Pago:', errorText);
+    if (dataId) {
+      const isValid = validateMercadoPagoSignature(xSignature, xRequestId, String(dataId));
       
-      // Deletar registro criado
-      await supabase
-        .from('pagamentos_mercadopago')
-        .delete()
-        .eq('id', pagamento.id);
-
-      return NextResponse.json(
-        { 
-          error: 'Erro ao criar preferência no Mercado Pago', 
-          details: errorText,
-        },
-        { status: 500 }
-      );
+      if (!isValid && process.env.NODE_ENV === 'production') {
+        console.error('❌ Assinatura inválida - requisição rejeitada');
+        return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
+      }
     }
 
-    const mpData = await mpResponse.json();
-    console.log('✅ Preferência criada - ID:', mpData.id);
+    // 4️⃣ Verificar tipo de notificação
+    const action = body.action;
 
-    // 1️⃣1️⃣ Atualizar registro com preference_id
-    await supabase
-      .from('pagamentos_mercadopago')
-      .update({
-        preference_id: mpData.id,
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', pagamento.id);
+    console.log('📋 Tipo de notificação:', { type, action, dataId });
 
-    console.log('✅ ===== SUCESSO =====');
+    // Só processar notificações de pagamento
+    if (type !== 'payment') {
+      console.log('ℹ️ Tipo de notificação ignorado:', type);
+      return NextResponse.json({ received: true, ignored: type });
+    }
 
-    // 1️⃣2️⃣ Retornar link de pagamento
-    return NextResponse.json({
-      success: true,
-      payment_id: pagamento.id,
-      preference_id: mpData.id,
-      init_point: mpData.init_point,
-      sandbox_init_point: mpData.sandbox_init_point,
-      pacote: {
-        nome: pacote.nome,
-        quantidade_cp: cpTotal,
-        valor: parseFloat(pacote.preco_brl),
-      },
+    // 5️⃣ Extrair ID do pagamento
+    const paymentId = dataId;
+
+    if (!paymentId) {
+      console.error('❌ Payment ID não encontrado no webhook');
+      return NextResponse.json({ error: 'Payment ID não encontrado' }, { status: 400 });
+    }
+
+    console.log('💳 Processando pagamento:', paymentId);
+
+    // 6️⃣ Buscar informações do pagamento na API do Mercado Pago
+    let paymentData;
+    try {
+      const paymentResponse = await fetch(
+        `https://api.mercadopago.com/v1/payments/${paymentId}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${process.env.MERCADOPAGO_ACCESS_TOKEN}`,
+          },
+        }
+      );
+
+      if (!paymentResponse.ok) {
+        const errorText = await paymentResponse.text();
+        console.error('❌ Erro ao buscar pagamento no MP:', {
+          status: paymentResponse.status,
+          error: errorText,
+        });
+        return NextResponse.json({ error: 'Erro ao consultar pagamento' }, { status: 500 });
+      }
+
+      paymentData = await paymentResponse.json();
+      
+      console.log('📊 Dados do pagamento recebidos:', {
+        id: paymentData.id,
+        status: paymentData.status,
+        status_detail: paymentData.status_detail,
+        external_reference: paymentData.external_reference,
+        transaction_amount: paymentData.transaction_amount,
+      });
+    } catch (fetchError) {
+      console.error('❌ Erro ao fazer fetch do pagamento:', fetchError);
+      return NextResponse.json({ error: 'Erro de rede ao consultar MP' }, { status: 500 });
+    }
+
+    // 7️⃣ Extrair dados importantes
+    const status = paymentData.status;
+    const externalReference = paymentData.external_reference;
+    const paymentMethod = paymentData.payment_method_id;
+
+    if (!externalReference) {
+      console.error('❌ external_reference não encontrado no pagamento');
+      return NextResponse.json({ error: 'External reference ausente' }, { status: 400 });
+    }
+
+    console.log('🔗 External Reference:', externalReference);
+
+    // 8️⃣ Atualizar registro no banco
+    try {
+      const { error: updateError } = await supabase
+        .from('pagamentos_mercadopago')
+        .update({
+          payment_id: paymentId.toString(),
+          status: status,
+          metodo_pagamento: paymentMethod,
+          dados_pagamento: paymentData,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', externalReference);
+
+      if (updateError) {
+        console.error('❌ Erro ao atualizar no Supabase:', updateError);
+        return NextResponse.json({ 
+          error: 'Erro ao atualizar registro',
+          details: updateError.message,
+        }, { status: 500 });
+      }
+
+      console.log('✅ Pagamento atualizado no banco');
+    } catch (dbError) {
+      console.error('❌ Erro de banco de dados:', dbError);
+      return NextResponse.json({ error: 'Erro de banco de dados' }, { status: 500 });
+    }
+
+    // 9️⃣ Se aprovado, creditar CP
+    if (status === 'approved') {
+      console.log('💰 Pagamento aprovado! Iniciando crédito de CP...');
+
+      try {
+        // Verificar se já foi processado
+        const { data: existingPayment, error: checkError } = await supabase
+          .from('pagamentos_mercadopago')
+          .select('status, user_id, quantidade_cp')
+          .eq('payment_id', paymentId.toString())
+          .single();
+
+        if (checkError) {
+          console.error('❌ Erro ao verificar status:', checkError);
+        }
+
+        if (existingPayment?.status === 'credited') {
+          console.log('⚠️ Pagamento já creditado - pulando');
+          return NextResponse.json({ 
+            received: true, 
+            status: 'already_credited',
+          });
+        }
+
+        // Chamar função SQL para creditar
+        const { error: creditError } = await supabase.rpc('processar_pagamento_aprovado', {
+          p_payment_id: paymentId.toString(),
+        });
+
+        if (creditError) {
+          console.error('❌ Erro ao creditar CP:', creditError);
+          return NextResponse.json({ 
+            error: 'Erro ao creditar CP',
+            details: creditError.message,
+          }, { status: 500 });
+        }
+
+        // Marcar como creditado
+        await supabase
+          .from('pagamentos_mercadopago')
+          .update({ status: 'credited' })
+          .eq('payment_id', paymentId.toString());
+
+        console.log('✅ CP creditado com sucesso!');
+        
+      } catch (creditProcessError) {
+        console.error('❌ Erro no processo de crédito:', creditProcessError);
+        return NextResponse.json({ 
+          error: 'Erro ao processar crédito',
+        }, { status: 500 });
+      }
+    } else if (status === 'rejected') {
+      console.log(`❌ Pagamento rejeitado: ${paymentData.status_detail}`);
+    } else if (status === 'pending') {
+      console.log(`⏳ Pagamento pendente: ${paymentData.status_detail}`);
+    } else {
+      console.log(`ℹ️ Pagamento com status: ${status}`);
+    }
+
+    console.log('🔔 ===== WEBHOOK FINALIZADO COM SUCESSO =====');
+    
+    return NextResponse.json({ 
+      received: true, 
+      status,
+      payment_id: paymentId,
     });
 
   } catch (error: any) {
-    console.error('❌ ===== ERRO CRÍTICO =====');
+    console.error('❌ ===== ERRO CRÍTICO NO WEBHOOK =====');
     console.error('Erro:', error);
     console.error('Stack:', error.stack);
     
@@ -224,6 +322,7 @@ export async function POST(request: NextRequest) {
       { 
         error: 'Erro interno do servidor',
         message: error.message,
+        timestamp: new Date().toISOString(),
       },
       { status: 500 }
     );
@@ -233,19 +332,14 @@ export async function POST(request: NextRequest) {
 // GET para teste
 export async function GET() {
   return NextResponse.json({ 
-    message: 'API de criação de preferência - Mercado Pago',
+    message: 'Webhook do Mercado Pago - v2.0 (Corrigido)',
     status: 'online',
     timestamp: new Date().toISOString(),
     config: {
+      has_webhook_secret: !!process.env.MERCADOPAGO_WEBHOOK_SECRET,
       has_access_token: !!process.env.MERCADOPAGO_ACCESS_TOKEN,
-      access_token_preview: process.env.MERCADOPAGO_ACCESS_TOKEN 
-        ? `${process.env.MERCADOPAGO_ACCESS_TOKEN.substring(0, 20)}...` 
-        : 'NÃO CONFIGURADO',
-      has_app_url: !!process.env.NEXT_PUBLIC_APP_URL,
-      app_url: process.env.NEXT_PUBLIC_APP_URL || 'NÃO CONFIGURADO',
-      has_supabase: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
+      has_supabase_url: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
       has_service_key: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
-      webhook_url: `${process.env.NEXT_PUBLIC_APP_URL}/api/mercadopago/webhook`,
     }
   });
 }
