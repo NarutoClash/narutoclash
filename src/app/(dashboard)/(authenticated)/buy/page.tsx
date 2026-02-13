@@ -24,10 +24,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { DadosAdicionaisForm } from '@/components/forms/DadosAdicionaisForm';
 
-
-// ✅ Declaração global do MercadoPago
 declare global {
   interface Window {
     MercadoPago: any;
@@ -51,10 +48,8 @@ export default function ComprarCPPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [selectedPackage, setSelectedPackage] = useState<WithId<PacoteCP> | null>(null);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
-  const [mpInstance, setMpInstance] = useState<any>(null);
-  const [deviceSessionId, setDeviceSessionId] = useState<string>('');
   const [mpReady, setMpReady] = useState(false);
-  const [mpLoadAttempts, setMpLoadAttempts] = useState(0);
+  const [systemReady, setSystemReady] = useState(false);
 
   // Buscar perfil do usuário
   const userProfileRef = useMemoSupabase(() => 
@@ -70,70 +65,66 @@ export default function ComprarCPPage() {
   }), []);
   const { data: pacotes, isLoading: arePacotesLoading } = useCollection<WithId<PacoteCP>>(pacotesQuery);
 
-  // ✅ Gerar Device Session ID IMEDIATAMENTE (não depende do MP)
+  // ✅ Marcar sistema como pronto após 2 segundos (tempo para carregar MP SDK)
   useEffect(() => {
-    if (!deviceSessionId) {
-      const sessionId = `mp-device-${Date.now()}-${Math.random().toString(36).substring(2, 15)}`;
-      setDeviceSessionId(sessionId);
-      console.log('🔐 Device Session ID gerado:', sessionId);
-    }
-  }, [deviceSessionId]);
+    const timer = setTimeout(() => {
+      setSystemReady(true);
+      console.log('✅ Sistema pronto para compras');
+    }, 2000);
 
-  // ✅ Tentar inicializar MP múltiplas vezes se necessário
+    return () => clearTimeout(timer);
+  }, []);
+
+  // ✅ Inicializar Mercado Pago
   useEffect(() => {
-    const MAX_ATTEMPTS = 10;
-    const RETRY_DELAY = 500;
+    if (mpReady) return;
 
-    const tryInitMercadoPago = () => {
-      if (mpReady) return; // Já inicializou
-
+    const initMP = () => {
       if (typeof window !== 'undefined' && window.MercadoPago) {
         try {
           const publicKey = process.env.NEXT_PUBLIC_MERCADOPAGO_PUBLIC_KEY;
           
           if (!publicKey) {
-            console.error('❌ NEXT_PUBLIC_MERCADOPAGO_PUBLIC_KEY não configurada');
-            toast({
-              variant: 'destructive',
-              title: 'Erro de Configuração',
-              description: 'Sistema de pagamentos não configurado. Entre em contato com o suporte.',
-            });
+            console.error('❌ Public Key não configurada');
             return;
           }
 
-          console.log('🔑 Inicializando Mercado Pago (tentativa', mpLoadAttempts + 1, ')...');
+          console.log('🔑 Inicializando Mercado Pago...');
           
           const mp = new window.MercadoPago(publicKey, {
             locale: 'pt-BR'
           });
 
-          setMpInstance(mp);
           setMpReady(true);
-          
-          console.log('✅ Mercado Pago inicializado com sucesso!');
+          console.log('✅ Mercado Pago inicializado!');
 
         } catch (error) {
-          console.error('❌ Erro ao inicializar Mercado Pago:', error);
-        }
-      } else {
-        // SDK ainda não carregou
-        if (mpLoadAttempts < MAX_ATTEMPTS) {
-          console.log('⏳ SDK do Mercado Pago ainda não carregou, tentando novamente...');
-          setMpLoadAttempts(prev => prev + 1);
-          setTimeout(tryInitMercadoPago, RETRY_DELAY);
-        } else {
-          console.error('❌ Timeout ao carregar SDK do Mercado Pago');
-          toast({
-            variant: 'destructive',
-            title: 'Erro ao Carregar Pagamentos',
-            description: 'Não foi possível carregar o sistema. Recarregue a página.',
-          });
+          console.error('❌ Erro ao inicializar MP:', error);
         }
       }
     };
 
-    tryInitMercadoPago();
-  }, [mpLoadAttempts, mpReady, toast]);
+    // Tentar inicializar a cada 500ms por até 10 tentativas
+    let attempts = 0;
+    const interval = setInterval(() => {
+      attempts++;
+      
+      if (window.MercadoPago) {
+        initMP();
+        clearInterval(interval);
+      } else if (attempts >= 10) {
+        console.error('❌ Timeout ao carregar SDK do Mercado Pago');
+        clearInterval(interval);
+        toast({
+          variant: 'destructive',
+          title: 'Erro ao Carregar',
+          description: 'Recarregue a página para tentar novamente.',
+        });
+      }
+    }, 500);
+
+    return () => clearInterval(interval);
+  }, [mpReady, toast]);
 
   // 🎨 Cores para cada pacote
   const getPackageTheme = (nome: string) => {
@@ -147,26 +138,22 @@ export default function ComprarCPPage() {
 
   // ✅ Abrir popup de confirmação
   const handleClickComprar = (pacote: WithId<PacoteCP>) => {
-    // ✅ Verificar se o Device ID foi gerado
-    if (!deviceSessionId) {
+    if (!systemReady) {
       toast({
         variant: 'destructive',
         title: 'Aguarde',
-        description: 'Sistema ainda está inicializando...',
+        description: 'Sistema ainda está carregando...',
       });
       return;
     }
 
     console.log('🛒 Pacote selecionado:', pacote.nome);
-    console.log('🔐 Device ID disponível:', deviceSessionId);
-    
     setSelectedPackage(pacote);
     setShowConfirmDialog(true);
   };
 
-
-   // ✅ SUBSTITUA A FUNÇÃO handleConfirmarCompra COMPLETA POR ESTA:
-   const handleConfirmarCompra = async () => {
+  // ✅ Confirmar compra
+  const handleConfirmarCompra = async () => {
     if (!user || !supabase || !selectedPackage) {
       toast({
         variant: 'destructive',
@@ -184,13 +171,12 @@ export default function ComprarCPPage() {
       console.log('👤 Usuário:', user.id);
       console.log('📦 Pacote ID:', selectedPackage.id);
 
-      // ✅ CORRETO: enviar userId e pacoteId (camelCase)
       const requestBody = {
         userId: user.id,
         pacoteId: selectedPackage.id,
       };
 
-      console.log('📤 Enviando requisição:', JSON.stringify(requestBody, null, 2));
+      console.log('📤 Enviando requisição...');
 
       const response = await fetch('/api/mercadopago/create-preference', {
         method: 'POST',
@@ -200,7 +186,7 @@ export default function ComprarCPPage() {
         body: JSON.stringify(requestBody),
       });
 
-      console.log('📥 Status da resposta:', response.status, response.statusText);
+      console.log('📥 Status:', response.status);
 
       if (!response.ok) {
         const error = await response.json();
@@ -209,17 +195,16 @@ export default function ComprarCPPage() {
       }
 
       const data = await response.json();
-      console.log('📦 Resposta da API:', data);
+      console.log('📦 Resposta:', data);
 
-      // ✅ Verificar se o init_point foi retornado
       if (!data.init_point) {
-        console.error('❌ init_point não retornado. Resposta:', data);
-        throw new Error('Link de pagamento não foi gerado. Tente novamente.');
+        console.error('❌ init_point não retornado');
+        throw new Error('Link de pagamento não foi gerado.');
       }
 
-      console.log('✅ Link de pagamento:', data.init_point);
+      console.log('✅ Link:', data.init_point);
 
-      // ✅ Abrir checkout em nova aba
+      // ✅ Abrir checkout
       const checkoutWindow = window.open(
         data.init_point, 
         '_blank', 
@@ -235,9 +220,7 @@ export default function ComprarCPPage() {
           variant: 'destructive',
         });
         
-        const openInSameTab = window.confirm(
-          'Popups bloqueados.\n\nAbrir pagamento nesta aba?'
-        );
+        const openInSameTab = window.confirm('Popups bloqueados.\n\nAbrir pagamento nesta aba?');
         
         if (openInSameTab) {
           window.location.href = data.init_point;
@@ -264,7 +247,6 @@ export default function ComprarCPPage() {
     }
   };
 
-
   if (!user || !userProfile) {
     return (
       <div className="flex justify-center items-center h-full">
@@ -281,7 +263,6 @@ export default function ComprarCPPage() {
         strategy="afterInteractive"
         onLoad={() => {
           console.log('📦 SDK do Mercado Pago carregado');
-          setMpLoadAttempts(0); // Reset contador para tentar inicializar
         }}
         onError={(e) => {
           console.error('❌ Erro ao carregar SDK:', e);
@@ -345,7 +326,7 @@ export default function ComprarCPPage() {
               <Button 
                 onClick={handleConfirmarCompra}
                 className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700"
-                disabled={isLoading || !deviceSessionId}
+                disabled={isLoading}
               >
                 {isLoading ? (
                   <>
@@ -364,11 +345,11 @@ export default function ComprarCPPage() {
         </Dialog>
 
         {/* Alerta de carregamento */}
-        {!deviceSessionId && (
+        {!systemReady && (
           <Alert className="mt-6 max-w-4xl mx-auto bg-yellow-500/10 border-yellow-500/30">
             <Loader2 className="h-4 w-4 text-yellow-500 animate-spin" />
             <AlertDescription className="text-gray-300">
-              Inicializando sistema de pagamentos...
+              Carregando sistema de pagamentos...
             </AlertDescription>
           </Alert>
         )}
@@ -459,9 +440,9 @@ export default function ComprarCPPage() {
                         className="w-full bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 shadow-lg shadow-orange-500/50" 
                         size="lg"
                         onClick={() => handleClickComprar(pacote)}
-                        disabled={isLoading || !deviceSessionId}
+                        disabled={isLoading || !systemReady}
                       >
-                        {!deviceSessionId ? (
+                        {!systemReady ? (
                           <>
                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                             Carregando...
@@ -525,9 +506,9 @@ export default function ComprarCPPage() {
           <Card className="mt-4 max-w-4xl mx-auto bg-gray-900/50 border-gray-700">
             <CardContent className="pt-6">
               <div className="text-xs font-mono text-gray-500 space-y-1">
-                <p>🔐 Device ID: {deviceSessionId || '⏳ Gerando...'}</p>
-                <p>📡 MP Ready: {mpReady ? '✅ Sim' : '⏳ Não'}</p>
-                <p>🔄 Tentativas: {mpLoadAttempts}</p>
+                <p>📡 Sistema Pronto: {systemReady ? '✅ Sim' : '⏳ Não'}</p>
+                <p>💳 MP Ready: {mpReady ? '✅ Sim' : '⏳ Não'}</p>
+                <p>🔄 Loading: {isLoading ? '🔄 Sim' : '✅ Não'}</p>
               </div>
             </CardContent>
           </Card>
