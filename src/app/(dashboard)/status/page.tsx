@@ -2519,20 +2519,11 @@ const BattleReportModal = () => {
                 <AvatarFallback>{userProfile.name?.charAt(0)}</AvatarFallback>
               </Avatar>
               <div className="flex-1 text-center sm:text-left">
-                <div className="flex items-center justify-center sm:justify-start gap-4">
-                  <CardTitle className="font-headline text-3xl">
-                    {userProfile.name}
-                  </CardTitle>
-                  {villageImage && (
-  <Image 
-    src={villageImage.imageUrl} 
-    alt={villageImage.description}
-    width={30}
-    height={30}
-    className="object-contain"
-  />
-)}
-                </div>
+              <div className="flex items-center justify-center sm:justify-start gap-4">
+  <CardTitle className="font-headline text-3xl">
+    {userProfile.name}
+  </CardTitle>
+</div>
                 <div className="flex items-center justify-center sm:justify-start gap-2 mt-2">
   <CardDescription className="text-md">
     Nível {userProfile.level} - {userProfile.village}
