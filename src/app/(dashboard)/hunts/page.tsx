@@ -20,7 +20,7 @@ import {
 } from '@/components/ui/select';
 import { useSupabase, useMemoSupabase } from '@/supabase';
 import { useDoc } from '@/supabase/hooks/use-doc';
-import { Loader2, Search, Timer, Swords, ScrollText, CheckCircle } from 'lucide-react';
+import { Loader2, Search, Timer, Swords, ScrollText, CheckCircle, Users } from 'lucide-react';
 import Link from 'next/link';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
@@ -191,6 +191,8 @@ useEffect(() => {
   
     return () => clearInterval(interval);
   }, [searchCooldown, winner]);
+
+
 
   const handleBattle = async () => {
     if (!userProfile || !opponent || !supabase || !user) return;
@@ -682,6 +684,7 @@ useEffect(() => {
     }
   };
 
+
   const handleCompleteHunt = async () => {
     if (!userProfileRef || !userProfile || !activeHunt || !supabase) return;
     
@@ -908,6 +911,8 @@ const remainingHuntTime = Math.max(0, huntLimit - dailyHuntTimeUsed);
   )}
 </CardFooter>
         </Card>
+
+
 
         <Card>
           <CardHeader>

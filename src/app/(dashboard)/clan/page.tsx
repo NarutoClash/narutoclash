@@ -35,6 +35,11 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Trophy, Target, Gift, Clock, CheckCircle, Timer } from 'lucide-react';
 import { ClanChat } from '../(authenticated)/clan/clanchat';
+import { ClanTechnologies } from '@/components/clan-technologies';
+import { ClanDonation } from '@/components/clan-donation';
+import { ClanBattleHistory } from '@/components/clan-battle-history';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ClanBattleSearch } from '@/components/clan-battle-search';
 
 
 // Função para calcular limite de membros baseado no nível do clã
@@ -61,9 +66,15 @@ type ClanData = {
   xp: number;
   xp_required: number;
   active_missions?: {
-    missions: string[];  // ✅ Array de strings (IDs)
+    missions: string[];
     nextReset: number;
   };
+  technologies?: {
+    dojo: number;
+    hospital: number;
+    library: number;
+  };
+  treasury_ryo?: number;
 };
 
 type ClanMember = { 
@@ -735,14 +746,14 @@ useEffect(() => {
 
   const handleLeaveClan = async () => {
     if (!user || !supabase || !userProfile || !userProfile.clan_id || !userProfileRef) return;
-
+  
     setIsSubmitting(true);
-
+  
     try {
       const clanId = userProfile.clan_id;
       const isLeader = userRole === 'Líder';
       const totalMembers = clanMembers?.length ?? 0;
-
+  
       if (isLeader && totalMembers > 1) {
         toast({
           variant: 'destructive',
@@ -752,19 +763,42 @@ useEffect(() => {
         setIsSubmitting(false);
         return;
       }
-
+  
       if (isLeader && totalMembers <= 1) {
+        // ✅ DELETAR TUDO RELACIONADO AO CLÃ (ordem correta)
+        
+        // 1. Deletar membros
         await supabase.from('clan_members').delete().eq('clan_id', clanId);
+        
+        // 2. Deletar solicitações
         await supabase.from('clan_join_requests').delete().eq('clan_id', clanId);
+        
+        // 3. Deletar missões completadas
+        await supabase.from('clan_mission_completions').delete().eq('clan_id', clanId);
+        
+        // 4. Deletar mensagens do chat
+        await supabase.from('clan_chat_messages').delete().eq('clan_id', clanId);
+        
+        // 5. Deletar doações (se a tabela existir)
+        try {
+          await supabase.from('clan_donations').delete().eq('clan_id', clanId);
+        } catch (e) {
+          // Tabela pode não existir ainda
+        }
+        
+        // 6. FINALMENTE deletar o clã
         await supabase.from('clans').delete().eq('id', clanId);
+        
       } else {
+        // Apenas sair do clã (não é líder ou tem outros membros)
         await supabase
           .from('clan_members')
           .delete()
           .eq('clan_id', clanId)
           .eq('user_id', user.id);
       }
-
+  
+      // Atualizar perfil do usuário
       await supabase
         .from('profiles')
         .update({
@@ -773,13 +807,14 @@ useEffect(() => {
           pending_clan_request: null,
         })
         .eq('id', user.id);
-
+  
       toast({
         title: isLeader ? 'Clã desbandado' : 'Você saiu do clã',
         description: isLeader ? 'O clã foi dissolvido com sucesso.' : 'Sua saída foi realizada com sucesso.',
       });
+      
       window.location.reload();
-
+  
     } catch (error: any) {
       toast({
         variant: 'destructive',
@@ -900,28 +935,28 @@ useEffect(() => {
         <PageHeader title={clanData.name} description={`[${clanData.tag}] - ${clanData.description}`} />
         
         <Card className="mt-6">
-        <CardHeader>
-  <div className="flex justify-between items-center">
-    <div>
-      <CardTitle className="flex items-center gap-2">
-        <Trophy className="text-primary" />
-        Informações do Clã
-      </CardTitle>
-      <CardDescription>
-        Nível {clanData.level} • {totalMembros}/{getClanMemberLimit(clanData.level)} Membros
-      </CardDescription>
-    </div>
-    {dailyMissionsResetTimer && (
-      <div className="flex flex-col items-end gap-1">
-        <span className="text-xs text-muted-foreground">Próximo reset:</span>
-        <div className="flex items-center gap-2 rounded-md border bg-muted px-3 py-1.5 text-sm">
-          <Timer className="h-4 w-4 text-primary"/>
-          <span className="font-mono font-semibold">{dailyMissionsResetTimer}</span>
-        </div>
-      </div>
-    )}
-  </div>
-</CardHeader>
+          <CardHeader>
+            <div className="flex justify-between items-center">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <Trophy className="text-primary" />
+                  Informações do Clã
+                </CardTitle>
+                <CardDescription>
+                  Nível {clanData.level} • {totalMembros}/{getClanMemberLimit(clanData.level)} Membros
+                </CardDescription>
+              </div>
+              {dailyMissionsResetTimer && (
+                <div className="flex flex-col items-end gap-1">
+                  <span className="text-xs text-muted-foreground">Próximo reset:</span>
+                  <div className="flex items-center gap-2 rounded-md border bg-muted px-3 py-1.5 text-sm">
+                    <Timer className="h-4 w-4 text-primary"/>
+                    <span className="font-mono font-semibold">{dailyMissionsResetTimer}</span>
+                  </div>
+                </div>
+              )}
+            </div>
+          </CardHeader>
           <CardContent>
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
@@ -1058,75 +1093,97 @@ useEffect(() => {
           </Card>
 
           <div className="space-y-8">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2"><Shield className="text-primary"/>Opções do Clã</CardTitle>
-              </CardHeader>
-              <CardContent className="flex flex-col gap-4">
-                <p className="text-sm text-muted-foreground">Líder: {clanData.leader_name}</p>
-                
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button variant="destructive" disabled={isSubmitting}>
-                      <LogOut className="mr-2"/>{isLeader ? 'Disbandar Clã' : 'Sair do Clã'}
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        {isLeader && totalMembros > 1 
-                          ? 'Você não pode sair do clã como líder enquanto houver outros membros. Expulse todos primeiro ou passe a liderança.'
-                          : isLeader
-                          ? 'Esta ação irá dissolver o clã permanentemente.'
-                          : 'Você será removido do clã.'
-                        }
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                      <AlertDialogAction onClick={handleLeaveClan} className={cn(buttonVariants({variant: 'destructive'}))}>Confirmar</AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-              </CardContent>
-            </Card>
+  {/* 🆕 CARD DE DOAÇÃO */}
+  {user && userProfile && (
+    <ClanDonation
+      clanId={clanData.id}
+      userRyo={userProfile.ryo || 0}
+      userId={user.id}
+      userName={userProfile.name}
+      supabase={supabase}
+    />
+  )}
 
-            {user && userProfile && clanRef && (
-              <ClanChat 
-                clanId={clanRef.id}
-                userId={user.id}
-                userName={userProfile.name}
-                supabase={supabase}
-              />
-            )}
+  {/* 🆕 BUSCA DE BATALHAS ENTRE CLÃS */}
+  {user && userProfile && (
+    <ClanBattleSearch
+      userProfile={userProfile}
+      supabase={supabase}
+      userId={user.id}
+    />
+  )}
 
-            {isManager && (
-              <Card>
-                <CardHeader><CardTitle className="flex items-center gap-2"><UserCheck />Solicitações</CardTitle></CardHeader>
-                <CardContent>
-                  {areRequestsLoading ? <Loader2 className="h-6 w-6 animate-spin"/> : 
-                    joinRequests && joinRequests.length > 0 ? (
-                      <div className="space-y-3">
-                        {joinRequests.map(req => (
-                          <div key={req.id} className="flex justify-between items-center bg-muted/50 p-2 rounded-md">
-                            <div>
-                              <p className="font-semibold">{req.user_name}</p>
-                              <p className="text-xs text-muted-foreground">Nível: {req.user_level}</p>
-                            </div>
-                            <div className="flex gap-2">
-                              <Button size="sm" variant="outline" className="text-red-500 border-red-500 hover:bg-red-500/10" onClick={() => handleManageRequest(req as WithId<JoinRequest & { clan_id: string }>, false)} disabled={isSubmitting}><UserX /></Button>
-                              <Button size="sm" className="bg-green-600 hover:bg-green-700" onClick={() => handleManageRequest(req as WithId<JoinRequest & { clan_id: string }>, true)} disabled={isSubmitting}><UserCheck /></Button>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    ) : <p className="text-sm text-muted-foreground text-center">Nenhuma solicitação pendente.</p>
-                  }
-                </CardContent>
-              </Card>
-            )}
-          </div>
+  <Card>
+    <CardHeader>
+      <CardTitle className="flex items-center gap-2">
+        <Shield className="text-primary"/>Opções do Clã
+      </CardTitle>
+    </CardHeader>
+    <CardContent className="flex flex-col gap-4">
+      <p className="text-sm text-muted-foreground">Líder: {clanData.leader_name}</p>
+      
+      <AlertDialog>
+        <AlertDialogTrigger asChild>
+          <Button variant="destructive" disabled={isSubmitting}>
+            <LogOut className="mr-2"/>{isLeader ? 'Disbandar Clã' : 'Sair do Clã'}
+          </Button>
+        </AlertDialogTrigger>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {isLeader && totalMembros > 1 
+                ? 'Você não pode sair do clã como líder enquanto houver outros membros. Expulse todos primeiro ou passe a liderança.'
+                : isLeader
+                ? 'Esta ação irá dissolver o clã permanentemente.'
+                : 'Você será removido do clã.'
+              }
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleLeaveClan} className={cn(buttonVariants({variant: 'destructive'}))}>Confirmar</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </CardContent>
+  </Card>
+
+  {user && userProfile && clanRef && (
+    <ClanChat 
+      clanId={clanRef.id}
+      userId={user.id}
+      userName={userProfile.name}
+      supabase={supabase}
+    />
+  )}
+
+  {isManager && (
+    <Card>
+      <CardHeader><CardTitle className="flex items-center gap-2"><UserCheck />Solicitações</CardTitle></CardHeader>
+      <CardContent>
+        {areRequestsLoading ? <Loader2 className="h-6 w-6 animate-spin"/> : 
+          joinRequests && joinRequests.length > 0 ? (
+            <div className="space-y-3">
+              {joinRequests.map(req => (
+                <div key={req.id} className="flex justify-between items-center bg-muted/50 p-2 rounded-md">
+                  <div>
+                    <p className="font-semibold">{req.user_name}</p>
+                    <p className="text-xs text-muted-foreground">Nível: {req.user_level}</p>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button size="sm" variant="outline" className="text-red-500 border-red-500 hover:bg-red-500/10" onClick={() => handleManageRequest(req as WithId<JoinRequest & { clan_id: string }>, false)} disabled={isSubmitting}><UserX /></Button>
+                    <Button size="sm" className="bg-green-600 hover:bg-green-700" onClick={() => handleManageRequest(req as WithId<JoinRequest & { clan_id: string }>, true)} disabled={isSubmitting}><UserCheck /></Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : <p className="text-sm text-muted-foreground text-center">Nenhuma solicitação pendente.</p>
+        }
+      </CardContent>
+    </Card>
+  )}
+</div>
         </div>
 
         <Card className="mt-8">
@@ -1140,150 +1197,194 @@ useEffect(() => {
             </CardDescription>
           </CardHeader>
           <CardContent>
-          {areMissionsLoading || areCompletionsLoading ? (
-  <div className="flex justify-center">
-    <Loader2 className="h-6 w-6 animate-spin" />
-  </div>
-) : missionsWithStatus && missionsWithStatus.length > 0 ? (
-  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-    {missionsWithStatus.map(({ mission, assignedTo }) => {
-      const isMyMission = assignedTo?.userId === user?.id;
-      const isOccupied = !!assignedTo;
-      const hasEnoughChakra = (userProfile?.current_chakra || 0) >= (mission.chakra_cost || 0);
-      const isMissionComplete = isMyMission && Date.now() >= (assignedTo?.endTime || 0);
-      const timeRemaining = isOccupied ? Math.max(0, (assignedTo?.endTime || 0) - Date.now()) : 0;
-      const hours = Math.floor(timeRemaining / (1000 * 60 * 60));
-      const minutes = Math.floor((timeRemaining % (1000 * 60 * 60)) / (1000 * 60));
-      
-      // Verificar se foi completada (não aparece mais)
-      const isCompleted = userCompletions?.some(c => c.mission_id === mission.id);
-      if (isCompleted) return null;
+            {areMissionsLoading || areCompletionsLoading ? (
+              <div className="flex justify-center">
+                <Loader2 className="h-6 w-6 animate-spin" />
+              </div>
+            ) : missionsWithStatus && missionsWithStatus.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 items-stretch">
+                {missionsWithStatus.map(({ mission, assignedTo }) => {
+                  const isMyMission = assignedTo?.userId === user?.id;
+                  const isOccupied = !!assignedTo;
+                  const hasEnoughChakra = (userProfile?.current_chakra || 0) >= (mission.chakra_cost || 0);
+                  const isMissionComplete = isMyMission && Date.now() >= (assignedTo?.endTime || 0);
+                  const timeRemaining = isOccupied ? Math.max(0, (assignedTo?.endTime || 0) - Date.now()) : 0;
+                  const hours = Math.floor(timeRemaining / (1000 * 60 * 60));
+                  const minutes = Math.floor((timeRemaining % (1000 * 60 * 60)) / (1000 * 60));
+                  
+                  // Verificar se foi completada (não aparece mais)
+                  const isCompleted = userCompletions?.some(c => c.mission_id === mission.id);
+                  if (isCompleted) return null;
 
-      return (
-        <Card key={mission.id} className={cn(
-          "border-2",
-          isOccupied && "border-yellow-500/50 bg-yellow-500/5"
-        )}>
-          <CardHeader>
-            <div className="flex justify-between items-start">
-              <CardTitle className="text-lg">{mission.title}</CardTitle>
-              <Badge
-                variant={
-                  mission.difficulty === 'Fácil'
-                    ? 'outline'
-                    : mission.difficulty === 'Média'
-                    ? 'secondary'
-                    : mission.difficulty === 'Difícil'
-                    ? 'default'
-                    : 'destructive'
-                }
-              >
-                {mission.difficulty}
-              </Badge>
-            </div>
-            <CardDescription>{mission.description}</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="flex items-center gap-2 text-sm">
-              <Gift className="h-4 w-4 text-yellow-500" />
-              <span className="font-semibold">{mission.xp_reward} XP</span>
-            </div>
-            <div className="text-xs text-muted-foreground space-y-1">
-              <p className="flex items-center gap-1">
-                • <span className="text-blue-400">⚡</span> Chakra: {mission.chakra_cost}
-              </p>
-              <p className="flex items-center gap-1">
-                • <Clock className="h-3 w-3 inline" /> Duração: {mission.duration_hours}h
-              </p>
-            </div>
-            
-            {/* Status da Missão */}
-            {isOccupied && (
-              <div className="space-y-2 mt-4 p-3 bg-yellow-500/10 border border-yellow-500/30 rounded-md">
-                <div className="flex items-center gap-2 text-sm">
-                  <Users className="h-4 w-4 text-yellow-600" />
-                  <span className="font-semibold text-yellow-700">
-                    {isMyMission ? 'Você está fazendo esta missão' : `${assignedTo.userName} está fazendo`}
-                  </span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="font-semibold">Tempo Restante:</span>
-                  <span className="font-mono">{hours}h {minutes}m</span>
-                </div>
-                <Progress 
-                  value={((Date.now() - assignedTo.startTime) / (assignedTo.endTime - assignedTo.startTime)) * 100} 
-                  className="h-2" 
-                />
+                  return (
+                    <Card key={mission.id} className={cn(
+                      "border-2 flex flex-col h-full",
+                      isOccupied && "border-yellow-500/50 bg-yellow-500/5"
+                    )}>
+                      <CardHeader>
+                        <div className="flex justify-between items-start">
+                          <CardTitle className="text-lg">{mission.title}</CardTitle>
+                          <Badge
+                            variant={
+                              mission.difficulty === 'Fácil'
+                                ? 'outline'
+                                : mission.difficulty === 'Média'
+                                ? 'secondary'
+                                : mission.difficulty === 'Difícil'
+                                ? 'default'
+                                : 'destructive'
+                            }
+                          >
+                            {mission.difficulty}
+                          </Badge>
+                        </div>
+                        <CardDescription>{mission.description}</CardDescription>
+                      </CardHeader>
+                      <CardContent className="space-y-3">
+                        <div className="flex items-center gap-2 text-sm">
+                          <Gift className="h-4 w-4 text-yellow-500" />
+                          <span className="font-semibold">{mission.xp_reward} XP</span>
+                        </div>
+                        <div className="text-xs text-muted-foreground space-y-1">
+                          <p className="flex items-center gap-1">
+                            • <span className="text-blue-400">⚡</span> Chakra: {mission.chakra_cost}
+                          </p>
+                          <p className="flex items-center gap-1">
+                            • <Clock className="h-3 w-3 inline" /> Duração: {mission.duration_hours}h
+                          </p>
+                        </div>
+                        
+                        {/* Status da Missão */}
+                        {isOccupied && (
+                          <div className="space-y-2 mt-4 p-3 bg-yellow-500/10 border border-yellow-500/30 rounded-md">
+                            <div className="flex items-center gap-2 text-sm">
+                              <Users className="h-4 w-4 text-yellow-600" />
+                              <span className="font-semibold text-yellow-700">
+                                {isMyMission ? 'Você está fazendo esta missão' : `${assignedTo.userName} está fazendo`}
+                              </span>
+                            </div>
+                            <div className="flex justify-between text-sm">
+                              <span className="font-semibold">Tempo Restante:</span>
+                              <span className="font-mono">{hours}h {minutes}m</span>
+                            </div>
+                            <Progress 
+                              value={((Date.now() - assignedTo.startTime) / (assignedTo.endTime - assignedTo.startTime)) * 100} 
+                              className="h-2" 
+                            />
+                          </div>
+                        )}
+                        
+                        {/* Botões de Ação */}
+                        {isMyMission && isMissionComplete ? (
+                          <Button 
+                            className="w-full" 
+                            onClick={handleCollectMissionReward}
+                            disabled={isSubmitting}
+                          >
+                            <CheckCircle className="mr-2 h-4 w-4" />
+                            Coletar Recompensa
+                          </Button>
+                        ) : isMyMission ? (
+                          <Button className="w-full" disabled>
+                            <Timer className="mr-2 h-4 w-4 animate-spin"/>
+                            Missão em Andamento...
+                          </Button>
+                        ) : isOccupied ? (
+                          <Button className="w-full" disabled variant="secondary">
+                            <Users className="mr-2 h-4 w-4" />
+                            Missão Ocupada
+                          </Button>
+                        ) : (
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button 
+                                className="w-full" 
+                                disabled={isSubmitting || !!activeMission || !hasEnoughChakra}
+                              >
+                                <Target className="mr-2 h-4 w-4" />
+                                {!hasEnoughChakra ? `Chakra Insuficiente (${mission.chakra_cost})` :
+                                 activeMission ? 'Você já está em outra missão' : 
+                                 'Iniciar Missão'}
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Iniciar {mission.title}?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Esta missão levará {mission.duration_hours} hora(s) para ser completada e custará {mission.chakra_cost} de chakra. 
+                                  Você ganhará {mission.xp_reward} XP para o clã ao concluir.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => handleCompleteMission(mission)}
+                                  className={cn(buttonVariants({ variant: 'default' }))}
+                                >
+                                  Confirmar
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        )}
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <p className="text-muted-foreground">
+                  Nenhuma missão disponível no momento. Aguarde o próximo reset às 00:00 BRT!
+                </p>
               </div>
             )}
-            
-            {/* Botões de Ação */}
-            {isMyMission && isMissionComplete ? (
-              <Button 
-                className="w-full" 
-                onClick={handleCollectMissionReward}
-                disabled={isSubmitting}
-              >
-                <CheckCircle className="mr-2 h-4 w-4" />
-                Coletar Recompensa
-              </Button>
-            ) : isMyMission ? (
-              <Button className="w-full" disabled>
-                <Timer className="mr-2 h-4 w-4 animate-spin"/>
-                Missão em Andamento...
-              </Button>
-            ) : isOccupied ? (
-              <Button className="w-full" disabled variant="secondary">
-                <Users className="mr-2 h-4 w-4" />
-                Missão Ocupada
-              </Button>
-            ) : (
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button 
-                    className="w-full" 
-                    disabled={isSubmitting || !!activeMission || !hasEnoughChakra}
-                  >
-                    <Target className="mr-2 h-4 w-4" />
-                    {!hasEnoughChakra ? `Chakra Insuficiente (${mission.chakra_cost})` :
-                     activeMission ? 'Você já está em outra missão' : 
-                     'Iniciar Missão'}
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Iniciar {mission.title}?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      Esta missão levará {mission.duration_hours} hora(s) para ser completada e custará {mission.chakra_cost} de chakra. 
-                      Você ganhará {mission.xp_reward} XP para o clã ao concluir.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                    <AlertDialogAction
-                      onClick={() => handleCompleteMission(mission)}
-                      className={cn(buttonVariants({ variant: 'default' }))}
-                    >
-                      Confirmar
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            )}
           </CardContent>
         </Card>
-      );
-    })}
-  </div>
-) : (
-  <div className="text-center py-8">
-    <p className="text-muted-foreground">
-      Nenhuma missão disponível no momento. Aguarde o próximo reset às 00:00 BRT!
-    </p>
-  </div>
-)}
-          </CardContent>
-        </Card>
+
+        {/* 🆕 SEÇÃO DE TECNOLOGIAS E HISTÓRICO */}
+<div className="mt-8">
+  <Card>
+    <Tabs defaultValue="technologies" className="w-full">
+      <CardHeader>
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="technologies">
+            Tecnologias do Clã
+          </TabsTrigger>
+          <TabsTrigger value="battles">
+            Histórico de Batalhas
+          </TabsTrigger>
+        </TabsList>
+      </CardHeader>
+
+      <CardContent>
+        <TabsContent value="technologies" className="mt-0">
+          <div className="mb-4">
+            <CardDescription>
+              Melhore as tecnologias para dar bônus permanentes a todos os membros do clã
+            </CardDescription>
+          </div>
+          <ClanTechnologies
+            clanId={clanData.id}
+            technologies={clanData.technologies || { dojo: 0, hospital: 0, library: 0 }}
+            treasuryRyo={clanData.treasury_ryo || 0}
+            isLeader={isLeader}
+            supabase={supabase}
+            userId={user!.id}
+          />
+        </TabsContent>
+
+        <TabsContent value="battles" className="mt-0">
+          <ClanBattleHistory
+            clanId={clanData.id}
+            clanName={clanData.name}
+            supabase={supabase}
+          />
+        </TabsContent>
+      </CardContent>
+    </Tabs>
+  </Card>
+</div>
       </div>
     );
   }

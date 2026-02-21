@@ -42,26 +42,45 @@ const formatDuration = (totalSeconds: number) => {
     return parts.join(' ') || '0s';
 };
 
-const MissionCard = ({ mission, userProfile, onAccept, isDisabled, isDaily = false }: { mission: Mission; userProfile: any; onAccept: (mission: Mission) => void; isDisabled: boolean, isDaily?: boolean }) => {
+const MissionCard = ({ 
+  mission, 
+  userProfile, 
+  onAccept, 
+  isDisabled, 
+  isDaily = false,
+  clanBonuses 
+}: { 
+  mission: Mission; 
+  userProfile: any; 
+  onAccept: (mission: Mission) => void; 
+  isDisabled: boolean;
+  isDaily?: boolean;
+  clanBonuses: { xp_bonus: number; mission_duration_reduction: number } | null;
+}) => {
     const isLevelSufficient = userProfile.level >= mission.requiredLevel;
     const isCompleted = isDaily && userProfile.daily_mission_state?.completedMissionIds?.includes(mission.id);
     
     const hasEnoughChakra = (userProfile.current_chakra || 0) >= (mission.chakraCost || 0);
     const canAccept = !isDisabled && isLevelSufficient && !isCompleted && hasEnoughChakra;
 
+    // 🆕 CALCULAR DURAÇÃO REDUZIDA
+    const reduction = clanBonuses?.mission_duration_reduction || 0;
+    const reducedDuration = Math.floor(mission.durationSeconds * (1 - reduction / 100));
+    const saved = mission.durationSeconds - reducedDuration;
+
     return (
         <Card key={mission.id} className={cn("flex flex-col relative", isCompleted ? 'bg-muted/30 border-dashed' : '')}>
-     {!isCompleted && !isLevelSufficient && (
-        <div className="absolute inset-0 bg-red-900/40 rounded-lg z-10 flex items-center justify-center">
-            <p className="text-white font-bold text-lg">Requer Nível {mission.requiredLevel}</p>
-        </div>
-    )}
-    {!isCompleted && isLevelSufficient && !hasEnoughChakra && (
-        <div className="absolute inset-0 bg-blue-900/40 rounded-lg z-10 flex items-center justify-center">
-            <p className="text-white font-bold text-lg">Chakra Insuficiente</p>
-        </div>
-    )}
-    <CardHeader>
+            {!isCompleted && !isLevelSufficient && (
+                <div className="absolute inset-0 bg-red-900/40 rounded-lg z-10 flex items-center justify-center">
+                    <p className="text-white font-bold text-lg">Requer Nível {mission.requiredLevel}</p>
+                </div>
+            )}
+            {!isCompleted && isLevelSufficient && !hasEnoughChakra && (
+                <div className="absolute inset-0 bg-blue-900/40 rounded-lg z-10 flex items-center justify-center">
+                    <p className="text-white font-bold text-lg">Chakra Insuficiente</p>
+                </div>
+            )}
+            <CardHeader>
                 <div className="flex justify-between items-start">
                     <CardTitle>{mission.name}</CardTitle>
                     <span className={`font-bold text-sm ${difficultyColors[mission.difficulty]}`}>{mission.difficulty}</span>
@@ -69,20 +88,33 @@ const MissionCard = ({ mission, userProfile, onAccept, isDisabled, isDaily = fal
                 <CardDescription>{mission.description}</CardDescription>
             </CardHeader>
             <CardContent className="flex-grow space-y-4">
-            <div className="flex flex-col gap-2">
-    <h4 className="font-semibold text-sm flex items-center gap-2"><Star className="h-4 w-4 text-yellow-400" /> Requisitos</h4>
-    <p className="text-sm text-muted-foreground ml-6">Nível Mínimo: {mission.requiredLevel}</p>
-    <p className="text-sm text-muted-foreground ml-6 flex items-center gap-1">
-        <span className="text-blue-400">⚡</span> Chakra: {mission.chakraCost}
-    </p>
-    <p className="text-sm text-muted-foreground ml-6 flex items-center gap-1"><Clock className="h-4 w-4" /> Duração: {formatDuration(mission.durationSeconds)}</p>
-</div>
+                <div className="flex flex-col gap-2">
+                    <h4 className="font-semibold text-sm flex items-center gap-2">
+                        <Star className="h-4 w-4 text-yellow-400" /> Requisitos
+                    </h4>
+                    <p className="text-sm text-muted-foreground ml-6">Nível Mínimo: {mission.requiredLevel}</p>
+                    <p className="text-sm text-muted-foreground ml-6 flex items-center gap-1">
+                        <span className="text-blue-400">⚡</span> Chakra: {mission.chakraCost}
+                    </p>
+                    <div className="ml-6">
+                        <p className="text-sm text-muted-foreground flex items-center gap-1">
+                            <Clock className="h-4 w-4" /> Duração: {formatDuration(reducedDuration)}
+                        </p>
+                        {saved > 0 && (
+                            <p className="text-xs text-blue-400 ml-5">
+                                (-{formatDuration(saved)} do clã)
+                            </p>
+                        )}
+                    </div>
+                </div>
                 <div>
-                    <h4 className="font-semibold text-sm mb-2 flex items-center gap-2"><Award className="h-4 w-4 text-amber-500" /> Recompensas</h4>
+                    <h4 className="font-semibold text-sm mb-2 flex items-center gap-2">
+                        <Award className="h-4 w-4 text-amber-500" /> Recompensas
+                    </h4>
                     <div className="space-y-1 text-sm text-muted-foreground ml-6">
                         <p>Ryous: {mission.ryoReward}</p>
                         <p>Experiência: {mission.experienceReward} XP</p>
-                         {mission.elementExperienceReward && (
+                        {mission.elementExperienceReward && (
                             <p className="flex items-center gap-1">
                                 Exp. de Elemento: {mission.elementExperienceReward.xp} XP em {mission.elementExperienceReward.element}
                             </p>
@@ -96,22 +128,22 @@ const MissionCard = ({ mission, userProfile, onAccept, isDisabled, isDaily = fal
                 </div>
             </CardContent>
             <CardFooter>
-    <Button 
-        className="w-full" 
-        onClick={() => onAccept(mission)} 
-        disabled={!canAccept}
-    >
-        {isCompleted ? 'Concluída' : 
-         !isLevelSufficient ? `Requer Nível ${mission.requiredLevel}` :
-         !hasEnoughChakra ? `Chakra Insuficiente (${mission.chakraCost})` :
-         isDisabled ? 'Em outra atividade' : (
-            <>
-                <Book className="mr-2 h-4 w-4" />
-                Aceitar Missão
-            </>
-        )}
-    </Button>
-</CardFooter>
+                <Button 
+                    className="w-full" 
+                    onClick={() => onAccept(mission)} 
+                    disabled={!canAccept}
+                >
+                    {isCompleted ? 'Concluída' : 
+                     !isLevelSufficient ? `Requer Nível ${mission.requiredLevel}` :
+                     !hasEnoughChakra ? `Chakra Insuficiente (${mission.chakraCost})` :
+                     isDisabled ? 'Em outra atividade' : (
+                        <>
+                            <Book className="mr-2 h-4 w-4" />
+                            Aceitar Missão
+                        </>
+                    )}
+                </Button>
+            </CardFooter>
         </Card>
     );
 };
@@ -284,8 +316,15 @@ const getBoostMultipliers = (activeBoosts: any[] | null, bossBuffs: any[] | null
 };
 
 export default function MissionsPage() {
-    const { user, supabase } = useSupabase();
-    const { toast } = useToast();
+  const { user, supabase } = useSupabase();
+  const { toast } = useToast();
+
+  // 🆕 ESTADO PARA BÔNUS DO CLÃ (logo após os hooks principais)
+  const [clanBonuses, setClanBonuses] = useState<{
+    xp_bonus: number;
+    mission_duration_reduction: number;
+  } | null>(null);
+
 
     const { isActive: isPremium, isLoading: isPremiumLoading } = usePremiumStatus(supabase, user?.id);
 
@@ -295,6 +334,23 @@ export default function MissionsPage() {
     }, [user]);
 
     const { data: userProfile, isLoading } = useDoc(userProfileRef);
+
+    // 🆕 BUSCAR BÔNUS DAS TECNOLOGIAS DO CLÃ
+    useEffect(() => {
+      const fetchClanBonuses = async () => {
+        if (!userProfile?.clan_id || !supabase) return;
+        
+        const { data, error } = await supabase.rpc('get_clan_technology_bonuses', {
+          p_clan_id: userProfile.clan_id
+        });
+        
+        if (!error && data) {
+          setClanBonuses(data);
+        }
+      };
+      
+      fetchClanBonuses();
+    }, [userProfile?.clan_id, supabase]);
     
     const activeBoosts = useActiveBoosts(supabase, user?.id);
     const bossBuffs = useBossBuffs(supabase, user?.id);
@@ -413,8 +469,13 @@ useEffect(() => {
             return;
         }
     
-        const startTime = Date.now();
-        const endTime = startTime + mission.durationSeconds * 1000;
+        // 🆕 APLICAR REDUÇÃO DE DURAÇÃO
+// 🆕 APLICAR REDUÇÃO DE DURAÇÃO
+const reduction = clanBonuses?.mission_duration_reduction || 0;
+const finalDuration = Math.floor(mission.durationSeconds * (1 - reduction / 100));
+
+const startTime = Date.now();
+const endTime = startTime + finalDuration * 1000;
       
         setLocalActiveMission({ missionId: mission.id, startTime, endTime });
       
@@ -563,7 +624,12 @@ useEffect(() => {
                 const baseXP = activeMissionDetails.experienceReward;
                 
                 const finalRyo = Math.floor(baseRyo * ryoMultiplier);
-                const finalXP = Math.floor(baseXP * xpMultiplier);
+                // 🆕 APLICAR BÔNUS DE XP DO CLÃ
+const clanXpBonus = clanBonuses?.xp_bonus || 0;
+const totalXpMultiplier = xpMultiplier * (1 + clanXpBonus / 100);
+const finalXP = Math.floor(baseXP * totalXpMultiplier);
+
+const clanBonusXP = Math.floor(baseXP * (clanXpBonus / 100));
                 
                 const bonusRyo = finalRyo - baseRyo;
                 const bonusXP = finalXP - baseXP;
@@ -762,10 +828,14 @@ useEffect(() => {
         const baseXP = activeMissionDetails.experienceReward;
         
         const finalRyo = Math.floor(baseRyo * ryoMultiplier);
-        const finalXP = Math.floor(baseXP * xpMultiplier);
-        
-        const bonusRyo = finalRyo - baseRyo;
-        const bonusXP = finalXP - baseXP;
+        // 🆕 APLICAR BÔNUS DE XP DO CLÃ
+const clanXpBonus = clanBonuses?.xp_bonus || 0;
+const totalXpMultiplier = xpMultiplier * (1 + clanXpBonus / 100);
+const finalXP = Math.floor(baseXP * totalXpMultiplier);
+
+const bonusRyo = finalRyo - baseRyo;
+const bonusXP = Math.floor(baseXP * xpMultiplier) - baseXP; // Bônus premium
+const clanBonusXP = Math.floor(baseXP * (clanXpBonus / 100)); // Bônus do clã
         const hasBonus = bonusRyo > 0 || bonusXP > 0;
         
         return (
@@ -780,102 +850,111 @@ useEffect(() => {
                         <CardDescription>{activeMissionDetails.description}</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                        <div className='space-y-2'>
-                            <div className="flex justify-between items-baseline">
-                                <p className="font-semibold">Progresso</p>
-                                <p className="text-sm text-muted-foreground">{formatDuration(Math.floor(timeRemaining / 1000))}</p>
-                            </div>
-                            <Progress value={progress} />
-                        </div>
-                        
-                        <div className="rounded-lg border bg-muted/20 p-4 space-y-3">
-                          <h4 className="font-semibold text-sm flex items-center gap-2">
-                            <Award className="h-4 w-4 text-amber-500" />
-                            Recompensas ao Completar
-                          </h4>
-                          
-                          <div className="space-y-3">
-                            {/* Ryo e XP */}
-                            <div className="grid grid-cols-2 gap-4">
-                              <div className="space-y-1">
-                                <div className="flex items-center gap-2">
-                                  <span className="text-sm font-medium">💰 Ryo:</span>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                  <span className="text-lg font-bold">{finalRyo}</span>
-                                  {bonusRyo > 0 && (
-                                    <span className="text-xs text-green-400">
-                                      (+{bonusRyo} bônus)
-                                    </span>
-                                  )}
-                                </div>
-                              </div>
-                              
-                              <div className="space-y-1">
-                                <div className="flex items-center gap-2">
-                                  <span className="text-sm font-medium">⭐ XP:</span>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                  <span className="text-lg font-bold">{finalXP}</span>
-                                  {bonusXP > 0 && (
-                                    <span className="text-xs text-green-400">
-                                      (+{bonusXP} bônus)
-                                    </span>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
+  <div className='space-y-2'>
+    <div className="flex justify-between items-baseline">
+      <p className="font-semibold">Progresso</p>
+      <p className="text-sm text-muted-foreground">{formatDuration(Math.floor(timeRemaining / 1000))}</p>
+    </div>
+    <Progress value={progress} />
+  </div>
+  
+  <div className="rounded-lg border bg-muted/20 p-4 space-y-3">
+    <h4 className="font-semibold text-sm flex items-center gap-2">
+      <Award className="h-4 w-4 text-amber-500" />
+      Recompensas ao Completar
+    </h4>
+    
+    <div className="space-y-3">
+      {/* Ryo e XP */}
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium">💰 Ryo:</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-lg font-bold">{finalRyo}</span>
+            {bonusRyo > 0 && (
+              <span className="text-xs text-green-400">
+                (+{bonusRyo} bônus)
+              </span>
+            )}
+          </div>
+        </div>
+        
+        <div className="space-y-1">
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium">⭐ XP:</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-lg font-bold">{finalXP}</span>
+            {(bonusXP > 0 || clanBonusXP > 0) && (
+              <div className="flex flex-col gap-1">
+                {bonusXP > 0 && (
+                  <span className="text-xs text-green-400">
+                    (+{bonusXP} bônus premium)
+                  </span>
+                )}
+                {clanBonusXP > 0 && (
+                  <span className="text-xs text-blue-400">
+                    (+{clanBonusXP} bônus do clã)
+                  </span>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
 
-                            {/* Exp. de Elemento */}
-                            {activeMissionDetails.elementExperienceReward && (
-                              <div className="pt-2 border-t">
-                                <p className="text-sm text-muted-foreground">
-                                  🔥 Exp. de Elemento: <span className="font-semibold text-foreground">{activeMissionDetails.elementExperienceReward.xp} XP</span> em {activeMissionDetails.elementExperienceReward.element}
-                                </p>
-                              </div>
-                            )}
+      {/* Exp. de Elemento */}
+      {activeMissionDetails.elementExperienceReward && (
+        <div className="pt-2 border-t">
+          <p className="text-sm text-muted-foreground">
+            🔥 Exp. de Elemento: <span className="font-semibold text-foreground">{activeMissionDetails.elementExperienceReward.xp} XP</span> em {activeMissionDetails.elementExperienceReward.element}
+          </p>
+        </div>
+      )}
 
-                            {/* Exp. de Jutsu */}
-                            {activeMissionDetails.jutsuExperienceReward && (
-                              <div className={activeMissionDetails.elementExperienceReward ? '' : 'pt-2 border-t'}>
-                                <p className="text-sm text-muted-foreground">
-                                  🥷 Exp. de Jutsu: <span className="font-semibold text-foreground">{activeMissionDetails.jutsuExperienceReward.xp} XP</span> em {activeMissionDetails.jutsuExperienceReward.jutsuName}
-                                </p>
-                              </div>
-                            )}
-                          </div>
-                          
-                          {hasBonus && (
-                            <div className="flex items-center gap-2 text-xs text-yellow-500 pt-2 border-t">
-                              <Star className="h-3 w-3" />
-                              <span>Bônus Premium Aplicado!</span>
-                            </div>
-                          )}
-                        </div>
-                    </CardContent>
-                    <CardFooter className="flex gap-2">
-                         {isMissionComplete && !isLoading ? (
-                            <Button className="w-full" onClick={handleCompleteMission}>
-                                <CheckCircle className="mr-2 h-4 w-4" />
-                                Completar Missão
-                            </Button>
-                        ) : (
-                            <>
-                              <Button className="flex-1" disabled>
-                                  <Timer className="mr-2 h-4 w-4 animate-spin"/>
-                                  Missão em Andamento...
-                              </Button>
-                              <Button 
-                                variant="destructive" 
-                                onClick={handleCancelMission}
-                                className="flex-shrink-0"
-                              >
-                                <X className="mr-2 h-4 w-4" />
-                                Cancelar
-                              </Button>
-                            </>
-                        )}
-                    </CardFooter>
+      {/* Exp. de Jutsu */}
+      {activeMissionDetails.jutsuExperienceReward && (
+        <div className={activeMissionDetails.elementExperienceReward ? '' : 'pt-2 border-t'}>
+          <p className="text-sm text-muted-foreground">
+            🥷 Exp. de Jutsu: <span className="font-semibold text-foreground">{activeMissionDetails.jutsuExperienceReward.xp} XP</span> em {activeMissionDetails.jutsuExperienceReward.jutsuName}
+          </p>
+        </div>
+      )}
+    </div>
+    
+    {hasBonus && (
+      <div className="flex items-center gap-2 text-xs text-yellow-500 pt-2 border-t">
+        <Star className="h-3 w-3" />
+        <span>Bônus Premium Aplicado!</span>
+      </div>
+    )}
+  </div>
+</CardContent>
+<CardFooter className="flex gap-2">
+  {isMissionComplete && !isLoading ? (
+    <Button className="w-full" onClick={handleCompleteMission}>
+      <CheckCircle className="mr-2 h-4 w-4" />
+      Completar Missão
+    </Button>
+  ) : (
+    <>
+      <Button className="flex-1" disabled>
+        <Timer className="mr-2 h-4 w-4 animate-spin"/>
+        Missão em Andamento...
+      </Button>
+      <Button 
+        variant="destructive" 
+        onClick={handleCancelMission}
+        className="flex-shrink-0"
+      >
+        <X className="mr-2 h-4 w-4" />
+        Cancelar
+      </Button>
+    </>
+  )}
+</CardFooter>
                 </Card>
             </div>
         )
@@ -909,13 +988,14 @@ const canRefresh = refreshesUsed < maxRefreshes;
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {dailyMissions.sort((a, b) => difficultyOrder.indexOf(a.difficulty) - difficultyOrder.indexOf(b.difficulty)).map((mission) => (
                     <MissionCard 
-                        key={mission.id}
-                        mission={mission}
-                        userProfile={userProfile}
-                        onAccept={handleAcceptMission}
-                        isDisabled={!!activeMission || !!userProfile.active_hunt}
-                        isDaily={true}
-                    />
+                    key={mission.id}
+                    mission={mission}
+                    userProfile={userProfile}
+                    onAccept={handleAcceptMission}
+                    isDisabled={!!activeMission || !!userProfile.active_hunt}
+                    isDaily={true}
+                    clanBonuses={clanBonuses}
+                />
                 ))}
             </div>
         </div>

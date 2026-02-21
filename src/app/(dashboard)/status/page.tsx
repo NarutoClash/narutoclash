@@ -476,6 +476,9 @@ export default function StatusPage() {
   const { user, supabase } = useSupabase();
   const { toast } = useToast();
   const [hasCheckedReload, setHasCheckedReload] = useState(false);
+  // 🆕 ESTADO PARA BÔNUS DE REGENERAÇÃO DO CLÃ
+  const [clanChakraBonus, setClanChakraBonus] = useState(0);
+  const baseRegenTime = 60000; // 1 minuto em milissegundos
 
   // 🆕 Reload ao entrar na página (ALTERNATIVA MAIS LIMPA)
   useEffect(() => {
@@ -497,8 +500,29 @@ export default function StatusPage() {
     if (!user) return null;
     return { table: 'profiles', id: user.id };
   }, [user]);
-
+  
   const { data: userProfile, isLoading } = useDoc(userProfileRef);
+  
+  // 🆕 ADICIONAR: Buscar war_points do clã
+  const [clanWarPoints, setClanWarPoints] = useState(0);
+  
+  useEffect(() => {
+    if (!userProfile?.clan_id || !supabase) return;
+    
+    const fetchClanWarPoints = async () => {
+      const { data, error } = await supabase
+        .from('clans')
+        .select('war_points')
+        .eq('id', userProfile.clan_id)
+        .single();
+      
+      if (!error && data) {
+        setClanWarPoints(data.war_points || 0);
+      }
+    };
+    
+    fetchClanWarPoints();
+  }, [userProfile?.clan_id, supabase]);
 
 // ✅ BUSCAR JUTSUS DO BANCO DE DADOS
 const jutsusQuery = useMemoSupabase(() => {
@@ -647,7 +671,6 @@ useEffect(() => {
   } | null>(null);
   const [missionJustCompleted, setMissionJustCompleted] = useState(false);
   const [doujutsuCooldownRemaining, setDoujutsuCooldownRemaining] = useState(0);
-  const [chakraRegenTimeRemaining, setChakraRegenTimeRemaining] = useState(0);
 
   const effectiveActiveMission = missionJustCompleted ? null : (localActiveMission || userProfile?.active_mission);
   const { 
@@ -766,12 +789,17 @@ const getBonusTooltip = (stat: StatKey, userProfile: any): React.ReactNode => {
   const boostBonuses = calculateBoostBonuses(activeBoosts);
   const premiumBoostBonus = boostBonuses[stat] || 0;
 
-  // ✅ ADICIONAR BÔNUS PREMIUM AOS SOURCES
+  // 🆕 ADICIONAR: CALCULAR BÔNUS DO CLÃ
+  const { calculateWarPointsBonus } = require('@/lib/clan-bonus-calculator');
+  const clanBonus = calculateWarPointsBonus(clanWarPoints);
+
+  // ✅ ADICIONAR BÔNUS PREMIUM E CLÃ AOS SOURCES
   const sources = [
     { name: 'Arma', value: weaponBuff },
     { name: 'Invocação', value: summonBuff },
     { name: 'Equipamento', value: equipmentBuff },
     { name: 'Boosts Premium', value: premiumBoostBonus },
+    { name: 'Clã (Pontos de Guerra)', value: clanBonus }, // 🆕 ADICIONAR ESTA LINHA
     { name: 'Selo Amaldiçoado', value: (sealMultiplier - 1), isPercent: true },
     { name: 'Dōjutsu', value: (doujutsuMultiplier - 1), isPercent: true },
     { name: 'Elemento', value: elementBonus }
@@ -852,6 +880,7 @@ const calculatedStats = useMemo(() => {
     ninjutsu: safeNumber(userProfile.ninjutsu) + safeNumber(pendingUpdates.ninjutsu) + safeNumber(boostBonuses.ninjutsu),
     genjutsu: safeNumber(userProfile.genjutsu) + safeNumber(pendingUpdates.genjutsu) + safeNumber(boostBonuses.genjutsu),
     selo: safeNumber(userProfile.selo) + safeNumber(pendingUpdates.selo) + safeNumber(boostBonuses.selo),
+    clan_war_points: clanWarPoints, // 🆕 ADICIONAR ESTA LINHA
   };
 
   const stats = calculateFinalStats(profileWithUpdates);
@@ -867,7 +896,7 @@ const calculatedStats = useMemo(() => {
     profileGenjutsu: safeNumber(profileWithUpdates.genjutsu),
     profileSelo: safeNumber(profileWithUpdates.selo),
   };
-}, [userProfile, pendingUpdates, activeBoosts]);
+}, [userProfile, pendingUpdates, activeBoosts, clanWarPoints]); 
 
 
 // 🆕 Função para calcular bônus de XP e Ryo dos boosts premium
@@ -1164,18 +1193,36 @@ const handleDeactivateSeal = (autoDeactivated = false) => {
 useEffect(() => {
   if (!userProfileRef || !supabase || !user || !userProfile || !calculatedStats) return;
 
-  const interval = setInterval(async () => {
+  // 🆕 FUNÇÃO ASYNC DENTRO DO useEffect
+  const runRegenInterval = async () => {
+    // 🆕 BUSCAR BÔNUS DO CLÃ
+    let clanChakraBonus = 0;
+    if (userProfile.clan_id) {
+      const { data } = await supabase.rpc('get_clan_technology_bonuses', {
+        p_clan_id: userProfile.clan_id
+      });
+      if (data) {
+        const bonus = data.chakra_regen_bonus || 0;
+        setClanChakraBonus(bonus); // 🆕 Salvar no estado
+      }
+    }
+
+    const interval = setInterval(async () => {
     try {
       const now = Date.now();
       const lastRegen = userProfile.last_chakra_regen || now;
       const timeSinceLastRegen = now - lastRegen;
-      const timeUntilNextRegen = 60000 - (timeSinceLastRegen % 60000);
+      // 🆕 APLICAR BÔNUS DE REGENERAÇÃO DO CLÃ
+const baseRegenTime = 60000; // 1 minuto
+const regenTimeReduction = clanChakraBonus / 100;
+const finalRegenTime = Math.floor(baseRegenTime * (1 - regenTimeReduction));
+
+const timeUntilNextRegen = finalRegenTime - (timeSinceLastRegen % baseRegenTime);
       
-      // Atualizar contador visual (em segundos)
-      setChakraRegenTimeRemaining(Math.ceil(timeUntilNextRegen / 1000));
+     
 
       // Se passou 1 minuto ou mais desde a última regeneração
-      if (timeSinceLastRegen >= 60000) {
+      if (timeSinceLastRegen >= finalRegenTime) {
         const currentChakra = userProfile.current_chakra ?? calculatedStats.maxChakra;
         const maxChakra = calculatedStats.maxChakra;
 
@@ -1192,7 +1239,7 @@ useEffect(() => {
 
           // Calcular quantos minutos se passaram
           const lastRegenTime = currentData.last_chakra_regen || now;
-          const minutesPassed = Math.floor((now - lastRegenTime) / 60000);
+          const minutesPassed = Math.floor((now - lastRegenTime) / finalRegenTime);
           
           if (minutesPassed >= 1) {
             // Regenerar chakra
@@ -1221,7 +1268,10 @@ useEffect(() => {
   }, 1000);
 
   return () => clearInterval(interval);
-}, [userProfileRef, supabase, user, userProfile?.current_chakra, userProfile?.last_chakra_regen, calculatedStats?.maxChakra]);
+};
+
+runRegenInterval();
+}, [userProfileRef, supabase, user, userProfile?.current_chakra, userProfile?.clan_id, userProfile?.last_chakra_regen, calculatedStats?.maxChakra]);
 
 
   useEffect(() => {
@@ -2572,8 +2622,8 @@ const BattleReportModal = () => {
   </div>
 
   <div className="w-full space-y-1">
-    <div className="mb-1 flex items-baseline justify-between text-sm">
-      <span className="font-medium text-blue-400">Chakra</span>
+  <div className="mb-1 flex items-baseline justify-between text-sm">
+    <span className="font-medium text-blue-400">Chakra</span>
       <span className="text-xs text-blue-400">
         {Math.round(currentChakra)} / {Math.round(calculatedStats.maxChakra)}
       </span>
@@ -2588,11 +2638,23 @@ const BattleReportModal = () => {
       />
     </div>
     {currentChakra < calculatedStats.maxChakra && (
-      <p className="text-xs text-muted-foreground text-center">
-        Próxima regeneração: {chakraRegenTimeRemaining}s | 
-        Cheio em: {Math.ceil((calculatedStats.maxChakra - currentChakra))} min
-      </p>
+  <p className="text-xs text-muted-foreground text-center mt-2">
+    Chakra cheio em: {(() => {
+      const chakraFaltando = calculatedStats.maxChakra - currentChakra;
+      const baseRegenTime = 60000; // 1 minuto por ponto
+      const regenTimeReduction = clanChakraBonus / 100;
+      const finalRegenTime = Math.floor(baseRegenTime * (1 - regenTimeReduction));
+      const totalTimeMs = chakraFaltando * finalRegenTime;
+      const minutes = Math.ceil(totalTimeMs / 60000);
+      return minutes;
+    })()} min
+    {userProfile.clan_id && clanChakraBonus > 0 && (
+      <span className="text-blue-400 ml-1">
+        (bônus de {clanChakraBonus}% do clã)
+      </span>
     )}
+  </p>
+)}
   </div>
 </div>
 

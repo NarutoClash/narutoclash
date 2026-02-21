@@ -11,7 +11,7 @@ import {
   CardFooter,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Swords, Hourglass, Shield, Heart, Loader2, RefreshCw, Skull, Target, Clock, Trophy } from 'lucide-react';
+import { Swords, Hourglass, Shield, Heart, Loader2, RefreshCw, Skull, Target, Clock, Trophy, Coins, Star } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { useSupabase, useMemoSupabase } from '@/supabase';
 import { useDoc } from '@/supabase/hooks/use-doc';
@@ -34,6 +34,8 @@ const BOSS_DOC_ID = 'current_boss';
 const ATTACK_COOLDOWN = 10 * 60 * 1000; // 10 minutes in milliseconds
 const BOSS_DURATION = 7 * 24 * 60 * 60 * 1000; // 7 days
 const BOSS_RESPAWN_TIME = 24 * 60 * 60 * 1000; // 24 hours after defeat
+const BOSS_DEFEAT_REWARD_RYO = 100000;
+const BOSS_DEFEAT_REWARD_STAT_POINTS = 10;
 
 // ✅ MILESTONES DE DANO
 const DAMAGE_MILESTONES = [
@@ -267,10 +269,13 @@ const calculateDrops = () => {
 // ✅ FUNÇÃO DE FORMATAÇÃO DE TEMPO
 const formatTime = (ms: number) => {
   const totalSeconds = Math.floor(ms / 1000);
-  const hours = Math.floor(totalSeconds / 3600).toString().padStart(2, '0');
-  const minutes = Math.floor((totalSeconds % 3600) / 60).toString().padStart(2, '0');
-  const seconds = (totalSeconds % 60).toString().padStart(2, '0');
-  return `${hours}:${minutes}:${seconds}`;
+  const days = Math.floor(totalSeconds / 86400);
+  const hours = Math.floor((totalSeconds % 86400) / 3600);
+
+  if (days > 0) {
+    return `${days}d ${hours}h`;
+  }
+  return `${hours}h`;
 };
 
 // ✅ TIPO DE BATTLE LOG
@@ -662,128 +667,141 @@ if (turn > 100) {
 
 const finalDamageDealt = Math.max(0, Math.round(totalPlayerDamage));
     
-    // ===== ATUALIZAR BOSS NO BANCO =====
-    try {
-      const newBossHealth = Math.max(0, (boss?.current_health || 0) - finalDamageDealt);
-      
-      const bossUpdate: any = {
-        current_health: newBossHealth,
-        total_attacks: (boss?.total_attacks || 0) + 1,
-      };
-      
-      // ✅ NOVO: Calcular dano total acumulado do jogador
-const currentPlayerDamage = userProfile.boss_damage_dealt || 0;
-const newPlayerDamage = currentPlayerDamage + finalDamageDealt;
-
-// ✅ NOVO: Verificar milestones desbloqueados
-const claimedMilestones = userProfile.boss_damage_milestones_claimed || [];
-const unlockedMilestones = DAMAGE_MILESTONES.filter(
-  milestone => newPlayerDamage >= milestone.damage && !claimedMilestones.includes(milestone.label)
-);
-
-let totalRyoReward = 0;
-const newClaimedMilestones = [...claimedMilestones];
-
-if (unlockedMilestones.length > 0) {
-  unlockedMilestones.forEach(milestone => {
-    totalRyoReward += milestone.ryo;
-    newClaimedMilestones.push(milestone.label);
-  });
+// ===== ATUALIZAR BOSS NO BANCO =====
+try {
+  const newBossHealth = Math.max(0, (boss?.current_health || 0) - finalDamageDealt);
   
-  setNewMilestonesUnlocked(unlockedMilestones);
-}
-      
-      const isBossDefeated = newBossHealth < 10;
+  const bossUpdate: any = {
+    current_health: newBossHealth,
+    total_attacks: (boss?.total_attacks || 0) + 1,
+  };
   
-      if (isBossDefeated) {
-        bossUpdate.status = 'defeated';
-        bossUpdate.last_defeated_at = Date.now();
-        bossUpdate.last_defeated_by = userProfile.character_name;
-        bossUpdate.respawn_at = Date.now() + BOSS_RESPAWN_TIME;
-        battleLog.push(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
-        battleLog.push(`🎉 VITÓRIA! VOCÊ DERROTOU ${boss?.name?.toUpperCase()}! 🎉`);
-        battleLog.push(`Vida final do boss: ${newBossHealth.toFixed(0)} HP`);
-      }
-      
-      await supabase
-        .from('world_bosses')
-        .update(bossUpdate)
-        .eq('id', BOSS_DOC_ID);
-      
-      setBossData({ ...boss, ...bossUpdate });
-      
-      await supabase
-  // ✅ ATUALIZAR PERFIL COM DANO, RYOS E MILESTONES
-const currentRyo = userProfile.ryo || 0;
-const profileUpdate: any = {
-  last_boss_attack: Date.now(),
-  current_health: playerStats?.maxHealth || 100,
-  boss_damage_dealt: newPlayerDamage,
-};
-
-if (totalRyoReward > 0) {
-  profileUpdate.ryo = currentRyo + totalRyoReward;
-  profileUpdate.boss_damage_milestones_claimed = newClaimedMilestones;
-}
-
-await supabase
-  .from('profiles')
-  .update(profileUpdate)
-  .eq('id', user!.id);
-
-if (setUserProfile) {
-  setUserProfile({
-    ...userProfile,
-    ...profileUpdate,
-  });
-}
-      
-// ✅ CALCULAR DROPS
-const droppedItems = calculateDrops();
-setLastDrops(droppedItems);
-
-setLastBattleLog(battleLog);
-localStorage.setItem('lastBattleLog', JSON.stringify(battleLog));
-
-// ✅ TOAST COM INFORMAÇÃO DE RECOMPENSAS E DROPS
-let toastDescription = `Você causou ${finalDamageDealt.toLocaleString()} de dano!`;
-
-if (totalRyoReward > 0) {
-  toastDescription += `\n\n🎁 Bônus: +${totalRyoReward.toLocaleString()} Ryō!`;
-  unlockedMilestones.forEach(m => {
-    toastDescription += `\n• ${m.label} (${m.ryo.toLocaleString()} Ryō)`;
-  });
-}
-
-if (droppedItems.length > 0) {
-  toastDescription += `\n\n🎁 Drops Recebidos:`;
-  droppedItems.forEach(item => {
-    toastDescription += `\n${item.icon} ${item.name}`;
-  });
-}
-
-toast({
-  title: isBossDefeated ? "🎉 Boss Derrotado!" : "✨ Ataque Realizado!",
-  description: toastDescription,
-  duration: (totalRyoReward > 0 || droppedItems.length > 0) ? 10000 : 4000,
-});
-
-toast({
-  title: isBossDefeated ? "🎉 Boss Derrotado!" : "✨ Ataque Realizado!",
-  description: toastDescription,
-  duration: totalRyoReward > 0 ? 8000 : 4000,
-});
-      
-    } catch (error) {
-      console.error('Erro ao atacar boss:', error);
-      toast({
-        variant: 'destructive',
-        title: 'Erro',
-        description: 'Não foi possível registrar o ataque.',
-      });
-    } finally {
-      setIsAttacking(false);
+  // ✅ CALCULAR DANO TOTAL E MILESTONES
+  const currentPlayerDamage = userProfile.boss_damage_dealt || 0;
+  const newPlayerDamage = currentPlayerDamage + finalDamageDealt;
+  
+  const claimedMilestones = userProfile.boss_damage_milestones_claimed || [];
+  const unlockedMilestones = DAMAGE_MILESTONES.filter(
+    milestone => newPlayerDamage >= milestone.damage && !claimedMilestones.includes(milestone.label)
+  );
+  
+  let totalRyoReward = 0;
+  const newClaimedMilestones = [...claimedMilestones];
+  
+  if (unlockedMilestones.length > 0) {
+    unlockedMilestones.forEach(milestone => {
+      totalRyoReward += milestone.ryo;
+      newClaimedMilestones.push(milestone.label);
+    });
+    
+    setNewMilestonesUnlocked(unlockedMilestones);
+  }
+  
+  // ✅ VERIFICAR SE O BOSS FOI DERROTADO
+  const isBossDefeated = newBossHealth < 10;
+  
+  // 🆕 CRIAR profileUpdate AQUI (ANTES DE USAR)
+  const profileUpdate: any = {
+    last_boss_attack: Date.now(),
+    current_health: playerStats?.maxHealth || 100,
+    boss_damage_dealt: newPlayerDamage,
+  };
+  
+  if (totalRyoReward > 0) {
+    profileUpdate.ryo = (userProfile.ryo || 0) + totalRyoReward;
+    profileUpdate.boss_damage_milestones_claimed = newClaimedMilestones;
+  }
+  
+  // ✅ PROCESSAR DERROTA DO BOSS (DEPOIS DE CRIAR profileUpdate)
+  if (isBossDefeated) {
+    bossUpdate.status = 'defeated';
+    bossUpdate.last_defeated_at = Date.now();
+    bossUpdate.last_defeated_by = userProfile.character_name;
+    bossUpdate.respawn_at = Date.now() + BOSS_RESPAWN_TIME;
+    
+    battleLog.push(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
+    battleLog.push(`🎉 VITÓRIA! VOCÊ DERROTOU ${boss?.name?.toUpperCase()}! 🎉`);
+    battleLog.push(`Vida final do boss: ${newBossHealth.toFixed(0)} HP`);
+    
+    // 🆕 RECOMPENSAS DO GOLPE FINAL
+    battleLog.push(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
+    battleLog.push(`💰 RECOMPENSA DO GOLPE FINAL:`);
+    battleLog.push(`+${BOSS_DEFEAT_REWARD_RYO.toLocaleString()} Ryo`);
+    battleLog.push(`+${BOSS_DEFEAT_REWARD_STAT_POINTS} Pontos de Atributo`);
+    
+    // 🆕 ADICIONAR RECOMPENSAS AO PROFILE UPDATE
+    totalRyoReward += BOSS_DEFEAT_REWARD_RYO;
+    profileUpdate.ryo = (userProfile.ryo || 0) + totalRyoReward;
+    profileUpdate.stat_points = (userProfile.stat_points || 0) + BOSS_DEFEAT_REWARD_STAT_POINTS;
+  }
+  
+  // ✅ ATUALIZAR BOSS NO BANCO
+  await supabase
+    .from('world_bosses')
+    .update(bossUpdate)
+    .eq('id', BOSS_DOC_ID);
+  
+  setBossData({ ...boss, ...bossUpdate });
+  
+  // ✅ ATUALIZAR PERFIL DO JOGADOR
+  await supabase
+    .from('profiles')
+    .update(profileUpdate)
+    .eq('id', user!.id);
+  
+  if (setUserProfile) {
+    setUserProfile({
+      ...userProfile,
+      ...profileUpdate,
+    });
+  }
+  
+  // ✅ CALCULAR DROPS
+  const droppedItems = calculateDrops();
+  setLastDrops(droppedItems);
+  
+  setLastBattleLog(battleLog);
+  localStorage.setItem('lastBattleLog', JSON.stringify(battleLog));
+  
+  // ✅ TOAST COM RECOMPENSAS
+  let toastDescription = `Você causou ${finalDamageDealt.toLocaleString()} de dano!`;
+  
+  if (totalRyoReward > 0) {
+    toastDescription += `\n\n🎁 Bônus: +${totalRyoReward.toLocaleString()} Ryō!`;
+    unlockedMilestones.forEach(m => {
+      toastDescription += `\n• ${m.label} (${m.ryo.toLocaleString()} Ryō)`;
+    });
+    
+    if (isBossDefeated) {
+      toastDescription += `\n\n🏆 GOLPE FINAL!`;
+      toastDescription += `\n• +${BOSS_DEFEAT_REWARD_RYO.toLocaleString()} Ryō`;
+      toastDescription += `\n• +${BOSS_DEFEAT_REWARD_STAT_POINTS} Pontos de Atributo`;
     }
+  }
+  
+  if (droppedItems.length > 0) {
+    toastDescription += `\n\n🎁 Drops Recebidos:`;
+    droppedItems.forEach(item => {
+      toastDescription += `\n${item.icon} ${item.name}`;
+    });
+  }
+  
+  toast({
+    title: isBossDefeated ? "🎉 Boss Derrotado!" : "✨ Ataque Realizado!",
+    description: toastDescription,
+    duration: isBossDefeated ? 12000 : (totalRyoReward > 0 || droppedItems.length > 0) ? 10000 : 4000,
+  });
+  
+} catch (error) {
+  console.error('Erro ao atacar boss:', error);
+  toast({
+    variant: 'destructive',
+    title: 'Erro',
+    description: 'Não foi possível registrar o ataque.',
+  });
+} finally {
+  setIsAttacking(false);
+}
   };
   
   if (isUserLoading || isBossLoading || isAuthLoading) {
@@ -827,15 +845,42 @@ toast({
                     <CardTitle className="text-2xl">Próximo Boss em:</CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <p className="text-5xl font-bold font-mono tracking-widest text-primary">{formatTime(timeUntilRespawn)}</p>
+                <div className="text-center mt-4">
+  <p className="text-5xl font-bold text-primary">
+    {formatTime(timeUntilRespawn)}
+  </p>
+  <p className="text-sm text-muted-foreground mt-2">
+    dias e horas restantes
+  </p>
+</div>
                 </CardContent>
-                <CardFooter className="flex-col gap-2 text-center">
-                    <p className="text-muted-foreground">O último chefe foi derrotado por:</p>
-                    <p className="text-xl font-bold text-amber-400 flex items-center gap-2">
-                        <Trophy className="h-6 w-6"/>
-                        {boss?.last_defeated_by || 'Um herói anônimo'}
-                    </p>
-                </CardFooter>
+                <CardFooter className="flex-col gap-4 text-center">
+  <div>
+    <p className="text-muted-foreground mb-2">O último chefe foi derrotado por:</p>
+    <p className="text-xl font-bold text-amber-400 flex items-center justify-center gap-2">
+      <Trophy className="h-6 w-6"/>
+      {boss?.last_defeated_by || 'Um herói anônimo'}
+    </p>
+  </div>
+  
+  <div className="w-full pt-4 border-t">
+    <p className="text-sm text-muted-foreground mb-3">Recompensas do Golpe Final:</p>
+    <div className="grid grid-cols-2 gap-4">
+      <div className="flex flex-col items-center gap-2 p-3 rounded-lg bg-amber-500/10 border border-amber-500/30">
+        <Coins className="h-5 w-5 text-amber-500" />
+        <span className="text-lg font-bold text-amber-500">
+          {BOSS_DEFEAT_REWARD_RYO.toLocaleString()} Ryo
+        </span>
+      </div>
+      <div className="flex flex-col items-center gap-2 p-3 rounded-lg bg-blue-500/10 border border-blue-500/30">
+        <Star className="h-5 w-5 text-blue-500" />
+        <span className="text-lg font-bold text-blue-500">
+          +{BOSS_DEFEAT_REWARD_STAT_POINTS} Pontos
+        </span>
+      </div>
+    </div>
+  </div>
+</CardFooter>
             </Card>
         </div>
     );
@@ -937,14 +982,15 @@ toast({
                 <p>{boss?.description || 'Um inimigo poderoso está se preparando...'}</p>
             </div>
             <div className="text-center">
-              <p className="text-sm text-muted-foreground">
-                  {boss?.current_health <= 0 
-                      ? 'Boss derrotado! Aguardando próximo boss...' 
-                      : boss?.expires_at 
-                          ? `Boss expira em: ${formatTime(timeUntilRespawn)}`
-                          : 'Carregando informações do boss...'
-                  }
-              </p>
+              {/* Boss expirando */}
+<p className="text-sm text-muted-foreground">
+  {boss?.current_health <= 0 
+    ? 'Boss derrotado! Aguardando próximo boss...' 
+    : boss?.expires_at 
+      ? `Boss disponível por mais: ${formatTime(timeUntilRespawn)}`
+      : 'Carregando informações do boss...'
+  }
+</p>
             </div>
             {/* ✅ DROPS RECENTES */}
 {lastDrops.length > 0 && (
@@ -1025,34 +1071,41 @@ toast({
 )}
           </CardContent>
           <CardFooter className="flex-col gap-4">
-  <Button 
-    onClick={handleAttack} 
-    disabled={!canAttack || isAttacking || !isPageReady}
-    className="w-full text-lg py-6"
-              style={{ pointerEvents: (!canAttack || isAttacking || !isPageReady) ? 'none' : 'auto' }}
-            >
-              {isAttacking ? (
-                <>
-                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                  Atacando...
-                </>
-              ) : !isPageReady ? (
-                <>
-                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                  Carregando...
-                </>
-              ) : canAttack ? (
-                <>
-                  <Swords className="mr-2 h-5 w-5" />
-                  Atacar Chefe
-                </>
-              ) : (
-                <>
-                  <Hourglass className="mr-2 h-5 w-5" />
-                  Aguarde {cooldownTime} para atacar
-                </>
-              )}
-            </Button>
+          <Button 
+  onClick={handleAttack} 
+  disabled={!canAttack || isAttacking || !isPageReady}
+  className="w-full text-lg py-6"
+  style={{ pointerEvents: (!canAttack || isAttacking || !isPageReady) ? 'none' : 'auto' }}
+>
+  {isAttacking ? (
+    <>
+      <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+      Atacando...
+    </>
+  ) : !isPageReady ? (
+    <>
+      <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+      Carregando...
+    </>
+  ) : canAttack ? (
+    <>
+      <Swords className="mr-2 h-5 w-5" />
+      Atacar Chefe
+    </>
+  ) : (
+    <>
+      <Clock className="mr-2 h-5 w-5 animate-pulse" />
+      Descansando...
+    </>
+  )}
+</Button>
+
+<p className="text-xs text-muted-foreground text-center">
+  {canAttack 
+    ? 'Você pode atacar o chefe a cada 10 minutos.' 
+    : 'Prepare-se para o próximo ataque!'
+  }
+</p>
             
             <p className="text-xs text-muted-foreground">Você pode atacar o chefe a cada 10 minutos.</p>
           </CardFooter>

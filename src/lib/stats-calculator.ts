@@ -3,6 +3,7 @@ import { weaponsData, type Weapon } from '@/lib/weapons-data';
 import { summonsData, type Summon, TRAINING_BONUS_PER_LEVEL } from '@/lib/summons-data';
 import { EQUIPMENT_DATA as equipmentsData, type Equipment } from '@/lib/battle-system/equipment-data';
 import { DOUJUTSU_DATA as doujutsuData } from '@/lib/battle-system/doujutsu-loader';
+import { calculateWarPointsBonus } from './clan-bonus-calculator'; // 🆕 ADICIONAR
 
 /**
  * Calcula o buff da invocação com treinamento
@@ -51,6 +52,7 @@ export function calculateFinalStats(userProfile: any) {
     legs_id: legsId,
     feet_id: feetId,
     hands_id: handsId,
+    clan_war_points: clanWarPoints = 0, // 🆕 ADICIONAR
   } = userProfile;
 
   // Equipamentos
@@ -60,6 +62,9 @@ export function calculateFinalStats(userProfile: any) {
   const equippedLegs = equipmentsData.find(e => e.id === legsId);
   const equippedFeet = equipmentsData.find(e => e.id === feetId);
   const equippedHands = equipmentsData.find(e => e.id === handsId);
+
+  // 🆕 CALCULAR BÔNUS DO CLÃ (PONTOS DE GUERRA)
+  const clanBonus = calculateWarPointsBonus(clanWarPoints);
 
   // ========== VITALIDADE ==========
   let vitality = baseVitality
@@ -154,12 +159,20 @@ export function calculateFinalStats(userProfile: any) {
   const katonLevel = elementLevels['Katon'] || 0;
   const raitonLevel = elementLevels['Raiton'] || 0;
 
-  const finalVitality = vitality;
-  const finalTaijutsu = taijutsu + (futonLevel * 2);
-  const finalNinjutsu = ninjutsu + (katonLevel * 2);
-  const finalGenjutsu = genjutsu + (dotonLevel * 2);
-  const finalSelo = selo + (raitonLevel * 2);
-  const finalIntelligence = intelligence + (suitonLevel * 2);
+  let finalVitality = vitality + (futonLevel * 0); // Futon não afeta vitalidade
+  let finalTaijutsu = taijutsu + (futonLevel * 2);
+  let finalNinjutsu = ninjutsu + (katonLevel * 2);
+  let finalGenjutsu = genjutsu + (dotonLevel * 2);
+  let finalSelo = selo + (raitonLevel * 2);
+  let finalIntelligence = intelligence + (suitonLevel * 2);
+
+  // 🆕 ADICIONAR BÔNUS DO CLÃ (DEPOIS DE TODOS OS MULTIPLICADORES E ELEMENTOS)
+  finalVitality += clanBonus;
+  finalIntelligence += clanBonus;
+  finalTaijutsu += clanBonus;
+  finalNinjutsu += clanBonus;
+  finalGenjutsu += clanBonus;
+  finalSelo += clanBonus;
 
   // ========== VIDA E CHAKRA ==========
   const maxHealth = 100 + (finalVitality * 15);
