@@ -12,6 +12,7 @@ export const JUTSU_GIFS: Record<string, string> = {
   'Futon: Shinkūha': 'https://i.ibb.co/9m431mhf/Futon-Shinkuha.gif',
   'Futon: Rasenshuriken': 'https://i.ibb.co/Vc4GMQ39/Futon-Rasenshuriken.gif',
   'Futon: Shinkū Renpa': 'https://i.ibb.co/SDcp5JTg/Futon-Shinku-Renpa.gif',
+  'Futon: Atsugai': 'https://i.ibb.co/bjYjqd67/suiton-atsugai.gif',
 
   // ===== KATON (FOGO) =====
   'Katon: Endan': 'https://i.ibb.co/mFGBv8kF/Katon-Endan.gif',

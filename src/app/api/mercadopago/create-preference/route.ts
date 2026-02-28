@@ -67,32 +67,43 @@ export async function POST(request: NextRequest) {
     // 5️⃣ Buscar dados do USUÁRIO no banco (profiles)
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
-      .select('id, name')
+      .select('id, name, character_name')
       .eq('id', userId)
-      .single();
+      .maybeSingle(); // ✅ maybeSingle() não retorna erro se não encontrar
 
-    if (profileError || !profile) {
-      console.error('❌ Usuário não encontrado:', profileError);
-      return NextResponse.json(
-        { error: 'Usuário não encontrado' },
-        { status: 404 }
-      );
+    // ✅ Não bloquear se perfil não tiver nome - apenas logar
+    if (profileError) {
+      console.warn('⚠️ Aviso ao buscar perfil:', profileError.message);
     }
 
-    console.log('👤 Usuário encontrado:', profile.name);
+    console.log('👤 Perfil encontrado:', profile?.name || profile?.character_name || 'sem nome');
 
     // 6️⃣ Buscar EMAIL do usuário (auth.users)
-    const { data: authUser } = await supabase.auth.admin.getUserById(userId);
+    const { data: authUser, error: authError } = await supabase.auth.admin.getUserById(userId);
     
-    const userEmail = authUser?.user?.email || `${userId}@narutoclash.com`;
-    const userName = profile.name || 'Jogador';
+    if (authError) {
+      console.error('❌ Erro ao buscar auth user:', authError.message);
+    }
 
-    console.log('📧 Email:', userEmail);
+    console.log('🔍 AUTH USER DEBUG:', {
+      found: !!authUser?.user,
+      email: authUser?.user?.email,
+      provider: authUser?.user?.app_metadata?.provider,
+      providers: authUser?.user?.app_metadata?.providers,
+      emailConfirmed: authUser?.user?.email_confirmed_at,
+    });
+
+    const userEmail = authUser?.user?.email || `${userId}@narutoclash.com`;
+    const userName = profile?.name || profile?.character_name || authUser?.user?.email?.split('@')[0] || 'Jogador';
+
+    console.log('📧 Email final:', userEmail);
+    console.log('👤 Nome final:', userName);
 
     // 7️⃣ Calcular CP total (base + bônus)
     const cpTotal = pacote.quantidade_cp + (pacote.bonus_cp || 0);
 
     // 8️⃣ Criar registro no banco (status: pending)
+    console.log('🔍 VERIFICANDO SE userId É UUID VÁLIDO:', userId);
     console.log('📝 Dados que serão inseridos:', {
       user_id: userId,
       package_id: pacoteId,
@@ -153,7 +164,10 @@ export async function POST(request: NextRequest) {
         },
       ],
       payer: {
-        email: userEmail,
+        // ✅ CORRIGIDO: Não enviar email do usuário para o MP
+        // Emails hotmail/@outlook são bloqueados pelo antifraude do Mercado Pago
+        // O MP deixa o próprio usuário preencher o email no checkout
+        email: 'pagador@narutoclash.com',
         name: userName,
       },
       external_reference: pagamento.id.toString(),

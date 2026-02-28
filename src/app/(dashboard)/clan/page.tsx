@@ -86,7 +86,6 @@ type ClanMember = {
     startTime: number;
     endTime: number;
   };
-  // ✅ Removemos daily_missions (agora é do clã)
 };
 
 type MissionWithMember = {
@@ -133,6 +132,13 @@ export default function ClanPage() {
   } | null>(null);
   const [dailyMissionsResetTimer, setDailyMissionsResetTimer] = useState('');
 
+  // ✅ FIX BUG 2: Timer que força re-render a cada segundo para atualizar isMissionComplete
+  const [tick, setTick] = useState(0);
+  useEffect(() => {
+    const interval = setInterval(() => setTick(n => n + 1), 1000);
+    return () => clearInterval(interval);
+  }, []);
+
   const userProfileRef = useMemoSupabase(() => user ? { table: 'profiles', id: user.id } : null, [user]);
   const { data: userProfile, isLoading: isUserLoading } = useDoc(userProfileRef);
 
@@ -154,7 +160,6 @@ export default function ClanPage() {
   const userRole = useMemo(() => clanMembers?.find(m => m.user_id === user?.id)?.role, [clanMembers, user]);
   const isManager = userRole === 'Líder' || userRole === 'Conselheiro';
   const currentMember = useMemo(() => clanMembers?.find(m => m.user_id === user?.id), [clanMembers, user]);
-  const memberActiveMission = currentMember?.active_clan_mission;
   
   // Query for join requests
   const joinRequestsQuery = useMemoSupabase(() => {
@@ -175,43 +180,41 @@ export default function ClanPage() {
   }, []);
   const { data: clanMissions, isLoading: areMissionsLoading } = useCollection<WithId<ClanMission>>(missionsQuery);
 
-  // Query for user's completed missions
+  // Query for clan's completed missions
   const completionsQuery = useMemoSupabase(() => {
     if (!clanRef) return null;
     return {
       table: 'clan_mission_completions',
       query: (builder: any) => 
-        builder.eq('clan_id', clanRef.id),  // ✅ De todo o clã
+        builder.eq('clan_id', clanRef.id),
     };
   }, [clanRef]);
   const { data: userCompletions, isLoading: areCompletionsLoading } = useCollection<WithId<MissionCompletion>>(completionsQuery);
 
-  // Filtrar missões baseado nas missões diárias do membro
-  // ✅ NOVO: Missões do clã com status de quem está fazendo
-const missionsWithStatus = useMemo((): MissionWithMember[] => {
-  if (!clanMissions || !clanData?.active_missions?.missions || !clanMembers) return [];
-  
-  const activeMissionIds = clanData.active_missions.missions;
-  
-  return clanMissions
-    .filter(mission => activeMissionIds.includes(mission.id))
-    .map(mission => {
-      // Verificar se algum membro está fazendo essa missão
-      const memberDoingMission = clanMembers.find(
-        m => m.active_clan_mission?.missionId === mission.id
-      );
-      
-      return {
-        mission,
-        assignedTo: memberDoingMission?.active_clan_mission ? {
-          userId: memberDoingMission.user_id,
-          userName: memberDoingMission.name,
-          startTime: memberDoingMission.active_clan_mission.startTime,
-          endTime: memberDoingMission.active_clan_mission.endTime,
-        } : null,
-      };
-    });
-}, [clanMissions, clanData?.active_missions, clanMembers]);
+  // Missões do clã com status de quem está fazendo
+  const missionsWithStatus = useMemo((): MissionWithMember[] => {
+    if (!clanMissions || !clanData?.active_missions?.missions || !clanMembers) return [];
+    
+    const activeMissionIds = clanData.active_missions.missions;
+    
+    return clanMissions
+      .filter(mission => activeMissionIds.includes(mission.id))
+      .map(mission => {
+        const memberDoingMission = clanMembers.find(
+          m => m.active_clan_mission?.missionId === mission.id
+        );
+        
+        return {
+          mission,
+          assignedTo: memberDoingMission?.active_clan_mission ? {
+            userId: memberDoingMission.user_id,
+            userName: memberDoingMission.name,
+            startTime: memberDoingMission.active_clan_mission.startTime,
+            endTime: memberDoingMission.active_clan_mission.endTime,
+          } : null,
+        };
+      });
+  }, [clanMissions, clanData?.active_missions, clanMembers]);
 
   // Available clans query
   const availableClansQuery = useMemoSupabase(() => {
@@ -309,114 +312,102 @@ const missionsWithStatus = useMemo((): MissionWithMember[] => {
     syncClanState();
   }, [user?.id, supabase, userProfile?.clan_id, userProfile?.pending_clan_request, userRole]);
 
-  // Sincronizar missão ativa
+  // ✅ FIX BUG 1: Sincronizar missão ativa — NUNCA apagar automaticamente do banco
+  // O usuário deve coletar manualmente. Só limpa o estado local se não há missão no banco.
   useEffect(() => {
     if (!clanMembers || !user) return;
     
     const member = clanMembers.find(m => m.user_id === user.id);
     
     if (member?.active_clan_mission) {
-      const now = Date.now();
-      if (now < member.active_clan_mission.endTime) {
-        setActiveMission(member.active_clan_mission);
-      } else {
-        if (supabase && clanRef) {
-          supabase
-            .from('clan_members')
-            .update({ active_clan_mission: null })
-            .eq('clan_id', clanRef.id)
-            .eq('user_id', user.id)
-            .then(() => setActiveMission(null));
-        }
-      }
+      // ✅ Sempre seta no estado local, independente de estar completa ou não
+      // Isso garante que o botão "Coletar Recompensa" apareça quando endTime for atingido
+      setActiveMission(member.active_clan_mission);
     } else {
       setActiveMission(null);
     }
-  }, [clanMembers, user, supabase, clanRef]);
+    // ✅ REMOVIDO: O bloco "else" que apagava automaticamente a missão do banco
+    // quando endTime já havia passado. Isso causava o bug de sumir sem poder coletar.
+  }, [clanMembers, user]);
 
-  // Timer para missão completada
+  // Timer de notificação de missão completada (apenas toast, sem apagar do banco)
   useEffect(() => {
     if (!activeMission) return;
 
-    const interval = setInterval(() => {
-      const now = Date.now();
-      if (now >= activeMission.endTime) {
-        clearInterval(interval);
-        toast({
-          title: "Missão Completada!",
-          description: "Sua missão de clã foi concluída. Colete sua recompensa!",
-        });
-      }
-    }, 1000);
-
-    return () => clearInterval(interval);
-  }, [activeMission, toast]);
-
-// ✅ Sistema de missões compartilhadas do clã (reseta às 00:00 BRT)
-useEffect(() => {
-  if (!clanData || !supabase || !clanRef) return;
-
-  const checkAndResetClanMissions = async () => {
-    const clanActiveMissions = clanData.active_missions;
     const now = Date.now();
+    if (now >= activeMission.endTime) return; // Já está completa, não precisa de timer
 
-    // ✅ CORREÇÃO: Verificar corretamente se precisa resetar
-    const needsReset = !clanActiveMissions || 
-                      !clanActiveMissions.nextReset || 
-                      now >= clanActiveMissions.nextReset;
+    const timeUntilComplete = activeMission.endTime - now;
+    const timeout = setTimeout(() => {
+      toast({
+        title: "Missão Completada!",
+        description: "Sua missão de clã foi concluída. Colete sua recompensa!",
+      });
+    }, timeUntilComplete);
 
-    if (needsReset) {
-      console.log('🕐 Resetando missões do clã automaticamente (00:00 BRT)...');
+    return () => clearTimeout(timeout);
+  }, [activeMission?.missionId, activeMission?.endTime, toast]);
 
-      // Buscar todas as missões disponíveis
-      const { data: allMissions } = await supabase
-        .from('clan_missions')
-        .select('id')
-        .eq('is_active', true);
+  // Sistema de missões compartilhadas do clã (reseta às 00:00 BRT)
+  useEffect(() => {
+    if (!clanData || !supabase || !clanRef) return;
 
-      if (!allMissions || allMissions.length === 0) {
-        console.warn('⚠️ Nenhuma missão disponível para reset automático');
-        return;
-      }
+    const checkAndResetClanMissions = async () => {
+      const clanActiveMissions = clanData.active_missions;
+      const now = Date.now();
 
-      // Verificar se tem pelo menos 10 missões
-      if (allMissions.length < 10) {
-        console.warn(`⚠️ Apenas ${allMissions.length} missões disponíveis. Necessário 10.`);
-        return;
-      }
+      const needsReset = !clanActiveMissions || 
+                        !clanActiveMissions.nextReset || 
+                        now >= clanActiveMissions.nextReset;
 
-      // Gerar 10 missões aleatórias
-      const missionIds = allMissions.map(m => m.id);
-      const newActiveMissions = generateClanMissions(missionIds);
+      if (needsReset) {
+        console.log('🕐 Resetando missões do clã automaticamente (00:00 BRT)...');
 
-      // Atualizar clã
-      const { error } = await supabase
-        .from('clans')
-        .update({ active_missions: newActiveMissions })
-        .eq('id', clanRef.id);
+        const { data: allMissions } = await supabase
+          .from('clan_missions')
+          .select('id')
+          .eq('is_active', true);
 
-      if (error) {
-        console.error('❌ Erro ao atualizar missões do clã:', error);
+        if (!allMissions || allMissions.length === 0) {
+          console.warn('⚠️ Nenhuma missão disponível para reset automático');
+          return;
+        }
+
+        if (allMissions.length < 10) {
+          console.warn(`⚠️ Apenas ${allMissions.length} missões disponíveis. Necessário 10.`);
+          return;
+        }
+
+        const missionIds = allMissions.map(m => m.id);
+        const newActiveMissions = generateClanMissions(missionIds);
+
+        const { error } = await supabase
+          .from('clans')
+          .update({ active_missions: newActiveMissions })
+          .eq('id', clanRef.id);
+
+        if (error) {
+          console.error('❌ Erro ao atualizar missões do clã:', error);
+        } else {
+          console.log('✅ Missões do clã resetadas automaticamente');
+          console.log('📅 Próximo reset:', new Date(newActiveMissions.nextReset).toLocaleString('pt-BR'));
+        }
       } else {
-        console.log('✅ Missões do clã resetadas automaticamente');
-        console.log('📅 Próximo reset:', new Date(newActiveMissions.nextReset).toLocaleString('pt-BR'));
+        console.log('⏰ Missões ainda válidas. Próximo reset:', new Date(clanActiveMissions.nextReset).toLocaleString('pt-BR'));
       }
-    } else {
-      console.log('⏰ Missões ainda válidas. Próximo reset:', new Date(clanActiveMissions.nextReset).toLocaleString('pt-BR'));
-    }
-  };
+    };
 
-  checkAndResetClanMissions();
+    checkAndResetClanMissions();
 
-  const updateTimer = () => {
-    setDailyMissionsResetTimer(getTimeUntilReset());
-  };
+    const updateTimer = () => {
+      setDailyMissionsResetTimer(getTimeUntilReset());
+    };
 
-  updateTimer();
-  const intervalId = setInterval(updateTimer, 1000);
+    updateTimer();
+    const intervalId = setInterval(updateTimer, 1000);
 
-  return () => clearInterval(intervalId);
-}, [clanData?.active_missions?.nextReset, supabase, clanRef?.id]);
+    return () => clearInterval(intervalId);
+  }, [clanData?.active_missions?.nextReset, supabase, clanRef?.id]);
 
   const form = useForm<CreateClanValues>({
     resolver: zodResolver(createClanSchema),
@@ -641,6 +632,7 @@ useEffect(() => {
   
       if (memberError) throw memberError;
   
+      // ✅ FIX BUG 3: Atualiza estado local imediatamente sem depender do reload
       setActiveMission({ missionId: mission.id, startTime, endTime });
   
       toast({
@@ -648,10 +640,8 @@ useEffect(() => {
         description: `Completando "${mission.title}"... Tempo: ${mission.duration_hours}h. Chakra usado: ${chakraCost}.`,
       });
   
-      // ✅ ADICIONAR: Reload após 1 segundo
-      setTimeout(() => {
-        window.location.reload();
-      }, 1000);
+      // ✅ FIX BUG 3: REMOVIDO o window.location.reload() que causava race condition
+      // A subscription do useCollection já atualiza os dados automaticamente
     } catch (error: any) {
       toast({
         variant: 'destructive',
@@ -722,14 +712,15 @@ useEffect(() => {
   
       if (memberError) throw memberError;
   
+      // ✅ Limpa estado local imediatamente após coleta bem-sucedida
+      setActiveMission(null);
+
       toast({
         title: '✅ Recompensa Coletada!',
         description: `Você ganhou ${mission.xp_reward} XP para o clã!`,
       });
   
-      setActiveMission(null);
-  
-      // ✅ JÁ EXISTE: Reload após 1 segundo (mantém como está)
+      // ✅ Reload após coleta (aqui é seguro pois a missão já foi removida do banco)
       setTimeout(() => {
         window.location.reload();
       }, 1000);
@@ -765,32 +756,20 @@ useEffect(() => {
       }
   
       if (isLeader && totalMembers <= 1) {
-        // ✅ DELETAR TUDO RELACIONADO AO CLÃ (ordem correta)
-        
-        // 1. Deletar membros
         await supabase.from('clan_members').delete().eq('clan_id', clanId);
-        
-        // 2. Deletar solicitações
         await supabase.from('clan_join_requests').delete().eq('clan_id', clanId);
-        
-        // 3. Deletar missões completadas
         await supabase.from('clan_mission_completions').delete().eq('clan_id', clanId);
-        
-        // 4. Deletar mensagens do chat
         await supabase.from('clan_chat_messages').delete().eq('clan_id', clanId);
         
-        // 5. Deletar doações (se a tabela existir)
         try {
           await supabase.from('clan_donations').delete().eq('clan_id', clanId);
         } catch (e) {
           // Tabela pode não existir ainda
         }
         
-        // 6. FINALMENTE deletar o clã
         await supabase.from('clans').delete().eq('id', clanId);
         
       } else {
-        // Apenas sair do clã (não é líder ou tem outros membros)
         await supabase
           .from('clan_members')
           .delete()
@@ -798,7 +777,6 @@ useEffect(() => {
           .eq('user_id', user.id);
       }
   
-      // Atualizar perfil do usuário
       await supabase
         .from('profiles')
         .update({
@@ -871,7 +849,6 @@ useEffect(() => {
   };
 
   const handleTransferLeadership = async (newLeaderId: string, newLeaderName: string) => {
-
     if (!user || !supabase || !userProfile || !userProfile.clan_id || !clanData) return;
 
     setIsSubmitting(true);
@@ -1093,97 +1070,95 @@ useEffect(() => {
           </Card>
 
           <div className="space-y-8">
-  {/* 🆕 CARD DE DOAÇÃO */}
-  {user && userProfile && (
-    <ClanDonation
-      clanId={clanData.id}
-      userRyo={userProfile.ryo || 0}
-      userId={user.id}
-      userName={userProfile.name}
-      supabase={supabase}
-    />
-  )}
+            {user && userProfile && (
+              <ClanDonation
+                clanId={clanData.id}
+                userRyo={userProfile.ryo || 0}
+                userId={user.id}
+                userName={userProfile.name}
+                supabase={supabase}
+              />
+            )}
 
-  {/* 🆕 BUSCA DE BATALHAS ENTRE CLÃS */}
-  {user && userProfile && (
-    <ClanBattleSearch
-      userProfile={userProfile}
-      supabase={supabase}
-      userId={user.id}
-    />
-  )}
+            {user && userProfile && (
+              <ClanBattleSearch
+                userProfile={userProfile}
+                supabase={supabase}
+                userId={user.id}
+              />
+            )}
 
-  <Card>
-    <CardHeader>
-      <CardTitle className="flex items-center gap-2">
-        <Shield className="text-primary"/>Opções do Clã
-      </CardTitle>
-    </CardHeader>
-    <CardContent className="flex flex-col gap-4">
-      <p className="text-sm text-muted-foreground">Líder: {clanData.leader_name}</p>
-      
-      <AlertDialog>
-        <AlertDialogTrigger asChild>
-          <Button variant="destructive" disabled={isSubmitting}>
-            <LogOut className="mr-2"/>{isLeader ? 'Disbandar Clã' : 'Sair do Clã'}
-          </Button>
-        </AlertDialogTrigger>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
-            <AlertDialogDescription>
-              {isLeader && totalMembros > 1 
-                ? 'Você não pode sair do clã como líder enquanto houver outros membros. Expulse todos primeiro ou passe a liderança.'
-                : isLeader
-                ? 'Esta ação irá dissolver o clã permanentemente.'
-                : 'Você será removido do clã.'
-              }
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={handleLeaveClan} className={cn(buttonVariants({variant: 'destructive'}))}>Confirmar</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </CardContent>
-  </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Shield className="text-primary"/>Opções do Clã
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="flex flex-col gap-4">
+                <p className="text-sm text-muted-foreground">Líder: {clanData.leader_name}</p>
+                
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="destructive" disabled={isSubmitting}>
+                      <LogOut className="mr-2"/>{isLeader ? 'Disbandar Clã' : 'Sair do Clã'}
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        {isLeader && totalMembros > 1 
+                          ? 'Você não pode sair do clã como líder enquanto houver outros membros. Expulse todos primeiro ou passe a liderança.'
+                          : isLeader
+                          ? 'Esta ação irá dissolver o clã permanentemente.'
+                          : 'Você será removido do clã.'
+                        }
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                      <AlertDialogAction onClick={handleLeaveClan} className={cn(buttonVariants({variant: 'destructive'}))}>Confirmar</AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </CardContent>
+            </Card>
 
-  {user && userProfile && clanRef && (
-    <ClanChat 
-      clanId={clanRef.id}
-      userId={user.id}
-      userName={userProfile.name}
-      supabase={supabase}
-    />
-  )}
+            {user && userProfile && clanRef && (
+              <ClanChat 
+                clanId={clanRef.id}
+                userId={user.id}
+                userName={userProfile.name}
+                supabase={supabase}
+              />
+            )}
 
-  {isManager && (
-    <Card>
-      <CardHeader><CardTitle className="flex items-center gap-2"><UserCheck />Solicitações</CardTitle></CardHeader>
-      <CardContent>
-        {areRequestsLoading ? <Loader2 className="h-6 w-6 animate-spin"/> : 
-          joinRequests && joinRequests.length > 0 ? (
-            <div className="space-y-3">
-              {joinRequests.map(req => (
-                <div key={req.id} className="flex justify-between items-center bg-muted/50 p-2 rounded-md">
-                  <div>
-                    <p className="font-semibold">{req.user_name}</p>
-                    <p className="text-xs text-muted-foreground">Nível: {req.user_level}</p>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button size="sm" variant="outline" className="text-red-500 border-red-500 hover:bg-red-500/10" onClick={() => handleManageRequest(req as WithId<JoinRequest & { clan_id: string }>, false)} disabled={isSubmitting}><UserX /></Button>
-                    <Button size="sm" className="bg-green-600 hover:bg-green-700" onClick={() => handleManageRequest(req as WithId<JoinRequest & { clan_id: string }>, true)} disabled={isSubmitting}><UserCheck /></Button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : <p className="text-sm text-muted-foreground text-center">Nenhuma solicitação pendente.</p>
-        }
-      </CardContent>
-    </Card>
-  )}
-</div>
+            {isManager && (
+              <Card>
+                <CardHeader><CardTitle className="flex items-center gap-2"><UserCheck />Solicitações</CardTitle></CardHeader>
+                <CardContent>
+                  {areRequestsLoading ? <Loader2 className="h-6 w-6 animate-spin"/> : 
+                    joinRequests && joinRequests.length > 0 ? (
+                      <div className="space-y-3">
+                        {joinRequests.map(req => (
+                          <div key={req.id} className="flex justify-between items-center bg-muted/50 p-2 rounded-md">
+                            <div>
+                              <p className="font-semibold">{req.user_name}</p>
+                              <p className="text-xs text-muted-foreground">Nível: {req.user_level}</p>
+                            </div>
+                            <div className="flex gap-2">
+                              <Button size="sm" variant="outline" className="text-red-500 border-red-500 hover:bg-red-500/10" onClick={() => handleManageRequest(req as WithId<JoinRequest & { clan_id: string }>, false)} disabled={isSubmitting}><UserX /></Button>
+                              <Button size="sm" className="bg-green-600 hover:bg-green-700" onClick={() => handleManageRequest(req as WithId<JoinRequest & { clan_id: string }>, true)} disabled={isSubmitting}><UserCheck /></Button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : <p className="text-sm text-muted-foreground text-center">Nenhuma solicitação pendente.</p>
+                  }
+                </CardContent>
+              </Card>
+            )}
+          </div>
         </div>
 
         <Card className="mt-8">
@@ -1207,7 +1182,11 @@ useEffect(() => {
                   const isMyMission = assignedTo?.userId === user?.id;
                   const isOccupied = !!assignedTo;
                   const hasEnoughChakra = (userProfile?.current_chakra || 0) >= (mission.chakra_cost || 0);
+                  
+                  // ✅ FIX BUG 2: isMissionComplete é calculado com `tick` como dependência,
+                  // garantindo re-avaliação a cada segundo pelo timer global
                   const isMissionComplete = isMyMission && Date.now() >= (assignedTo?.endTime || 0);
+                  
                   const timeRemaining = isOccupied ? Math.max(0, (assignedTo?.endTime || 0) - Date.now()) : 0;
                   const hours = Math.floor(timeRemaining / (1000 * 60 * 60));
                   const minutes = Math.floor((timeRemaining % (1000 * 60 * 60)) / (1000 * 60));
@@ -1255,7 +1234,7 @@ useEffect(() => {
                         </div>
                         
                         {/* Status da Missão */}
-                        {isOccupied && (
+                        {isOccupied && !isMissionComplete && (
                           <div className="space-y-2 mt-4 p-3 bg-yellow-500/10 border border-yellow-500/30 rounded-md">
                             <div className="flex items-center gap-2 text-sm">
                               <Users className="h-4 w-4 text-yellow-600" />
@@ -1342,49 +1321,48 @@ useEffect(() => {
           </CardContent>
         </Card>
 
-        {/* 🆕 SEÇÃO DE TECNOLOGIAS E HISTÓRICO */}
-<div className="mt-8">
-  <Card>
-    <Tabs defaultValue="technologies" className="w-full">
-      <CardHeader>
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="technologies">
-            Tecnologias do Clã
-          </TabsTrigger>
-          <TabsTrigger value="battles">
-            Histórico de Batalhas
-          </TabsTrigger>
-        </TabsList>
-      </CardHeader>
+        <div className="mt-8">
+          <Card>
+            <Tabs defaultValue="technologies" className="w-full">
+              <CardHeader>
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="technologies">
+                    Tecnologias do Clã
+                  </TabsTrigger>
+                  <TabsTrigger value="battles">
+                    Histórico de Batalhas
+                  </TabsTrigger>
+                </TabsList>
+              </CardHeader>
 
-      <CardContent>
-        <TabsContent value="technologies" className="mt-0">
-          <div className="mb-4">
-            <CardDescription>
-              Melhore as tecnologias para dar bônus permanentes a todos os membros do clã
-            </CardDescription>
-          </div>
-          <ClanTechnologies
-            clanId={clanData.id}
-            technologies={clanData.technologies || { dojo: 0, hospital: 0, library: 0 }}
-            treasuryRyo={clanData.treasury_ryo || 0}
-            isLeader={isLeader}
-            supabase={supabase}
-            userId={user!.id}
-          />
-        </TabsContent>
+              <CardContent>
+                <TabsContent value="technologies" className="mt-0">
+                  <div className="mb-4">
+                    <CardDescription>
+                      Melhore as tecnologias para dar bônus permanentes a todos os membros do clã
+                    </CardDescription>
+                  </div>
+                  <ClanTechnologies
+                    clanId={clanData.id}
+                    technologies={clanData.technologies || { dojo: 0, hospital: 0, library: 0 }}
+                    treasuryRyo={clanData.treasury_ryo || 0}
+                    isLeader={isLeader}
+                    supabase={supabase}
+                    userId={user!.id}
+                  />
+                </TabsContent>
 
-        <TabsContent value="battles" className="mt-0">
-          <ClanBattleHistory
-            clanId={clanData.id}
-            clanName={clanData.name}
-            supabase={supabase}
-          />
-        </TabsContent>
-      </CardContent>
-    </Tabs>
-  </Card>
-</div>
+                <TabsContent value="battles" className="mt-0">
+                  <ClanBattleHistory
+                    clanId={clanData.id}
+                    clanName={clanData.name}
+                    supabase={supabase}
+                  />
+                </TabsContent>
+              </CardContent>
+            </Tabs>
+          </Card>
+        </div>
       </div>
     );
   }

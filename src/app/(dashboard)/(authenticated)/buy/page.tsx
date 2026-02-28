@@ -81,15 +81,16 @@ export default function ComprarCPPage() {
     // 1. Usuário existe
     // 2. Perfil carregado
     // 3. Pacotes carregados
-    if (user && userProfile && pacotes && pacotes.length > 0) {
+    // ✅ CORRIGIDO: nao depende de userProfile ter 'name' - hotmail e gmail funcionam igual
+    if (user && pacotes && pacotes.length > 0) {
       const timer = setTimeout(() => {
         setSystemReady(true);
         console.log('✅ Sistema pronto para compras');
-      }, 1000);
+      }, 500);
 
       return () => clearTimeout(timer);
     }
-  }, [user, userProfile, pacotes]);
+  }, [user, pacotes]);
 
   // ✅ Inicializar Mercado Pago
   useEffect(() => {
@@ -284,14 +285,8 @@ export default function ComprarCPPage() {
     );
   }
 
-  if (!userProfile) {
-    return (
-      <div className="flex flex-col justify-center items-center h-full gap-4">
-        <Loader2 className="h-8 w-8 animate-spin text-orange-500" />
-        <p className="text-gray-400">Carregando perfil...</p>
-      </div>
-    );
-  }
+  // ✅ CORRIGIDO: nao bloquear se nao tiver perfil - hotmail pode nao ter perfil criado
+  // if (!userProfile) { return loading } <- REMOVIDO
 
   return (
     <>
@@ -403,7 +398,7 @@ export default function ComprarCPPage() {
           <CardContent>
             <div className="flex items-center gap-3">
               <span className="text-4xl font-bold text-yellow-500">
-                💎 {userProfile.clash_points || 0}
+                💎 {userProfile?.clash_points || 0}
               </span>
               <span className="text-sm text-gray-400">CP disponíveis</span>
             </div>

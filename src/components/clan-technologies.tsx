@@ -75,8 +75,21 @@ export function ClanTechnologies({
   const { toast } = useToast();
   const [upgrading, setUpgrading] = useState<string | null>(null);
 
+  const LEVEL_COSTS: Record<number, number> = {
+    0: 500000,
+    1: 1500000,
+    2: 4000000,
+    3: 8000000,
+    4: 15000000,
+    5: 25000000,
+    6: 40000000,
+    7: 60000000,
+    8: 85000000,
+    9: 120000000,
+  };
+
   const calculateCost = (currentLevel: number) => {
-    return 1000 * Math.pow(2, currentLevel);
+    return LEVEL_COSTS[currentLevel] ?? 120000000;
   };
 
   const handleUpgrade = async (techId: 'dojo' | 'hospital' | 'library') => {

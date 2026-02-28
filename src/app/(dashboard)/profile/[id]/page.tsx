@@ -162,27 +162,18 @@ export default function ProfilePage() {
       <div className="mt-8">
         <Card className="mx-auto max-w-4xl">
           <CardHeader className="border-b">
-            <div className="flex flex-col sm:flex-row items-center gap-6">
-              <Avatar className="h-32 w-32 rounded-md border-2 border-primary shadow-lg">
-                <AvatarImage src={profile.avatar_url} alt={profile.name} />
-                <AvatarFallback>{profile.name?.charAt(0) || 'N'}</AvatarFallback>
-              </Avatar>
-              
-              <div className="flex-1 text-center sm:text-left w-full">
-                <div className="flex flex-col sm:flex-row items-center justify-center sm:justify-start gap-4 mb-2">
-                  <CardTitle className="font-headline text-3xl">
-                    {profile.name || 'Ninja'}
-                  </CardTitle>
-                  {villageImage && (
-                    <Image 
-                      src={villageImage.imageUrl} 
-                      alt={villageImage.description}
-                      width={80}
-                      height={80}
-                      className="rounded-md"
-                    />
-                  )}
-                </div>
+          <div className="flex flex-col sm:flex-row items-center gap-6">
+                  <Avatar className="h-32 w-32 rounded-md border-2 border-primary shadow-lg">
+                    <AvatarImage src={profile.avatar_url} alt={profile.name} />
+                    <AvatarFallback>{profile.name?.charAt(0) || 'N'}</AvatarFallback>
+                  </Avatar>
+                  
+                  <div className="flex-1 text-center sm:text-left w-full">
+                    <div className="flex flex-col sm:flex-row items-center justify-center sm:justify-start gap-4 mb-2">
+                      <CardTitle className="font-headline text-3xl">
+                        {profile.name || 'Ninja'}
+                      </CardTitle>
+                    </div>
                 
                 <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 mt-3">
   <Badge variant="default" className="text-md">

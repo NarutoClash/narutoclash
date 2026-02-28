@@ -1,13 +1,15 @@
 'use client';
 
 import { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Edit, Save, X, Eye, Image as ImageIcon, Bold, Italic, Underline, Palette } from 'lucide-react';
+import {
+  Edit, Save, X, Eye, Image as ImageIcon,
+  Bold, Italic, Underline, Palette,
+} from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useSupabase } from '@/supabase';
-import Image from 'next/image';
 
 interface BioEditorProps {
   profileId: string;
@@ -15,136 +17,131 @@ interface BioEditorProps {
   isOwner: boolean;
 }
 
-// Função para processar BBCode em HTML
+// ─── BBCode helpers ────────────────────────────────────────────────────────────
+
 const processTextFormatting = (text: string) => {
-  // Processa [b]texto[/b] para negrito
-  let processed = text.replace(/\[b\](.*?)\[\/b\]/g, '<strong>$1</strong>');
-  
-  // Processa [i]texto[/i] para itálico
-  processed = processed.replace(/\[i\](.*?)\[\/i\]/g, '<em>$1</em>');
-  
-  // Processa [u]texto[/u] para sublinhado
-  processed = processed.replace(/\[u\](.*?)\[\/u\]/g, '<u>$1</u>');
-  
-  // Processa [s]texto[/s] para tachado
-  processed = processed.replace(/\[s\](.*?)\[\/s\]/g, '<s>$1</s>');
-  
-  // Processa cores nomeadas: [red], [blue], [green], etc
-  const colorMap: { [key: string]: string } = {
-    red: '#ef4444',
-    blue: '#3b82f6',
-    green: '#22c55e',
-    yellow: '#eab308',
-    purple: '#a855f7',
-    pink: '#ec4899',
-    orange: '#f97316',
-    cyan: '#06b6d4',
-    white: '#ffffff',
-    black: '#000000',
-    gray: '#6b7280',
-    gold: '#fbbf24',
+  let p = text.replace(/\[b\]([\s\S]*?)\[\/b\]/g, '<strong>$1</strong>');
+  p = p.replace(/\[i\]([\s\S]*?)\[\/i\]/g, '<em>$1</em>');
+  p = p.replace(/\[u\]([\s\S]*?)\[\/u\]/g, '<u>$1</u>');
+  p = p.replace(/\[s\]([\s\S]*?)\[\/s\]/g, '<s>$1</s>');
+
+  const colorMap: Record<string, string> = {
+    red: '#ef4444', blue: '#3b82f6', green: '#22c55e', yellow: '#eab308',
+    purple: '#a855f7', pink: '#ec4899', orange: '#f97316', cyan: '#06b6d4',
+    white: '#ffffff', black: '#000000', gray: '#6b7280', gold: '#fbbf24',
   };
-  
-  Object.keys(colorMap).forEach(colorName => {
-    const regex = new RegExp(`\\[${colorName}\\](.*?)\\[\\/${colorName}\\]`, 'g');
-    processed = processed.replace(regex, `<span style="color: ${colorMap[colorName]}">$1</span>`);
+  Object.entries(colorMap).forEach(([name, hex]) => {
+    p = p.replace(
+      new RegExp(`\\[${name}\\]([\\s\\S]*?)\\[\\/${name}\\]`, 'g'),
+      `<span style="color:${hex}">$1</span>`
+    );
   });
-  
-  // Processa [size=tamanho]texto[/size] para tamanho
-  processed = processed.replace(/\[size=(.*?)\](.*?)\[\/size\]/g, '<span style="font-size: $1">$2</span>');
-  
-  return processed;
+  p = p.replace(/\[size=([\s\S]*?)\]([\s\S]*?)\[\/size\]/g, '<span style="font-size:$1">$2</span>');
+  return p;
 };
 
-// Função para processar o texto e converter [img]url[/img] em imagens
-const parseContent = (content: string) => {
-  const parts: Array<{ type: 'text' | 'image'; content: string }> = [];
-  const regex = /\[img\](.*?)\[\/img\]/g;
-  let lastIndex = 0;
-  let match;
+// ─── Parse BBCode into parts ───────────────────────────────────────────────────
 
-  while ((match = regex.exec(content)) !== null) {
-    // Adiciona texto antes da imagem
-    if (match.index > lastIndex) {
-      parts.push({
-        type: 'text',
-        content: content.substring(lastIndex, match.index)
-      });
-    }
-    
-    // Adiciona a imagem
-    parts.push({
-      type: 'image',
-      content: match[1]
-    });
-    
-    lastIndex = regex.lastIndex;
+type Part =
+  | { type: 'text'; content: string }
+  | { type: 'image'; url: string };
+
+const parseContent = (content: string): Part[] => {
+  const parts: Part[] = [];
+  let lastIndex = 0;
+  const re = /\[img(?:=[^\]]*)?\]([\s\S]*?)\[\/img\]/g;
+  let match: RegExpExecArray | null;
+
+  while ((match = re.exec(content)) !== null) {
+    if (match.index > lastIndex)
+      parts.push({ type: 'text', content: content.substring(lastIndex, match.index) });
+    parts.push({ type: 'image', url: match[1].trim() });
+    lastIndex = re.lastIndex;
   }
-  
-  // Adiciona texto restante
-  if (lastIndex < content.length) {
-    parts.push({
-      type: 'text',
-      content: content.substring(lastIndex)
-    });
-  }
-  
+  if (lastIndex < content.length)
+    parts.push({ type: 'text', content: content.substring(lastIndex) });
+
   return parts;
 };
+
+// ─── Render parts — images flush with zero gap ────────────────────────────────
+
+const renderContent = (parts: Part[]) => {
+  const elements: React.ReactNode[] = [];
+  let i = 0;
+
+  while (i < parts.length) {
+    const part = parts[i];
+
+    if (part.type === 'image') {
+      // Collect all consecutive images into one zero-gap block
+      const images: string[] = [];
+      while (i < parts.length && parts[i].type === 'image') {
+        images.push((parts[i] as { type: 'image'; url: string }).url);
+        i++;
+      }
+      elements.push(
+        <div key={`imgs-${i}`} style={{ fontSize: 0, lineHeight: 0, display: 'block' }}>
+          {images.map((url, idx) => (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              key={idx}
+              src={url}
+              alt=""
+              style={{
+                display: 'block',
+                width: '100%',
+                margin: 0,
+                padding: 0,
+                border: 0,
+                lineHeight: 0,
+              }}
+              onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+            />
+          ))}
+        </div>
+      );
+    } else {
+      elements.push(
+        <p
+          key={`text-${i}`}
+          className="whitespace-pre-wrap text-sm leading-relaxed"
+          dangerouslySetInnerHTML={{ __html: processTextFormatting(part.content) }}
+        />
+      );
+      i++;
+    }
+  }
+
+  return elements;
+};
+
+// ─── Main component ────────────────────────────────────────────────────────────
 
 export function BioEditor({ profileId, initialContent = '', isOwner }: BioEditorProps) {
   const { supabase } = useSupabase();
   const { toast } = useToast();
-  const [isEditing, setIsEditing] = useState(false);
-  const [bioContent, setBioContent] = useState(initialContent);
-  const [isSaving, setIsSaving] = useState(false);
-  const [showPreview, setShowPreview] = useState(false);
+  const [isEditing, setIsEditing]         = useState(false);
+  const [bioContent, setBioContent]       = useState(initialContent);
+  const [isSaving, setIsSaving]           = useState(false);
+  const [showPreview, setShowPreview]     = useState(false);
   const [showColorMenu, setShowColorMenu] = useState(false);
 
   const handleSave = async () => {
-    if (!supabase) {
-      toast({
-        variant: 'destructive',
-        title: 'Erro',
-        description: 'Não foi possível conectar ao banco de dados.',
-      });
-      return;
-    }
-
+    if (!supabase) return;
     setIsSaving(true);
-    
     try {
-      // ✅ CORRIGIDO: Usar o nome correto da coluna
       const { error } = await supabase
         .from('profiles')
         .update({ bio: bioContent.trim() || null })
         .eq('id', profileId);
-
-      if (error) {
-        console.error('Erro do Supabase:', error);
-        throw error;
-      }
-
-      toast({
-        title: 'Bio atualizada!',
-        description: 'Suas informações foram salvas com sucesso.',
-      });
-      
+      if (error) throw error;
+      toast({ title: 'Bio atualizada!' });
       setIsEditing(false);
       setShowPreview(false);
-      
-      // Recarregar após 1 segundo
-      setTimeout(() => {
-        window.location.reload();
-      }, 1000);
-      
+      setTimeout(() => window.location.reload(), 1000);
     } catch (error: any) {
-      console.error('Erro ao salvar bio:', error);
-      toast({
-        variant: 'destructive',
-        title: 'Erro ao salvar',
-        description: error?.message || 'Não foi possível salvar as alterações.',
-      });
+      toast({ variant: 'destructive', title: 'Erro ao salvar', description: error?.message });
     } finally {
       setIsSaving(false);
     }
@@ -156,178 +153,98 @@ export function BioEditor({ profileId, initialContent = '', isOwner }: BioEditor
     setShowPreview(false);
   };
 
-  const insertImageTag = () => {
+  const insert = (snippet: string) => {
     const textarea = document.getElementById('bio-content') as HTMLTextAreaElement;
-    const cursorPos = textarea?.selectionStart || bioContent.length;
-    const before = bioContent.substring(0, cursorPos);
-    const after = bioContent.substring(cursorPos);
-    setBioContent(before + '[img]URL_DA_IMAGEM[/img]' + after);
-  };
-
-  const insertBoldTag = () => {
-    const textarea = document.getElementById('bio-content') as HTMLTextAreaElement;
-    const cursorPos = textarea?.selectionStart || bioContent.length;
-    const before = bioContent.substring(0, cursorPos);
-    const after = bioContent.substring(cursorPos);
-    setBioContent(before + '[b]texto em negrito[/b]' + after);
-  };
-
-  const insertItalicTag = () => {
-    const textarea = document.getElementById('bio-content') as HTMLTextAreaElement;
-    const cursorPos = textarea?.selectionStart || bioContent.length;
-    const before = bioContent.substring(0, cursorPos);
-    const after = bioContent.substring(cursorPos);
-    setBioContent(before + '[i]texto em itálico[/i]' + after);
-  };
-
-  const insertUnderlineTag = () => {
-    const textarea = document.getElementById('bio-content') as HTMLTextAreaElement;
-    const cursorPos = textarea?.selectionStart || bioContent.length;
-    const before = bioContent.substring(0, cursorPos);
-    const after = bioContent.substring(cursorPos);
-    setBioContent(before + '[u]texto sublinhado[/u]' + after);
+    const pos = textarea?.selectionStart ?? bioContent.length;
+    setBioContent(bioContent.slice(0, pos) + snippet + bioContent.slice(pos));
   };
 
   const colors = [
-    { name: 'red', label: 'Vermelho', color: '#ef4444' },
-    { name: 'blue', label: 'Azul', color: '#3b82f6' },
-    { name: 'green', label: 'Verde', color: '#22c55e' },
-    { name: 'yellow', label: 'Amarelo', color: '#eab308' },
-    { name: 'purple', label: 'Roxo', color: '#a855f7' },
-    { name: 'pink', label: 'Rosa', color: '#ec4899' },
-    { name: 'orange', label: 'Laranja', color: '#f97316' },
-    { name: 'cyan', label: 'Ciano', color: '#06b6d4' },
-    { name: 'gold', label: 'Dourado', color: '#fbbf24' },
-    { name: 'white', label: 'Branco', color: '#ffffff' },
-    { name: 'gray', label: 'Cinza', color: '#6b7280' },
+    { name: 'red',    label: 'Vermelho', color: '#ef4444' },
+    { name: 'blue',   label: 'Azul',     color: '#3b82f6' },
+    { name: 'green',  label: 'Verde',    color: '#22c55e' },
+    { name: 'yellow', label: 'Amarelo',  color: '#eab308' },
+    { name: 'purple', label: 'Roxo',     color: '#a855f7' },
+    { name: 'pink',   label: 'Rosa',     color: '#ec4899' },
+    { name: 'orange', label: 'Laranja',  color: '#f97316' },
+    { name: 'cyan',   label: 'Ciano',    color: '#06b6d4' },
+    { name: 'gold',   label: 'Dourado',  color: '#fbbf24' },
+    { name: 'white',  label: 'Branco',   color: '#ffffff' },
+    { name: 'gray',   label: 'Cinza',    color: '#6b7280' },
   ];
 
-  const insertColorTag = (colorName: string) => {
-    const textarea = document.getElementById('bio-content') as HTMLTextAreaElement;
-    const cursorPos = textarea?.selectionStart || bioContent.length;
-    const before = bioContent.substring(0, cursorPos);
-    const after = bioContent.substring(cursorPos);
-    setBioContent(before + `[${colorName}]texto colorido[/${colorName}]` + after);
-    setShowColorMenu(false);
-  };
-
-  // Se não tiver conteúdo e não for o dono, não mostrar nada
-  if (!bioContent && !isOwner) {
-    return null;
-  }
+  if (!bioContent && !isOwner) return null;
 
   const parsedContent = parseContent(bioContent);
 
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle className="flex items-center gap-2">
-          <Edit className="h-5 w-5" />
-          Sobre Mim
-        </CardTitle>
-        {isOwner && !isEditing && (
+      {isOwner && !isEditing && (
+        <CardHeader className="flex flex-row items-center justify-end pb-2 pt-4 px-6">
           <Button size="sm" variant="outline" onClick={() => setIsEditing(true)}>
             <Edit className="h-4 w-4 mr-2" />
             Editar
           </Button>
-        )}
-      </CardHeader>
+        </CardHeader>
+      )}
 
-      <CardContent>
+      <CardContent className={isOwner && !isEditing ? 'pt-2 px-0 pb-0' : 'pt-6'}>
         {isEditing ? (
-          <div className="space-y-4">
-            {/* Editor de Texto com BBCode */}
+          <div className="space-y-4 px-6">
             <div className="space-y-2">
               <div className="flex items-center justify-between mb-2">
-                <label htmlFor="bio-content" className="text-sm font-medium">
-                  Descrição
-                </label>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowPreview(!showPreview)}
-                >
+                <label htmlFor="bio-content" className="text-sm font-medium">Descrição</label>
+                <Button type="button" variant="outline" size="sm"
+                  onClick={() => setShowPreview(!showPreview)}>
                   <Eye className="h-4 w-4 mr-2" />
                   {showPreview ? 'Ocultar' : 'Preview'}
                 </Button>
               </div>
 
-              {/* Barra de Ferramentas de Formatação */}
+              {/* Toolbar */}
               <div className="flex flex-wrap gap-2 p-2 bg-muted/30 rounded-md border">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={insertBoldTag}
-                  title="Negrito"
-                >
+                <Button type="button" variant="ghost" size="sm"
+                  onClick={() => insert('[b]texto em negrito[/b]')} title="Negrito">
                   <Bold className="h-4 w-4" />
                 </Button>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={insertItalicTag}
-                  title="Itálico"
-                >
+                <Button type="button" variant="ghost" size="sm"
+                  onClick={() => insert('[i]texto em itálico[/i]')} title="Itálico">
                   <Italic className="h-4 w-4" />
                 </Button>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={insertUnderlineTag}
-                  title="Sublinhado"
-                >
+                <Button type="button" variant="ghost" size="sm"
+                  onClick={() => insert('[u]texto sublinhado[/u]')} title="Sublinhado">
                   <Underline className="h-4 w-4" />
                 </Button>
-                
-                {/* Menu de Cores */}
+
                 <div className="relative">
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setShowColorMenu(!showColorMenu)}
-                    title="Cor"
-                  >
+                  <Button type="button" variant="ghost" size="sm"
+                    onClick={() => setShowColorMenu(!showColorMenu)} title="Cor">
                     <Palette className="h-4 w-4" />
                   </Button>
-                  
                   {showColorMenu && (
                     <div className="absolute top-full left-0 mt-1 p-2 bg-popover border rounded-md shadow-lg z-10 grid grid-cols-4 gap-1 min-w-[200px]">
-                      {colors.map((color) => (
-                        <button
-                          key={color.name}
-                          type="button"
-                          onClick={() => insertColorTag(color.name)}
+                      {colors.map(c => (
+                        <button key={c.name} type="button"
+                          onClick={() => { insert(`[${c.name}]texto colorido[/${c.name}]`); setShowColorMenu(false); }}
                           className="p-2 rounded hover:bg-muted transition-colors flex flex-col items-center gap-1"
-                          title={color.label}
-                        >
-                          <div 
-                            className="w-6 h-6 rounded border-2 border-border"
-                            style={{ backgroundColor: color.color }}
-                          />
-                          <span className="text-xs">{color.label}</span>
+                          title={c.label}>
+                          <div className="w-6 h-6 rounded border-2 border-border" style={{ backgroundColor: c.color }} />
+                          <span className="text-xs">{c.label}</span>
                         </button>
                       ))}
                     </div>
                   )}
                 </div>
-                
+
                 <div className="border-l mx-1" />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={insertImageTag}
-                  title="Inserir Imagem"
-                >
+
+                <Button type="button" variant="ghost" size="sm"
+                  onClick={() => insert('[img]URL_DA_IMAGEM[/img]')}
+                  title="Inserir Imagem">
                   <ImageIcon className="h-4 w-4" />
                 </Button>
               </div>
-              
+
               <Textarea
                 id="bio-content"
                 placeholder="Escreva sobre você... Use as ferramentas acima para formatar"
@@ -336,45 +253,21 @@ export function BioEditor({ profileId, initialContent = '', isOwner }: BioEditor
                 rows={10}
                 className="resize-none font-mono text-sm"
               />
-              
               <div className="flex items-center justify-between text-xs text-muted-foreground">
-                <span>BBCode: [b]negrito[/b] [i]itálico[/i] [u]sublinhado[/u] [red]vermelho[/red] [img]url[/img]</span>
-                <span>{bioContent.length}/2000 caracteres</span>
+                <span>BBCode: [b]negrito[/b] [i]itálico[/i] [img]url[/img]</span>
+                <span>{bioContent.length}/2000</span>
               </div>
             </div>
 
-            {/* Preview */}
             {showPreview && bioContent && (
               <div className="space-y-2">
                 <h4 className="text-sm font-medium">Preview:</h4>
-                <div className="rounded-lg border bg-muted/20 p-4 min-h-[100px]">
-                  {parsedContent.map((part, index) => (
-                    part.type === 'text' ? (
-                      <p 
-                        key={index} 
-                        className="whitespace-pre-wrap text-sm leading-relaxed inline"
-                        dangerouslySetInnerHTML={{ __html: processTextFormatting(part.content) }}
-                      />
-                    ) : (
-                      <div key={index} className="relative w-full max-w-md h-48 my-3">
-                        <Image
-                          src={part.content}
-                          alt="Bio image"
-                          fill
-                          className="object-contain"
-                          unoptimized
-                          onError={(e) => {
-                            (e.target as HTMLImageElement).style.display = 'none';
-                          }}
-                        />
-                      </div>
-                    )
-                  ))}
+                <div className="rounded-lg border overflow-hidden bg-muted/20 min-h-[100px]">
+                  {renderContent(parsedContent)}
                 </div>
               </div>
             )}
 
-            {/* Botões de Ação */}
             <div className="flex gap-2">
               <Button onClick={handleSave} disabled={isSaving} className="flex-1">
                 <Save className="h-4 w-4 mr-2" />
@@ -387,32 +280,12 @@ export function BioEditor({ profileId, initialContent = '', isOwner }: BioEditor
             </div>
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="overflow-hidden">
             {bioContent ? (
-              <div className="prose prose-sm dark:prose-invert max-w-none">
-                {parsedContent.map((part, index) => (
-                  part.type === 'text' ? (
-                    <p 
-                      key={index} 
-                      className="whitespace-pre-wrap text-sm leading-relaxed"
-                      dangerouslySetInnerHTML={{ __html: processTextFormatting(part.content) }}
-                    />
-                  ) : (
-                    <div key={index} className="relative w-full max-w-2xl h-64 my-4">
-                      <Image
-                        src={part.content}
-                        alt="Bio"
-                        fill
-                        className="object-contain"
-                        unoptimized
-                      />
-                    </div>
-                  )
-                ))}
-              </div>
+              renderContent(parsedContent)
             ) : (
               isOwner && (
-                <div className="text-center py-8 text-muted-foreground">
+                <div className="text-center py-8 text-muted-foreground px-6">
                   <ImageIcon className="h-12 w-12 mx-auto mb-2 opacity-50" />
                   <p className="text-sm">Clique em "Editar" para adicionar informações sobre você</p>
                 </div>

@@ -350,7 +350,7 @@ const allElements = ['Katon', 'Futon', 'Raiton', 'Doton', 'Suiton'];
 // 🆕 ADICIONAR ESTAS LINHAS
 const SEAL_IMAGES = {
   level1: 'https://i.ibb.co/pBn3CwPB/selo1.png',
-  level2: 'https://i.ibb.co/H1RKX4p/selo3.png',  // ✅ CORRIGIDO
+  level2: 'https://i.ibb.co/7tGjpnKB/selo3.png',  // ✅ CORRIGIDO
 };
 
 const formatDuration = (totalSeconds: number) => {

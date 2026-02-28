@@ -247,6 +247,7 @@ const BOSS_DROPS = {
 
 // ✅ FUNÇÃO PARA CALCULAR DROPS
 const calculateDrops = () => {
+  const droppedItems: any[] = [];
   const allDrops = [
     ...BOSS_DROPS.comum,
     ...BOSS_DROPS.raro,
@@ -254,11 +255,9 @@ const calculateDrops = () => {
     ...BOSS_DROPS.lendario,
   ];
 
-  const droppedItems: any[] = [];
-
   allDrops.forEach(item => {
-    const randomRoll = Math.random();
-    if (randomRoll <= item.dropChance) {
+    const roll = Math.random();
+    if (roll < item.dropChance) {
       droppedItems.push(item);
     }
   });
@@ -369,6 +368,15 @@ await supabase
 })
 .neq('id', '00000000-0000-0000-0000-000000000000'); // Atualiza todos
     
+    // ✅ RESETAR DANO NO PERFIL LOCAL TAMBÉM
+    if (setUserProfile) {
+      setUserProfile((prev: any) => prev ? {
+        ...prev,
+        boss_damage_dealt: 0,
+        boss_damage_milestones_claimed: []
+      } : prev);
+    }
+
     bossSetter(newBossData);
     setLastBattleLog([]);
   };
@@ -743,25 +751,34 @@ try {
   
   setBossData({ ...boss, ...bossUpdate });
   
-  // ✅ ATUALIZAR PERFIL DO JOGADOR
-  await supabase
-    .from('profiles')
-    .update(profileUpdate)
-    .eq('id', user!.id);
-  
-  if (setUserProfile) {
-    setUserProfile({
-      ...userProfile,
-      ...profileUpdate,
-    });
-  }
-  
-  // ✅ CALCULAR DROPS
-  const droppedItems = calculateDrops();
-  setLastDrops(droppedItems);
-  
-  setLastBattleLog(battleLog);
-  localStorage.setItem('lastBattleLog', JSON.stringify(battleLog));
+  // ✅ CALCULAR DROPS ANTES DO UPDATE
+const droppedItems = calculateDrops();
+setLastDrops(droppedItems);
+
+if (droppedItems.length > 0) {
+  const currentBossInventory = userProfile.boss_inventory || {};
+  const updatedBossInventory = { ...currentBossInventory };
+  droppedItems.forEach(item => {
+    updatedBossInventory[item.id] = (updatedBossInventory[item.id] || 0) + 1;
+  });
+  profileUpdate.boss_inventory = updatedBossInventory;
+}
+
+// ✅ ATUALIZAR PERFIL DO JOGADOR (agora inclui boss_inventory)
+await supabase
+  .from('profiles')
+  .update(profileUpdate)
+  .eq('id', user!.id);
+
+if (setUserProfile) {
+  setUserProfile({ ...userProfile, ...profileUpdate });
+}
+
+setLastBattleLog(battleLog);
+localStorage.setItem('lastBattleLog', JSON.stringify(battleLog));
+
+// ✅ FORÇAR RELOAD DO STATUS AO NAVEGAR
+sessionStorage.removeItem('status-last-reload'); // ← ADICIONAR ESTA LINHA
   
   // ✅ TOAST COM RECOMPENSAS
   let toastDescription = `Você causou ${finalDamageDealt.toLocaleString()} de dano!`;

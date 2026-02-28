@@ -23,21 +23,21 @@ export type Technology = {
 export const hospitalLevels: TechnologyLevel[] = [
   {
     level: 1,
-    cost: 50000,
+    cost: 500000,
     name: 'Enfermaria Básica',
     description: 'Melhora a regeneração de chakra',
     benefits: ['Regeneração de chakra 10% mais rápida']
   },
   {
     level: 2,
-    cost: 100000,
+    cost: 1500000,
     name: 'Ala Médica',
     description: 'Instalações médicas aprimoradas',
     benefits: ['Regeneração de chakra 10% mais rápida', 'Mantém benefício do Nv 1']
   },
   {
     level: 3,
-    cost: 200000,
+    cost: 4000000,
     name: 'Centro Médico',
     description: 'Poções funcionam melhor',
     benefits: [
@@ -48,7 +48,7 @@ export const hospitalLevels: TechnologyLevel[] = [
   },
   {
     level: 4,
-    cost: 400000,
+    cost: 10000000,
     name: 'Hospital Avançado',
     description: 'Tratamentos especializados',
     benefits: [
@@ -59,7 +59,7 @@ export const hospitalLevels: TechnologyLevel[] = [
   },
   {
     level: 5,
-    cost: 800000,
+    cost: 25000000,
     name: 'Hospital Lendário',
     description: 'Medicina shinobi de elite',
     benefits: [
@@ -74,28 +74,28 @@ export const hospitalLevels: TechnologyLevel[] = [
 export const dojoLevels: TechnologyLevel[] = [
   {
     level: 1,
-    cost: 50000,
+    cost: 500000,
     name: 'Área de Treino',
     description: 'Espaço básico para treinamento',
     benefits: ['+5% XP em missões']
   },
   {
     level: 2,
-    cost: 100000,
+    cost: 1500000,
     name: 'Dojo Tradicional',
     description: 'Treino estruturado',
     benefits: ['+10% XP em missões', 'Acumula com Nv 1']
   },
   {
     level: 3,
-    cost: 200000,
+    cost: 4000000,
     name: 'Dojo Avançado',
     description: 'Métodos de treino superiores',
     benefits: ['+15% XP em missões', 'Total: +15% XP']
   },
   {
     level: 4,
-    cost: 400000,
+    cost: 10000000,
     name: 'Academia de Elite',
     description: 'Treinamento elemental especializado',
     benefits: [
@@ -106,7 +106,7 @@ export const dojoLevels: TechnologyLevel[] = [
   },
   {
     level: 5,
-    cost: 800000,
+    cost: 25000000,
     name: 'Santuário do Sábio',
     description: 'Conhecimento ancestral',
     benefits: [
@@ -121,21 +121,21 @@ export const dojoLevels: TechnologyLevel[] = [
 export const treasuryLevels: TechnologyLevel[] = [
   {
     level: 1,
-    cost: 50000,
+    cost: 500000,
     name: 'Cofre Básico',
     description: 'Armazenamento seguro',
     benefits: ['+5% Ryo em missões']
   },
   {
     level: 2,
-    cost: 100000,
+    cost: 1500000,
     name: 'Cofre Reforçado',
     description: 'Maior capacidade de armazenamento',
     benefits: ['+10% Ryo em missões', 'Acumula com Nv 1']
   },
   {
     level: 3,
-    cost: 200000,
+    cost: 4000000,
     name: 'Tesouro Fortificado',
     description: 'Conexões comerciais estabelecidas',
     benefits: [
@@ -145,7 +145,7 @@ export const treasuryLevels: TechnologyLevel[] = [
   },
   {
     level: 4,
-    cost: 400000,
+    cost: 10000000,
     name: 'Câmara do Tesouro',
     description: 'Rede comercial expandida',
     benefits: [
@@ -156,7 +156,7 @@ export const treasuryLevels: TechnologyLevel[] = [
   },
   {
     level: 5,
-    cost: 600000,
+    cost: 25000000,
     name: 'Vault Imperial',
     description: 'Riqueza lendária',
     benefits: [
