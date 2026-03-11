@@ -10,20 +10,14 @@ import {
   calculateDamage, 
   calculateDynamicStats, 
   getRandomAttackType,
+  detectBuild, getBuildInfo, emptyBattleState,
+  buildLogEntry, calcLogStats,
 } from '@/lib/battle-system';
+import type { RichBattleLogEntry, BuildEffect } from '@/lib/battle-system';
+import { BattleReport, BattleResult } from '@/components/battle-report';
 import { EQUIPMENT_DATA } from '@/lib/battle-system/equipment-data';
 
-type BattleLogEntry = string | {
-  turn: number;
-  attacker: 'player' | 'opponent';
-  attackType?: string;
-  jutsuName: string;
-  jutsuGif: string | null;
-  damageLog: string;
-  damage: number;
-  playerHealth?: string;
-  opponentHealth?: string;
-};
+type BattleLogEntry = RichBattleLogEntry;
 
 const SEARCH_COOLDOWN_SECONDS = 10;
 
@@ -180,53 +174,56 @@ export function ClanBattleSearch({ userProfile, supabase, userId }: ClanBattleSe
   };
 
   const handleClanBattle = async (selectedOpponent: any) => {
-    console.log('🚀 handleClanBattle CHAMADA');
-    
-    if (!userProfile || !selectedOpponent || !supabase || !userId) {
-      console.error('❌ Dados faltando!', {
-        hasUserProfile: !!userProfile,
-        hasOpponent: !!selectedOpponent,
-        hasSupabase: !!supabase,
-        hasUserId: !!userId
-      });
-      return;
-    }
-  
+    if (!userProfile || !selectedOpponent || !supabase || !userId) return;
+
     const playerFighter = {
       ...userProfile,
       elementLevels: userProfile.element_levels || {},
       jutsus: userProfile.jutsus || {},
     };
-    
     const opponentFighter = {
       ...selectedOpponent,
       elementLevels: selectedOpponent.element_levels || {},
       jutsus: selectedOpponent.jutsus || {},
     };
-  
+
+    // Stats e builds
     const playerStats = calculateDynamicStats(playerFighter, EQUIPMENT_DATA);
     const opponentStats = calculateDynamicStats(opponentFighter, EQUIPMENT_DATA);
-  
-    let playerHealth = userProfile.current_health ?? playerStats.maxHealth;
-    let opponentHealth = selectedOpponent.current_health ?? opponentStats.maxHealth;
-    
-    console.log('❤️ HP INICIAL:', { player: playerHealth, opponent: opponentHealth });
-  
+    const playerBuild = detectBuild(playerStats);
+    const opponentBuild = detectBuild(opponentStats);
+    const playerBuildInfo = getBuildInfo(playerBuild);
+    const opponentBuildInfo = getBuildInfo(opponentBuild);
+    const playerState = emptyBattleState();
+    const opponentState = emptyBattleState();
+
+    // Passivas de regen
+    if (playerBuild === 'guardiao') playerState.regenPercent = 0.03;
+    if (opponentBuild === 'guardiao') opponentState.regenPercent = 0.03;
+    if ((playerFighter.elementLevels?.['Suiton'] || 0) >= 10) playerState.regenPercent = Math.max(playerState.regenPercent, 0.05);
+    if ((opponentFighter.elementLevels?.['Suiton'] || 0) >= 10) opponentState.regenPercent = Math.max(opponentState.regenPercent, 0.05);
+
+    // HP máximo com passivas
+    let playerMaxHealth = playerBuild === 'protetor'
+      ? 100 + playerStats.finalVitality * 15 + playerStats.finalIntelligence * 8
+      : playerStats.maxHealth;
+    let opponentMaxHealth = opponentBuild === 'protetor'
+      ? 100 + opponentStats.finalVitality * 15 + opponentStats.finalIntelligence * 8
+      : opponentStats.maxHealth;
+    if (playerBuild === 'imortal') playerMaxHealth *= 1.25;
+    if (opponentBuild === 'imortal') opponentMaxHealth *= 1.25;
+
+    let playerHealth = userProfile.current_health ?? playerMaxHealth;
+    let opponentHealth = selectedOpponent.current_health ?? opponentMaxHealth;
+
     const log: BattleLogEntry[] = [];
-    log.push(`⚔️ BATALHA ENTRE CLÃS! ${playerFighter.name} (${playerFighter.clan_name}) vs ${opponentFighter.name} (${opponentFighter.clan_name})`);
-    
+    log.push(`🏯 BATALHA ENTRE CLÃS! ${playerFighter.name} [${playerBuildInfo.emoji} ${playerBuildInfo.name}] vs ${opponentFighter.name} [${opponentBuildInfo.emoji} ${opponentBuildInfo.name}]`);
+
     const roundsForDB: any[] = [];
     let turn = 1;
     let battleWinner = null;
-    
-    let minTurns = 1;
-    let maxTurns = 50;
-    
-    console.log('🎮 INICIANDO BATALHA - Turno', turn);
-  
+
     do {
-      console.log(`\n━━━ TURNO ${turn} ━━━`);
-      
       const roundData: any = {
         round_number: turn,
         player_damage: 0,
@@ -235,119 +232,134 @@ export function ClanBattleSearch({ userProfile, supabase, userId }: ClanBattleSe
         opponent_jutsu: null,
         winner: null,
       };
-  
-      const playerAttackType = getRandomAttackType(playerFighter);
-      
-      if (playerAttackType) {
-        const { damage, log: damageLog, jutsuUsed, jutsuGif } = calculateDamage(
-          playerFighter, 
-          opponentFighter, 
-          playerAttackType, 
-          { equipmentData: EQUIPMENT_DATA }
-        );
-  
-        roundData.player_damage = Math.round(damage);
-        roundData.player_jutsu = jutsuUsed;
-        
-        opponentHealth -= damage;
-        opponentHealth = Math.max(0, opponentHealth);
-        
-        console.log(`⚔️ Player causou ${roundData.player_damage} dano. HP oponente: ${opponentHealth}`);
-        
-        log.push({
-          turn: turn,
-          attacker: 'player',
-          attackType: playerAttackType,
-          jutsuName: jutsuUsed || 'Ataque básico',
-          jutsuGif: jutsuGif || null,
-          damageLog: damageLog,
-          damage: damage,
-          opponentHealth: `${opponentHealth.toFixed(0)} HP`
-        });
+
+      // ── Promover barreira pending → ativa ──
+      if (playerState.barrierPending) {
+        playerState.barrierActiveThisTurn = true;
+        playerState.barrierPending = false;
+      } else {
+        playerState.barrierActiveThisTurn = false;
       }
-      
+      if (opponentState.barrierPending) {
+        opponentState.barrierActiveThisTurn = true;
+        opponentState.barrierPending = false;
+      } else {
+        opponentState.barrierActiveThisTurn = false;
+      }
+
+      // Regen
+      let clanPlayerRegen = 0, clanOppRegen = 0;
+      if (playerState.regenPercent > 0) { clanPlayerRegen = playerMaxHealth * playerState.regenPercent; playerHealth = Math.min(playerMaxHealth, playerHealth + clanPlayerRegen); }
+      if (opponentState.regenPercent > 0) { clanOppRegen = opponentMaxHealth * opponentState.regenPercent; opponentHealth = Math.min(opponentMaxHealth, opponentHealth + clanOppRegen); }
+      // Queimadura
+      let clanPlayerBurn = 0, clanOppBurn = 0;
+      if (playerState.burnDamage > 0) { clanPlayerBurn = playerState.burnDamage; playerHealth -= clanPlayerBurn; playerState.burnDamage = 0; }
+      if (opponentState.burnDamage > 0) { clanOppBurn = opponentState.burnDamage; opponentHealth -= clanOppBurn; opponentState.burnDamage = 0; }
+
+      // ===== TURNO DO PLAYER =====
+      const playerAttackType = getRandomAttackType(playerFighter, playerStats);
+      if (playerAttackType) {
+        const result = calculateDamage(playerFighter, opponentFighter, playerAttackType, {
+          equipmentData: EQUIPMENT_DATA,
+          attackerBuild: playerBuild, defenderBuild: opponentBuild,
+          attackerState: playerState, defenderState: opponentState,
+          isFirstTurn: turn === 1,
+        });
+        let actualDmg = result.damage + (result.secondHitDamage || 0);
+        const clanPlayerReactions: BuildEffect[] = [];
+        if (!opponentState.barrierUsed && (opponentFighter.elementLevels?.['Doton'] || 0) >= 10) {
+          actualDmg *= 0.5; opponentState.barrierUsed = true;
+          clanPlayerReactions.push({ type: 'barrier_blocked', label: '🪨 Barreira Doton absorveu 50%!', color: '#78716c' });
+        }
+        if (opponentState.barrierActiveThisTurn) {
+          clanPlayerReactions.push({ type: 'item_barreira_absorveu', label: '🛡️ Barreira absorveu o ataque!', color: '#38bdf8' });
+          actualDmg = 0;
+          opponentState.barrierActiveThisTurn = false;
+        }
+        roundData.player_damage = Math.round(actualDmg);
+        roundData.player_jutsu = result.jutsuUsed;
+        opponentHealth -= actualDmg;
+        opponentHealth = Math.max(0, opponentHealth);
+        log.push(buildLogEntry({
+          turn, attacker: 'player', attackType: playerAttackType, result,
+          playerHealth, playerMaxHealth, opponentHealth, opponentMaxHealth,
+          attackerBuild: playerBuild,
+          regenApplied: clanPlayerRegen, burnDamageApplied: clanPlayerBurn,
+          reactionEffects: clanPlayerReactions,
+        }));
+      }
+
       if (opponentHealth <= 0) {
         battleWinner = 'player';
         roundData.winner = userId;
         log.push(`🏆 ${playerFighter.name} venceu!`);
         roundsForDB.push(roundData);
-        console.log(`✅ ROUND ${turn} SALVO. Total: ${roundsForDB.length}`);
         break;
       }
-  
-      const opponentAttackType = getRandomAttackType(opponentFighter);
-      
+
+      // ===== TURNO DO OPONENTE =====
+      const opponentAttackType = getRandomAttackType(opponentFighter, opponentStats);
       if (opponentAttackType) {
-        const { damage, log: damageLog, jutsuUsed, jutsuGif } = calculateDamage(
-          opponentFighter, 
-          playerFighter, 
-          opponentAttackType, 
-          { equipmentData: EQUIPMENT_DATA }
-        );
-  
-        roundData.opponent_damage = Math.round(damage);
-        roundData.opponent_jutsu = jutsuUsed;
-        
-        playerHealth -= damage;
-        playerHealth = Math.max(0, playerHealth);
-        
-        console.log(`🤖 Oponente causou ${roundData.opponent_damage} dano. HP player: ${playerHealth}`);
-        
-        log.push({
-          turn: turn,
-          attacker: 'opponent',
-          attackType: opponentAttackType,
-          jutsuName: jutsuUsed || 'Ataque básico',
-          jutsuGif: jutsuGif || null,
-          damageLog: damageLog,
-          damage: damage,
-          playerHealth: `${playerHealth.toFixed(0)} HP`
+        const resultOpp = calculateDamage(opponentFighter, playerFighter, opponentAttackType, {
+          equipmentData: EQUIPMENT_DATA,
+          attackerBuild: opponentBuild, defenderBuild: playerBuild,
+          attackerState: opponentState, defenderState: playerState,
+          isFirstTurn: turn === 1,
         });
+        let actualDmgOpp = resultOpp.damage + (resultOpp.secondHitDamage || 0);
+        const clanOppReactions: BuildEffect[] = [];
+        if (!playerState.barrierUsed && (playerFighter.elementLevels?.['Doton'] || 0) >= 10) {
+          actualDmgOpp *= 0.5; playerState.barrierUsed = true;
+          clanOppReactions.push({ type: 'barrier_blocked', label: '🪨 Barreira Doton absorveu 50%!', color: '#78716c' });
+        }
+        if (playerState.barrierActiveThisTurn) {
+          clanOppReactions.push({ type: 'item_barreira_absorveu', label: '🛡️ Barreira absorveu o ataque!', color: '#38bdf8' });
+          actualDmgOpp = 0;
+          playerState.barrierActiveThisTurn = false;
+        }
+        if (playerBuild === 'imortal' && playerHealth - actualDmgOpp <= 0 && !playerState.survivedDeathUsed && Math.random() < 0.2) {
+          actualDmgOpp = playerHealth - 1;
+          playerState.survivedDeathUsed = true;
+          clanOppReactions.push({ type: 'survived_death', label: '💀 Vontade de Ferro! Sobreviveu com 1 HP!', color: '#64748b' });
+        }
+        roundData.opponent_damage = Math.round(actualDmgOpp);
+        roundData.opponent_jutsu = resultOpp.jutsuUsed;
+        playerHealth -= actualDmgOpp;
+        playerHealth = Math.max(0, playerHealth);
+        log.push(buildLogEntry({
+          turn, attacker: 'opponent', attackType: opponentAttackType, result: resultOpp,
+          playerHealth, playerMaxHealth, opponentHealth, opponentMaxHealth,
+          attackerBuild: opponentBuild,
+          regenApplied: clanOppRegen, burnDamageApplied: clanOppBurn,
+          reactionEffects: clanOppReactions,
+        }));
       }
-  
+
       if (playerHealth <= 0) {
         battleWinner = 'opponent';
         roundData.winner = selectedOpponent.id;
         log.push(`💀 ${opponentFighter.name} venceu!`);
         roundsForDB.push(roundData);
-        console.log(`✅ ROUND ${turn} SALVO. Total: ${roundsForDB.length}`);
         break;
       }
-      
-      if (roundData.player_damage > roundData.opponent_damage) {
-        roundData.winner = userId;
-      } else if (roundData.opponent_damage > roundData.player_damage) {
-        roundData.winner = selectedOpponent.id;
-      }
-      
+
+      if (roundData.player_damage > roundData.opponent_damage) roundData.winner = userId;
+      else if (roundData.opponent_damage > roundData.player_damage) roundData.winner = selectedOpponent.id;
+
       roundsForDB.push(roundData);
-      console.log(`✅ ROUND ${turn} SALVO. Total: ${roundsForDB.length}`);
-      
       turn++;
-    } while (playerHealth > 0 && opponentHealth > 0 && turn <= maxTurns);
-    
-    console.log('\n🏁 FIM DA BATALHA');
-    console.log('📊 Total de rounds:', roundsForDB.length);
-    console.log('🏆 Vencedor:', battleWinner);
-    
+    } while (playerHealth > 0 && opponentHealth > 0 && turn <= 50);
+
     if (roundsForDB.length === 0) {
-      console.error('❌ CRÍTICO: Nenhum round salvo. Adicionando round de emergência...');
-      
-      const emergencyRound = {
-        round_number: 1,
-        player_damage: 100,
-        opponent_damage: 100,
-        player_jutsu: 'Ataque básico',
-        opponent_jutsu: 'Ataque básico',
+      roundsForDB.push({
+        round_number: 1, player_damage: 100, opponent_damage: 100,
+        player_jutsu: 'Ataque básico', opponent_jutsu: 'Ataque básico',
         winner: battleWinner === 'player' ? userId : selectedOpponent.id,
-      };
-      
-      roundsForDB.push(emergencyRound);
-      console.log('✅ Round de emergência adicionado');
+      });
     }
-  
+
     try {
-      const { data: insertedBattle, error: insertError } = await supabase
+      const { error: insertError } = await supabase
         .from('clan_battles')
         .insert({
           attacker_id: userId,
@@ -357,101 +369,40 @@ export function ClanBattleSearch({ userProfile, supabase, userId }: ClanBattleSe
           winner_id: battleWinner === 'player' ? userId : selectedOpponent.id,
           rounds: roundsForDB,
           is_war_battle: false,
-        })
-        .select();
-      
-      if (insertError) {
-        console.error('❌ Erro ao salvar:', insertError);
-        throw insertError;
-      }
-      
-      console.log('✅ Batalha salva!', insertedBattle);
-      
-      console.log('📊 Atualizando pontos de guerra...');
-      
+        });
+      if (insertError) throw insertError;
+
       const winnerClanId = battleWinner === 'player' ? userProfile.clan_id : selectedOpponent.clan_id;
-      const loserClanId = battleWinner === 'player' ? selectedOpponent.clan_id : userProfile.clan_id;
-      
-      const { error: winnerUpdateError } = await supabase.rpc('increment_war_points', {
-        clan_id_param: winnerClanId,
-        points: 1
-      });
-      
-      if (winnerUpdateError) {
-        console.warn('⚠️ Erro ao atualizar pontos do vencedor:', winnerUpdateError);
-        const { data: winnerClan } = await supabase
-          .from('clans')
-          .select('war_points')
-          .eq('id', winnerClanId)
-          .single();
-        
-        if (winnerClan) {
-          await supabase
-            .from('clans')
-            .update({ war_points: (winnerClan.war_points || 0) + 1 })
-            .eq('id', winnerClanId);
-        }
+      const loserClanId  = battleWinner === 'player' ? selectedOpponent.clan_id : userProfile.clan_id;
+
+      const { error: winErr } = await supabase.rpc('increment_war_points', { clan_id_param: winnerClanId, points: 1 });
+      if (winErr) {
+        const { data: wc } = await supabase.from('clans').select('war_points').eq('id', winnerClanId).single();
+        if (wc) await supabase.from('clans').update({ war_points: (wc.war_points || 0) + 1 }).eq('id', winnerClanId);
       }
-      
-      const { error: loserUpdateError } = await supabase.rpc('increment_war_points', {
-        clan_id_param: loserClanId,
-        points: -1
-      });
-      
-      if (loserUpdateError) {
-        console.warn('⚠️ Erro ao atualizar pontos do perdedor:', loserUpdateError);
-        const { data: loserClan } = await supabase
-          .from('clans')
-          .select('war_points')
-          .eq('id', loserClanId)
-          .single();
-        
-        if (loserClan) {
-          await supabase
-            .from('clans')
-            .update({ war_points: (loserClan.war_points || 0) - 1 })
-            .eq('id', loserClanId);
-        }
+      const { error: loseErr } = await supabase.rpc('increment_war_points', { clan_id_param: loserClanId, points: -1 });
+      if (loseErr) {
+        const { data: lc } = await supabase.from('clans').select('war_points').eq('id', loserClanId).single();
+        if (lc) await supabase.from('clans').update({ war_points: (lc.war_points || 0) - 1 }).eq('id', loserClanId);
       }
-      
-      console.log('✅ Pontos de guerra atualizados!', {
-        winner: `${winnerClanId} (+1)`,
-        loser: `${loserClanId} (-1)`
-      });
-      
     } catch (error) {
-      console.error('❌ Erro crítico:', error);
-      toast({
-        variant: 'destructive',
-        title: 'Erro ao Salvar',
-        description: 'Veja o console.',
-      });
+      toast({ variant: 'destructive', title: 'Erro ao Salvar', description: 'Veja o console.' });
       return;
     }
-    
-    await supabase.from('profiles').update({ 
-      current_health: Math.max(0, Math.round(playerHealth)),
-      is_recovering: false,
-    }).eq('id', userId);
-    
-    await supabase.from('profiles').update({ 
-      current_health: Math.max(0, Math.round(opponentHealth)),
-      is_recovering: false,
-    }).eq('id', selectedOpponent.id);
-    
-    const battleReport = {
+
+    await supabase.from('profiles').update({ current_health: Math.max(0, Math.round(playerHealth)), is_recovering: false }).eq('id', userId);
+    await supabase.from('profiles').update({ current_health: Math.max(0, Math.round(opponentHealth)), is_recovering: false }).eq('id', selectedOpponent.id);
+
+    localStorage.setItem('lastClanBattleReport', JSON.stringify({
       battleLog: log,
       winner: battleWinner === 'player' ? playerFighter.name : opponentFighter.name,
       opponent: selectedOpponent,
-    };
-    
-    localStorage.setItem('lastClanBattleReport', JSON.stringify(battleReport));
+    }));
     setSearchCooldown(SEARCH_COOLDOWN_SECONDS);
-    
     setTimeout(() => window.location.reload(), 1000);
   };
 
-  // Determina o estado atual do botão para renderização
+    // Determina o estado atual do botão para renderização
   const getButtonContent = () => {
     if (searchCooldown > 0) {
       return {
@@ -533,63 +484,36 @@ export function ClanBattleSearch({ userProfile, supabase, userId }: ClanBattleSe
         )}
 
         {battleLog.length > 0 && (
-          <Alert variant="default" className="max-h-96 overflow-y-auto">
-            <ScrollText className="h-4 w-4" />
-            <AlertTitle>Relatório de Batalha entre Clãs</AlertTitle>
-            <AlertDescription className="font-mono text-xs space-y-3 mt-2">
-              {battleLog.map((log, index) => {
-                if (typeof log === 'string') {
-                  return <p key={index} className="text-muted-foreground font-semibold">{log}</p>;
-                }
-                
-                return (
-                  <div key={index} className="space-y-2 pb-2 border-b border-border/50">
-                    <p className="font-semibold">
-                      Turno {log.turn} - {log.attacker === 'player' ? '⚔️ Você' : '🤖 Oponente'}
-                    </p>
-                    
-                    {log.jutsuGif && (
-                      <div className="flex justify-center my-2">
-                        <img 
-                          src={log.jutsuGif} 
-                          alt={log.jutsuName}
-                          className="w-32 h-32 rounded-md object-cover border-2 border-purple-500/20"
-                        />
-                      </div>
-                    )}
-                    
-                    <p className="text-purple-500 font-medium">
-                      {log.jutsuName}
-                    </p>
-                    
-                    <p className={log.attacker === 'player' ? 'text-blue-600' : 'text-red-600'}>
-                      {log.damageLog}
-                    </p>
-                    
-                    <p className="text-xs text-muted-foreground">
-                      {log.attacker === 'player' 
-                        ? `Vida do oponente: ${log.opponentHealth}`
-                        : `Sua vida: ${log.playerHealth}`
-                      }
-                    </p>
-                  </div>
-                );
-              })}
-            </AlertDescription>
-          </Alert>
+          <BattleReport
+            log={battleLog}
+            playerName={userProfile?.name || 'Você'}
+            opponentName={opponent?.name || 'Oponente'}
+            context="clan"
+            clanName={userProfile?.clan_name}
+            opponentClanName={opponent?.clan_name}
+          />
         )}
-        
-        {winner && (
-          <div className="p-3 rounded-md bg-purple-500/20 text-center font-bold text-lg">
-            <p>🏆 Vencedor: {winner} 🏆</p>
-          </div>
-        )}
+
+        {winner && battleLog.length > 0 && (() => {
+          const stats = calcLogStats(battleLog, 'player');
+          return (
+            <BattleResult
+              winner={winner}
+              totalTurns={stats.totalTurns}
+              totalDamageDealt={stats.totalDamageDealt}
+              totalDamageTaken={stats.totalDamageTaken}
+              critCount={stats.critCount}
+              passiveCount={stats.passiveCount}
+              context="clan"
+            />
+          );
+        })()}
       </CardContent>
       
       <CardFooter>
         {/* ✅ BOTÃO CORRIGIDO: duas linhas para caber sem estourar */}
         <Button
-          className="w-full h-auto py-2 bg-purple-600 hover:bg-purple-700 flex flex-col gap-0.5"
+          className="w-full h-auto py-2 flex flex-col gap-0.5 bg-gradient-to-b from-[#a855f7] to-[#7e22ce] text-white border-t border-l border-r border-b-2 border-t-[#c084fc] border-l-[#a855f7] border-r-[#581c87] border-b-[#2e1065] shadow-[0_2px_8px_rgba(0,0,0,0.35),inset_0_1px_0_rgba(255,220,255,0.2)] hover:from-[#b56ef8] hover:to-[#9333ea] hover:shadow-[0_3px_14px_rgba(168,85,247,0.45)] rounded-[3px]"
           onClick={handleSearchClanOpponent}
           disabled={isDisabled}
         >

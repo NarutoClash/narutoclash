@@ -1,4 +1,3 @@
-
 export type Mission = {
   id: string;
   name: string;
@@ -84,7 +83,7 @@ export const allJutsus: {name: string, element: string, requiredLevel: number}[]
   
   // ===== SUITON (ÁGUA) =====
   { name: 'Suiton: Bakusui Shōha', element: 'Suiton', requiredLevel: 1 },
-  { name: 'Suiton: Daibaku no Jutsu no Jutsu', element: 'Suiton', requiredLevel: 4 },
+  { name: 'Suiton: Daibaku no Jutsu', element: 'Suiton', requiredLevel: 4 },
   { name: 'Suiton: Goshokuzame', element: 'Suiton', requiredLevel: 6 },
   { name: 'Suiton: Suijinheki', element: 'Suiton', requiredLevel: 8 },
   { name: 'Suiton: Suiryūdan no Jutsu', element: 'Suiton', requiredLevel: 10 },
@@ -395,13 +394,13 @@ const missionsDataRaw: Mission[] = [
   {
     id: 'medium-7',
     name: 'Tsunami Local',
-    description: 'Uma seca severa atingiu uma área agrícola. Use o Suiton: Daibaku no Jutsu no Jutsu para criar uma onda controlada e irrigar os campos.',
+    description: 'Uma seca severa atingiu uma área agrícola. Use o Suiton: Daibaku no Jutsu para criar uma onda controlada e irrigar os campos.',
     difficulty: 'Média',
     requiredLevel: 12,
     durationSeconds: 7800,
     ryoReward: 360,
     experienceReward: 620,
-    jutsuExperienceReward: { jutsuName: 'Suiton: Daibaku no Jutsu no Jutsu', xp: 75 },
+    jutsuExperienceReward: { jutsuName: 'Suiton: Daibaku no Jutsu', xp: 75 },
   },
   {
     id: 'medium-8',

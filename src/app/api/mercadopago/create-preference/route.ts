@@ -11,14 +11,12 @@ const supabase = createClient(
 );
 
 export async function POST(request: NextRequest) {
-  console.log('💳 ===== CRIANDO PREFERÊNCIA DE PAGAMENTO =====');
   
   try {
     // 1️⃣ Ler dados da requisição
     const body = await request.json();
     const { userId, pacoteId } = body;
 
-    console.log('📦 Dados recebidos:', { userId, pacoteId });
 
     // 2️⃣ Validar dados obrigatórios
     if (!userId || !pacoteId) {
@@ -62,7 +60,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log('📦 Pacote encontrado:', pacote.nome);
 
     // 5️⃣ Buscar dados do USUÁRIO no banco (profiles)
     const { data: profile, error: profileError } = await supabase
@@ -76,7 +73,6 @@ export async function POST(request: NextRequest) {
       console.warn('⚠️ Aviso ao buscar perfil:', profileError.message);
     }
 
-    console.log('👤 Perfil encontrado:', profile?.name || profile?.character_name || 'sem nome');
 
     // 6️⃣ Buscar EMAIL do usuário (auth.users)
     const { data: authUser, error: authError } = await supabase.auth.admin.getUserById(userId);
@@ -85,35 +81,15 @@ export async function POST(request: NextRequest) {
       console.error('❌ Erro ao buscar auth user:', authError.message);
     }
 
-    console.log('🔍 AUTH USER DEBUG:', {
-      found: !!authUser?.user,
-      email: authUser?.user?.email,
-      provider: authUser?.user?.app_metadata?.provider,
-      providers: authUser?.user?.app_metadata?.providers,
-      emailConfirmed: authUser?.user?.email_confirmed_at,
-    });
 
     const userEmail = authUser?.user?.email || `${userId}@narutoclash.com`;
     const userName = profile?.name || profile?.character_name || authUser?.user?.email?.split('@')[0] || 'Jogador';
 
-    console.log('📧 Email final:', userEmail);
-    console.log('👤 Nome final:', userName);
 
     // 7️⃣ Calcular CP total (base + bônus)
     const cpTotal = pacote.quantidade_cp + (pacote.bonus_cp || 0);
 
     // 8️⃣ Criar registro no banco (status: pending)
-    console.log('🔍 VERIFICANDO SE userId É UUID VÁLIDO:', userId);
-    console.log('📝 Dados que serão inseridos:', {
-      user_id: userId,
-      package_id: pacoteId,
-      cp_amount: pacote.quantidade_cp,
-      bonus_cp: pacote.bonus_cp || 0,
-      price_paid: parseFloat(pacote.preco_brl),
-      payment_method: 'mercadopago',
-      payment_provider: 'mercadopago',
-      status: 'pending',
-    });
 
     const { data: pagamento, error: insertError } = await supabase
       .from('payment_transactions')
@@ -148,7 +124,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log('✅ Pagamento registrado no banco - ID:', pagamento.id);
 
     // 9️⃣ Criar preferência no Mercado Pago
     const bonusText = pacote.bonus_cp > 0 ? ` +${pacote.bonus_cp} BÔNUS` : '';
@@ -187,7 +162,6 @@ export async function POST(request: NextRequest) {
       },
     };
 
-    console.log('📤 Criando preferência no Mercado Pago...');
 
     // 🔟 Chamar API do Mercado Pago
     const mpResponse = await fetch('https://api.mercadopago.com/checkout/preferences', {
@@ -219,7 +193,6 @@ export async function POST(request: NextRequest) {
     }
 
     const mpData = await mpResponse.json();
-    console.log('✅ Preferência criada - ID:', mpData.id);
 
     // 1️⃣1️⃣ Atualizar registro com preference_id
     await supabase
@@ -230,7 +203,6 @@ export async function POST(request: NextRequest) {
       })
       .eq('id', pagamento.id);
 
-    console.log('✅ ===== SUCESSO =====');
 
     // 1️⃣2️⃣ Retornar link de pagamento
     return NextResponse.json({

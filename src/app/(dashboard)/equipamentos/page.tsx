@@ -13,6 +13,7 @@ import { Loader2, Coins, CheckCircle, Grip, Trash2, Shirt, Footprints, Hand, Acc
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import { ItemPassivasDisplay } from '@/components/item-passivas-display';
 import Image from 'next/image';
 import { equipmentsData, type Equipment } from '@/lib/equipments-data';
 import { updateDocumentNonBlocking } from '@/supabase/non-blocking-updates';
@@ -94,6 +95,9 @@ const EquipmentCard = ({
                      <h4 className="font-semibold text-sm">Requisitos</h4>
                      <p className="text-sm text-muted-foreground">Nível: {item.requiredLevel}</p>
                  </div>
+                 {item.passivas && item.passivas.length > 0 && (
+                   <ItemPassivasDisplay passivas={item.passivas} mode="full" />
+                 )}
             </CardContent>
             <CardFooter className="flex-col gap-2">
                  {isOwned ? (
@@ -117,7 +121,7 @@ const EquipmentCard = ({
                             </p>
                             <AlertDialog>
                               <AlertDialogTrigger asChild>
-                                 <Button variant="outline" size="sm" className="w-full">
+                                 <Button variant="outline" className="w-full">
                                     <Trash2 className="mr-2 h-4 w-4" />
                                     Vender
                                 </Button>
@@ -182,7 +186,7 @@ export default function EquipamentosPage() {
         return { table: 'profiles', id: user.id };
     }, [user]);
 
-    const { data: userProfile, isLoading } = useDoc(userProfileRef);
+    const { data: userProfile, isLoading, setData: setUserProfile } = useDoc(userProfileRef);
 
     const typeToFieldMap = {
         'Peito': 'chest_id',
@@ -200,92 +204,65 @@ export default function EquipamentosPage() {
         }
 
         setIsProcessing(true);
+        const currentOwnedIds = userProfile.ownedEquipmentIds || [];
+        const updatePayload: any = {
+            ryo: (userProfile.ryo || 0) - item.price,
+            ownedEquipmentIds: [...currentOwnedIds, item.id],
+        };
+        const fieldToUpdate = typeToFieldMap[item.type];
+        if (fieldToUpdate) updatePayload[fieldToUpdate] = item.id;
 
-        try {
-            const currentOwnedIds = userProfile.ownedEquipmentIds || [];
-            const updatePayload: any = {
-                ryo: (userProfile.ryo || 0) - item.price,
-                ownedEquipmentIds: [...currentOwnedIds, item.id]
-            };
-            
-            const fieldToUpdate = typeToFieldMap[item.type];
-            if (fieldToUpdate) {
-                updatePayload[fieldToUpdate] = item.id;
-            }
-
-            await updateDocumentNonBlocking(userProfileRef, updatePayload, supabase);
-            
+        const { data: updated, error } = await supabase.from('profiles').update(updatePayload).eq('id', userProfile.id).select().single();
+        if (error) {
+            toast({ variant: "destructive", title: "Erro ao comprar item", description: error.message });
+        } else {
+            if (updated) setUserProfile(updated);
             toast({ title: "Compra realizada!", description: `${item.name} foi comprado e equipado.` });
-
-            // Reload após 1 segundo
-            setTimeout(() => {
-                window.location.reload();
-            }, 1000);
-        } catch (error) {
-            toast({ variant: "destructive", title: "Erro ao comprar item" });
-            setIsProcessing(false);
         }
+        setIsProcessing(false);
     };
 
     const handleEquipItem = async (item: Equipment) => {
-        if (!userProfileRef || !supabase || isProcessing) return;
+        if (!userProfileRef || !userProfile || !supabase || isProcessing) return;
         
         setIsProcessing(true);
+        const updatePayload: any = {};
+        const fieldToUpdate = typeToFieldMap[item.type];
+        if (fieldToUpdate) updatePayload[fieldToUpdate] = item.id;
 
-        try {
-            const updatePayload: any = {};
-            const fieldToUpdate = typeToFieldMap[item.type];
-            if(fieldToUpdate) {
-                updatePayload[fieldToUpdate] = item.id;
-            }
-            
-            await updateDocumentNonBlocking(userProfileRef, updatePayload, supabase);
-            
+        const { data: updated, error } = await supabase.from('profiles').update(updatePayload).eq('id', userProfile.id).select().single();
+        if (error) {
+            toast({ variant: "destructive", title: "Erro ao equipar item", description: error.message });
+        } else {
+            if (updated) setUserProfile(updated);
             toast({ title: 'Equipamento Alterado!', description: `Você equipou ${item.name}.` });
-
-            // Reload após 1 segundo
-            setTimeout(() => {
-                window.location.reload();
-            }, 1000);
-        } catch (error) {
-            toast({ variant: "destructive", title: "Erro ao equipar item" });
-            setIsProcessing(false);
         }
+        setIsProcessing(false);
     };
 
     const handleSellItem = async (item: Equipment) => {
         if (!userProfileRef || !userProfile || !supabase || isProcessing) return;
 
         setIsProcessing(true);
-
-        try {
-            const sellPrice = Math.floor(item.price / 2);
-            const currentOwnedIds = userProfile.ownedEquipmentIds || [];
-            const updatePayload: any = {
-                ryo: (userProfile.ryo || 0) + sellPrice,
-                ownedEquipmentIds: currentOwnedIds.filter((id: string) => id !== item.id)
-            };
-            
-            const fieldToUpdate = typeToFieldMap[item.type];
-            if (fieldToUpdate) {
-                const currentlyEquippedId = userProfile[fieldToUpdate];
-                if (currentlyEquippedId === item.id) {
-                    updatePayload[fieldToUpdate] = null;
-                }
-            }
-
-            await updateDocumentNonBlocking(userProfileRef, updatePayload, supabase);
-            
-            toast({ title: "Item Vendido!", description: `${item.name} foi vendido por ${sellPrice} Ryo.` });
-
-            // Reload após 1 segundo
-            setTimeout(() => {
-                window.location.reload();
-            }, 1000);
-        } catch (error) {
-            toast({ variant: "destructive", title: "Erro ao vender item" });
-            setIsProcessing(false);
+        const sellPrice = Math.floor(item.price / 2);
+        const currentOwnedIds = userProfile.ownedEquipmentIds || [];
+        const updatePayload: any = {
+            ryo: (userProfile.ryo || 0) + sellPrice,
+            ownedEquipmentIds: currentOwnedIds.filter((id: string) => id !== item.id),
+        };
+        const fieldToUpdate = typeToFieldMap[item.type];
+        if (fieldToUpdate && userProfile[fieldToUpdate] === item.id) {
+            updatePayload[fieldToUpdate] = null;
         }
+
+        const { data: updated, error } = await supabase.from('profiles').update(updatePayload).eq('id', userProfile.id).select().single();
+        if (error) {
+            toast({ variant: "destructive", title: "Erro ao vender item", description: error.message });
+        } else {
+            if (updated) setUserProfile(updated);
+            toast({ title: "Item Vendido!", description: `${item.name} foi vendido por ${sellPrice.toLocaleString()} Ryo.` });
+        }
+        setIsProcessing(false);
     };
     
     const equipmentCategories: { name: 'Peito' | 'Pernas' | 'Pés' | 'Mãos', icon: React.ElementType }[] = [

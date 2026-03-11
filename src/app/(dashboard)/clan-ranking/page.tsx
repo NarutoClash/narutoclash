@@ -21,6 +21,19 @@ type ClanRanking = {
   village: string;
   member_count?: number;
   description?: string;
+  win_streak?: number;
+};
+
+type LeagueEntry = {
+  clan_id: string;
+  clan_name: string;
+  points: number;
+  wars_played: number;
+  wars_won: number;
+  win_streak: number;
+  level: number;
+  tag: string;
+  position: number;
 };
 
 type ClanMember = {
@@ -38,8 +51,12 @@ export default function ClanRankingPage() {
   const [clans, setClans] = useState<ClanRanking[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [villageFilter, setVillageFilter] = useState<string>('all');
+  const [activeTab, setActiveTab] = useState<'geral' | 'semanal' | 'mensal'>('geral');
+  const [weeklyRanking, setWeeklyRanking] = useState<LeagueEntry[]>([]);
+  const [monthlyRanking, setMonthlyRanking] = useState<LeagueEntry[]>([]);
+  const [leagueLoading, setLeagueLoading] = useState(false);
   
-  // 🆕 Estados para visualização de clã
+  // Estados para visualização de clã
   const [selectedClan, setSelectedClan] = useState<ClanRanking | null>(null);
   const [clanMembers, setClanMembers] = useState<ClanMember[]>([]);
   const [isLoadingMembers, setIsLoadingMembers] = useState(false);
@@ -62,6 +79,19 @@ export default function ClanRankingPage() {
   useEffect(() => {
     fetchClans();
   }, [villageFilter, supabase]);
+
+  useEffect(() => {
+    if (!supabase) return;
+    setLeagueLoading(true);
+    Promise.all([
+      supabase.from('clan_weekly_ranking').select('*').limit(20),
+      supabase.from('clan_monthly_ranking').select('*').limit(20),
+    ]).then(([weekly, monthly]) => {
+      setWeeklyRanking(weekly.data || []);
+      setMonthlyRanking(monthly.data || []);
+      setLeagueLoading(false);
+    });
+  }, [supabase]);
 
   const fetchClans = async () => {
     if (!supabase) return;
@@ -364,13 +394,76 @@ export default function ClanRankingPage() {
       <PageHeader
         title="Ranking de Clãs"
         description={
-          villageFilter === 'all' 
-            ? "Os clãs mais poderosos ordenados por pontos de guerra." 
-            : `Clãs de ${villageFilter} ordenados por nível.`
+          activeTab === 'geral'
+            ? "Os clãs mais poderosos ordenados por pontos de guerra totais."
+            : activeTab === 'semanal'
+            ? "Ranking da liga semanal — reseta toda segunda-feira."
+            : "Ranking da liga mensal — reseta no início de cada mês."
         }
       />
 
-      <Card className="mt-8 mb-4">
+      {/* Tabs de liga */}
+      <div className="mt-6 mb-4 flex items-center justify-center gap-2">
+        {(['geral', 'semanal', 'mensal'] as const).map(tab => (
+          <button
+            key={tab}
+            onClick={() => setActiveTab(tab)}
+            className={cn(
+              'px-4 py-2 rounded-lg text-sm font-semibold transition-all border',
+              activeTab === tab
+                ? 'bg-amber-500 text-black border-amber-500 shadow'
+                : 'border-white/10 text-muted-foreground hover:border-white/30'
+            )}
+          >
+            {tab === 'geral' ? '🌍 Geral' : tab === 'semanal' ? '📅 Semanal' : '🏆 Mensal'}
+          </button>
+        ))}
+      </div>
+
+      {/* Liga Semanal */}
+      {activeTab === 'semanal' && (
+        <div className="max-w-2xl mx-auto space-y-3 mt-2">
+          <Card className="mb-3">
+            <CardContent className="pt-4 pb-3">
+              <p className="text-xs text-muted-foreground text-center">
+                🥇 +5 pts vitória · +1 pt por abate · +1 pt por sobrevivente · Prêmio: Ryo na treasury do clã
+              </p>
+            </CardContent>
+          </Card>
+          {leagueLoading ? (
+            <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin" /></div>
+          ) : weeklyRanking.length === 0 ? (
+            <Card><CardContent className="pt-6 text-center text-muted-foreground">Nenhuma guerra esta semana ainda.</CardContent></Card>
+          ) : weeklyRanking.map((entry) => (
+            <LeagueCard key={entry.clan_id} entry={entry} />
+          ))}
+        </div>
+      )}
+
+      {/* Liga Mensal */}
+      {activeTab === 'mensal' && (
+        <div className="max-w-2xl mx-auto space-y-3 mt-2">
+          <Card className="mb-3">
+            <CardContent className="pt-4 pb-3">
+              <p className="text-xs text-muted-foreground text-center">
+                🥇 Top 3 no fim do mês recebem Ryo + XP em dobro na treasury · Prêmio maior que o semanal
+              </p>
+            </CardContent>
+          </Card>
+          {leagueLoading ? (
+            <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin" /></div>
+          ) : monthlyRanking.length === 0 ? (
+            <Card><CardContent className="pt-6 text-center text-muted-foreground">Nenhuma guerra este mês ainda.</CardContent></Card>
+          ) : monthlyRanking.map((entry) => (
+            <LeagueCard key={entry.clan_id} entry={entry} />
+          ))}
+        </div>
+      )}
+
+      {/* Ranking Geral (original) */}
+      {activeTab === 'geral' && <>
+
+      <Card className="mt-2 mb-4">
         <CardContent className="pt-6">
           <div className="flex items-center gap-3 justify-center">
             <Trophy className="h-6 w-6 text-amber-500" />
@@ -394,7 +487,6 @@ export default function ClanRankingPage() {
               <Button
                 key={village.value}
                 variant={villageFilter === village.value ? 'default' : 'outline'}
-                size="sm"
                 onClick={() => handleVillageChange(village.value)}
                 className={cn(
                   'transition-all',
@@ -588,6 +680,41 @@ export default function ClanRankingPage() {
           </div>
         </>
       )}
+      </> /* fim activeTab geral */}
     </div>
+  );
+}
+
+// ── Componente de card de liga ────────────────────────────────────────
+function LeagueCard({ entry }: { entry: LeagueEntry }) {
+  const medal = entry.position === 1 ? '🥇' : entry.position === 2 ? '🥈' : entry.position === 3 ? '🥉' : `#${entry.position}`;
+  const posColor = entry.position === 1 ? 'border-yellow-400/40 bg-yellow-400/5'
+    : entry.position === 2 ? 'border-slate-400/40 bg-slate-400/5'
+    : entry.position === 3 ? 'border-orange-400/40 bg-orange-400/5'
+    : 'border-white/10 bg-white/5';
+  return (
+    <Card className={cn('border', posColor)}>
+      <CardContent className="py-3 px-4">
+        <div className="flex items-center gap-3">
+          <span className="text-xl w-8 text-center">{medal}</span>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2">
+              <p className="font-bold text-sm truncate">{entry.clan_name}</p>
+              {entry.tag && <span className="text-xs text-muted-foreground">[{entry.tag}]</span>}
+              {entry.win_streak >= 3 && (
+                <span className="text-xs text-orange-400 font-bold">🔥 {entry.win_streak}v</span>
+              )}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {entry.wars_won}V / {entry.wars_played - entry.wars_won}D · {entry.wars_played} guerras
+            </p>
+          </div>
+          <div className="text-right">
+            <p className="text-lg font-black text-amber-400">{entry.points}</p>
+            <p className="text-xs text-muted-foreground">pts</p>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   );
 }

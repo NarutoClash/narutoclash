@@ -18,6 +18,7 @@ import Image from 'next/image';
 import { useSupabase } from '@/supabase';
 import { villageImages } from '@/lib/village-images';
 import { weaponsData } from '@/lib/weapons-data';
+import { ItemPassivasDisplay } from '@/components/item-passivas-display';
 import { summonsData } from '@/lib/summons-data';
 import { equipmentsData } from '@/lib/equipments-data';
 import { doujutsuData } from '@/lib/dojutsu-data';
@@ -312,6 +313,9 @@ export default function ProfilePage() {
                         {equippedWeapon.name}
                       </h4>
                       <p className="text-sm text-muted-foreground">{equippedWeapon.description}</p>
+                      {equippedWeapon.passivas && equippedWeapon.passivas.length > 0 && (
+                        <ItemPassivasDisplay passivas={equippedWeapon.passivas} mode="compact" />
+                      )}
                     </div>
                   </div>
                 </Card>
@@ -369,6 +373,9 @@ export default function ProfilePage() {
                           <div className="text-center w-full">
                             <p className="text-xs text-muted-foreground mb-1">{label}</p>
                             <p className="text-sm font-medium">{item.name}</p>
+                            {item.passivas && item.passivas.length > 0 && (
+                              <ItemPassivasDisplay passivas={item.passivas} mode="compact" />
+                            )}
                           </div>
                         </div>
                       </Card>

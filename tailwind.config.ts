@@ -27,9 +27,36 @@ const config: Config = {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
+        muted: {
+          DEFAULT: "hsl(var(--muted))",
+          foreground: "hsl(var(--muted-foreground))",
+        },
+        accent: {
+          DEFAULT: "hsl(var(--accent))",
+          foreground: "hsl(var(--accent-foreground))",
+        },
+        popover: {
+          DEFAULT: "hsl(var(--popover))",
+          foreground: "hsl(var(--popover-foreground))",
+        },
+        destructive: {
+          DEFAULT: "hsl(var(--destructive))",
+          foreground: "hsl(var(--destructive-foreground))",
+        },
         // Cores para HP e Chakra
         hp: "hsl(var(--hp-color))",
         chakra: "hsl(var(--chakra-color))",
+        // Sidebar — necessário para o shadcn/ui sidebar component
+        sidebar: {
+          DEFAULT: "hsl(var(--sidebar-background))",
+          foreground: "hsl(var(--sidebar-foreground))",
+          primary: "hsl(var(--sidebar-primary))",
+          "primary-foreground": "hsl(var(--sidebar-primary-foreground))",
+          accent: "hsl(var(--sidebar-accent))",
+          "accent-foreground": "hsl(var(--sidebar-accent-foreground))",
+          border: "hsl(var(--sidebar-border))",
+          ring: "hsl(var(--sidebar-ring))",
+        },
       },
       backgroundImage: {
         // O gradiente que você gostou
@@ -55,6 +82,10 @@ const config: Config = {
         // Glow para HP e Chakra
         'hp-glow': '0 0 10px rgba(239, 68, 68, 0.5)',
         'chakra-glow': '0 0 10px rgba(59, 130, 246, 0.5)',
+      },
+      fontFamily: {
+        body: ['Outfit', 'sans-serif'],
+        sans: ['Outfit', 'sans-serif'],
       },
       borderRadius: {
         lg: "var(--radius)",

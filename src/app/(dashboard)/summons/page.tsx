@@ -11,7 +11,11 @@ import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
-import { summonsData, type Summon, getTrainingCost, MAX_SUMMON_LEVEL, TRAINING_BONUS_PER_LEVEL } from '@/lib/summons-data';
+import { summonsData, type Summon, getTrainingCost, MAX_SUMMON_LEVEL, TRAINING_BONUS_PER_LEVEL, getSummonBuildAbility } from '@/lib/summons-data';
+import { detectBuild } from '@/lib/battle-system/build-detector';
+import { calculateFinalStats } from '@/lib/stats-calculator';
+import { calculateDynamicStats } from '@/lib/battle-system/calculator';
+import { EQUIPMENT_DATA } from '@/lib/battle-system/equipment-data';
 import { updateDocumentNonBlocking } from '@/supabase/non-blocking-updates';
 import { usePremiumStatus } from '@/hooks/use-premium-status';
 import {
@@ -40,7 +44,7 @@ const StatBuff = ({ label, value, isTraining = false }: { label: string; value: 
     const isBuff = value > 0;
     return (
         <div className="flex justify-between items-center text-sm">
-            <span className={cn("text-gray-400", isTraining && "font-bold text-orange-400")}>
+            <span className={cn("text-[#888855]", isTraining && "font-bold text-[#cc9900]")}>
                 {label} {isTraining && '⭐'}
             </span>
             <span className={cn("font-semibold", isBuff ? "text-green-400" : "text-red-500")}>
@@ -98,8 +102,8 @@ const SummonCard = ({
 
     return (
         <Card className={cn(
-            "flex flex-col relative bg-gradient-to-br from-gray-900 to-gray-800 border-orange-500/20 hover:border-orange-500/50 transition-all hover:scale-105 hover:shadow-lg hover:shadow-orange-500/20",
-            isOwned && "border-orange-500 ring-2 ring-orange-500 shadow-xl shadow-orange-500/30"
+            "flex flex-col relative bg-white border-[#ffcc00]/40 hover:border-[#ffcc00] transition-all hover:scale-105 hover:shadow-lg hover:shadow-[#ffcc00]/20",
+            isOwned && "border-[#ffcc00] ring-2 ring-[#ffcc00] shadow-xl shadow-[#ffcc00]/30"
         )}>
              {!isOwned && !canUse && (
                 <div className="absolute inset-0 bg-red-900/40 rounded-lg z-10 flex items-center justify-center backdrop-blur-sm">
@@ -113,10 +117,10 @@ const SummonCard = ({
                 </div>
             )}
             <CardHeader>
-                <div className="relative w-full h-40 mb-4 rounded-md overflow-hidden bg-black/30 border border-orange-500/20">
+                <div className="relative w-full h-40 mb-4 rounded-md overflow-hidden bg-[#fffbe6] border border-[#ffcc00]/30">
                     <Image src={summon.imageUrl} alt={summon.name} layout="fill" objectFit="contain" unoptimized/>
                 </div>
-                <CardTitle className="flex items-center justify-between text-orange-400">
+                <CardTitle className="flex items-center justify-between text-[#664400]">
                     <span className="flex items-center gap-2">
                         {summon.name}
                         {summon.isPremium && (
@@ -124,17 +128,17 @@ const SummonCard = ({
                         )}
                     </span>
                     {isOwned && (
-                        <span className="flex items-center gap-1 text-sm font-normal text-orange-400">
+                        <span className="flex items-center gap-1 text-sm font-normal text-[#888855]">
                             <Star className="h-4 w-4" />
                             Nível {summonLevel}
                         </span>
                     )}
                 </CardTitle>
-                <CardDescription className="text-gray-400">{summon.description}</CardDescription>
+                <CardDescription className="text-[#888855]">{summon.description}</CardDescription>
             </CardHeader>
             <CardContent className="flex-grow space-y-4">
                  <div className="space-y-1">
-                    <h4 className="font-semibold text-sm text-orange-400">Bônus de Atributos</h4>
+                    <h4 className="font-semibold text-sm text-[#664400]">Bônus de Atributos</h4>
                     <StatBuff label="Taijutsu" value={getBuffValue('taijutsu', summon.buffs.taijutsu)} isTraining={trainedStat === 'taijutsu'} />
                     <StatBuff label="Ninjutsu" value={getBuffValue('ninjutsu', summon.buffs.ninjutsu)} isTraining={trainedStat === 'ninjutsu'} />
                     <StatBuff label="Genjutsu" value={getBuffValue('genjutsu', summon.buffs.genjutsu)} isTraining={trainedStat === 'genjutsu'} />
@@ -143,17 +147,56 @@ const SummonCard = ({
                     <StatBuff label="Inteligência" value={getBuffValue('inteligencia', summon.buffs.inteligencia)} isTraining={trainedStat === 'inteligencia'} />
                  </div>
                  <div className="space-y-1">
-                     <h4 className="font-semibold text-sm text-orange-400">Requisitos</h4>
-                     <p className="text-sm text-gray-400">Nível: {summon.requiredLevel}</p>
+                     <h4 className="font-semibold text-sm text-[#664400]">Requisitos</h4>
+                     <p className="text-sm text-[#888855]">Nível: {summon.requiredLevel}</p>
                  </div>
                  {isOwned && trainedStat && (
-                    <div className="p-2 bg-orange-500/10 rounded-md border border-orange-500/20">
+                    <div className="p-2 bg-[#ffcc00]/10 rounded-md border border-[#ffcc00]/30">
                         <p className="text-xs text-center">
-                            <span className="font-bold text-orange-400 capitalize">{trainedStat}</span> em treinamento 
-                            <span className="text-gray-400"> (+{(summonLevel - 1) * TRAINING_BONUS_PER_LEVEL} bônus)</span>
+                            <span className="font-bold text-[#664400] capitalize">{trainedStat}</span> em treinamento 
+                            <span className="text-[#888855]"> (+{(summonLevel - 1) * TRAINING_BONUS_PER_LEVEL} bônus)</span>
                         </p>
                     </div>
                  )}
+                 {(() => {
+                    // Detecta a build atual do jogador e mostra o buff de batalha da invocação
+                    const _stats  = calculateFinalStats(userProfile);
+                    const _fighter = {
+                      vitality: userProfile.vitality || 0,
+                      taijutsu: userProfile.taijutsu || 0,
+                      ninjutsu: userProfile.ninjutsu || 0,
+                      genjutsu: userProfile.genjutsu || 0,
+                      intelligence: userProfile.intelligence || 0,
+                      selo: userProfile.selo || 0,
+                      elementLevels: userProfile.element_levels || {},
+                      jutsus: userProfile.jutsus || {},
+                    } as any;
+                    const _dynStats = calculateDynamicStats(_fighter, EQUIPMENT_DATA);
+                    const _build    = detectBuild(_dynStats);
+                    const _ability  = getSummonBuildAbility(summon.id, _build);
+                    if (!_ability) return null;
+                    const _lvBonus  = Math.floor((summonLevel - 1) * 5);
+                    return (
+                      <div className="mt-3 rounded-lg border border-[#ffcc00]/50 bg-gradient-to-br from-[#fffbe6] to-[#fff8d6] p-3 space-y-1.5">
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-base">{_ability.emoji}</span>
+                          <span className="text-xs font-bold text-[#664400] uppercase tracking-wide">Habilidade de Batalha</span>
+                        </div>
+                        <p className="text-sm font-bold text-[#442200]">{_ability.name}</p>
+                        <p className="text-xs text-[#886633] leading-snug">{_ability.description}</p>
+                        <div className="flex items-center justify-between pt-1">
+                          <span className="text-[10px] bg-[#ffcc00]/20 text-[#664400] px-2 py-0.5 rounded-full font-semibold capitalize">
+                            Build: {_build}
+                          </span>
+                          {isOwned && _lvBonus > 0 && (
+                            <span className="text-[10px] text-green-600 font-semibold">
+                              +{_lvBonus}% eficácia (Nv {summonLevel})
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    );
+                 })()}
             </CardContent>
             <CardFooter className="flex-col gap-2">
     {isOwned ? (
@@ -162,7 +205,7 @@ const SummonCard = ({
                 <DialogTrigger asChild>
                     <Button 
                         variant="outline" 
-                        className="w-full h-auto min-h-[44px] py-3 border-orange-500/50 hover:bg-orange-500/10 whitespace-normal text-center" 
+                        className="w-full h-auto min-h-[44px] py-3 border-[#ffcc00] text-[#664400] hover:bg-[#ffcc00]/10 whitespace-normal text-center" 
                         disabled={isMaxLevel}
                     >
                         <div className="flex flex-col items-center gap-1 w-full">
@@ -180,13 +223,13 @@ const SummonCard = ({
                         </div>
                     </Button>
                 </DialogTrigger>
-                <DialogContent className="bg-gradient-to-br from-gray-900 to-gray-800 border-orange-500/20">
+                <DialogContent className="bg-white border-[#ffcc00]/40">
                     <DialogHeader>
-                        <DialogTitle className="text-orange-400">Treinar {summon.name}</DialogTitle>
-                        <DialogDescription className="text-gray-400">
+                        <DialogTitle className="text-[#664400]">Treinar {summon.name}</DialogTitle>
+                        <DialogDescription className="text-[#888855]">
                             Escolha qual atributo você quer treinar. Cada nível adiciona +{TRAINING_BONUS_PER_LEVEL} ao stat escolhido.
                             {trainedStat && (
-                                <span className="block mt-2 text-orange-400 font-semibold">
+                                <span className="block mt-2 text-[#664400] font-semibold">
                                     Atributo atual em treinamento: {trainedStat.charAt(0).toUpperCase() + trainedStat.slice(1)}
                                 </span>
                             )}
@@ -232,10 +275,10 @@ const SummonCard = ({
                         <span>Cancelar Contrato</span>
                     </Button>
                 </AlertDialogTrigger>
-                <AlertDialogContent className="bg-gradient-to-br from-gray-900 to-gray-800 border-orange-500/20">
+                <AlertDialogContent className="bg-white border-[#ffcc00]/40">
                     <AlertDialogHeader>
-                        <AlertDialogTitle className="text-orange-400">Cancelar contrato com {summon.name}?</AlertDialogTitle>
-                        <AlertDialogDescription className="text-gray-400">
+                        <AlertDialogTitle className="text-[#664400]">Cancelar contrato com {summon.name}?</AlertDialogTitle>
+                        <AlertDialogDescription className="text-[#888855]">
                             Você receberá apenas 50% do valor base ({(summon.price / 2).toLocaleString()} Ryo).
                             {summonLevel > 1 && (
                                 <span className="block mt-2 text-red-500 font-semibold">
@@ -245,10 +288,10 @@ const SummonCard = ({
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel className="border-orange-500/50 hover:bg-orange-500/10">Manter Contrato</AlertDialogCancel>
+                        <AlertDialogCancel className="border-[#ffcc00] text-[#664400] hover:bg-[#ffcc00]/10">Manter Contrato</AlertDialogCancel>
                         <AlertDialogAction 
                             onClick={() => onSell(summon)}
-                            className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700"
+                            className="bg-[#ffcc00] text-[#664400] font-bold hover:bg-[#cc9900]"
                         >
                             Confirmar
                         </AlertDialogAction>
@@ -298,7 +341,7 @@ export default function SummonsPage() {
         return { table: 'profiles', id: user.id };
     }, [user]);
 
-    const { data: userProfile, isLoading } = useDoc(userProfileRef);
+    const { data: userProfile, isLoading, setData: setUserProfile } = useDoc(userProfileRef);
 
     const handleBuySummon = async (summon: Summon) => {
         if (!userProfile || !userProfileRef || !supabase || userProfile.summon_id) return;
@@ -307,45 +350,51 @@ export default function SummonsPage() {
             toast({ variant: 'destructive', title: 'Ryo Insuficiente' });
             return;
         }
-         if (userProfile.level < summon.requiredLevel) {
+        if (userProfile.level < summon.requiredLevel) {
             toast({ variant: 'destructive', title: 'Nível Insuficiente' });
             return;
         }
 
-        updateDocumentNonBlocking(userProfileRef, {
-            ryo: (userProfile.ryo || 0) - summon.price,
+        const newRyo = (userProfile.ryo || 0) - summon.price;
+        const { data: updated, error } = await supabase.from('profiles').update({
+            ryo: newRyo,
             summon_id: summon.id,
             summon_level: 1,
             summon_trained_stat: null,
-        }, supabase);
+        }).eq('id', userProfile.id).select().single();
 
+        if (error) {
+            toast({ variant: 'destructive', title: 'Erro ao formar contrato', description: error.message });
+            return;
+        }
+
+        if (updated) setUserProfile(updated);
         toast({ title: 'Contrato Formado!', description: `Você agora pode invocar ${summon.name}.` });
-
-        setTimeout(() => {
-            window.location.reload();
-        }, 1500);
     };
 
-    const handleSellSummon = (summon: Summon) => {
+    const handleSellSummon = async (summon: Summon) => {
         if (!userProfileRef || !userProfile || !supabase) return;
         
         const sellPrice = Math.floor(summon.price / 2);
+        const newRyo = (userProfile.ryo || 0) + sellPrice;
 
-        updateDocumentNonBlocking(userProfileRef, {
+        const { data: updated, error } = await supabase.from('profiles').update({
             summon_id: null,
             summon_level: null,
             summon_trained_stat: null,
-            ryo: (userProfile.ryo || 0) + sellPrice
-        }, supabase);
+            ryo: newRyo,
+        }).eq('id', userProfile.id).select().single();
 
-        toast({ title: 'Contrato Cancelado!', description: `Você não tem mais contrato com ${summon.name} e recebeu ${sellPrice} Ryo.` });
+        if (error) {
+            toast({ variant: 'destructive', title: 'Erro ao cancelar contrato', description: error.message });
+            return;
+        }
 
-        setTimeout(() => {
-            window.location.reload();
-        }, 1500);
+        if (updated) setUserProfile(updated);
+        toast({ title: 'Contrato Cancelado!', description: `Você recebeu ${sellPrice.toLocaleString()} Ryo.` });
     };
 
-    const handleTrainSummon = (summon: Summon, stat: string) => {
+    const handleTrainSummon = async (summon: Summon, stat: string) => {
         if (!userProfileRef || !userProfile || !supabase) return;
 
         const currentLevel = userProfile.summon_level || 1;
@@ -361,25 +410,30 @@ export default function SummonsPage() {
             return;
         }
 
-        updateDocumentNonBlocking(userProfileRef, {
-            ryo: (userProfile.ryo || 0) - trainingCost,
-            summon_level: currentLevel + 1,
-            summon_trained_stat: stat,
-        }, supabase);
+        const newRyo  = (userProfile.ryo || 0) - trainingCost;
+        const newLevel = currentLevel + 1;
 
+        const { data: updated, error } = await supabase.from('profiles').update({
+            ryo: newRyo,
+            summon_level: newLevel,
+            summon_trained_stat: stat,
+        }).eq('id', userProfile.id).select().single();
+
+        if (error) {
+            toast({ variant: 'destructive', title: 'Erro no treinamento', description: error.message });
+            return;
+        }
+
+        if (updated) setUserProfile(updated);
         toast({ 
             title: 'Treinamento Concluído!', 
-            description: `${summon.name} subiu para nível ${currentLevel + 1}! ${stat.charAt(0).toUpperCase() + stat.slice(1)} +${TRAINING_BONUS_PER_LEVEL}` 
+            description: `${summon.name} subiu para nível ${newLevel}! ${stat.charAt(0).toUpperCase() + stat.slice(1)} +${TRAINING_BONUS_PER_LEVEL}` 
         });
-
-        setTimeout(() => {
-            window.location.reload();
-        }, 1500);
     };
 
     if (isLoading) {
         return (
-            <div className="min-h-screen bg-gradient-to-b from-black via-gray-900 to-orange-950 flex flex-col items-center justify-center text-center px-4">
+            <div className="flex flex-col items-center justify-center text-center px-4">
                 <PageHeader title="Carregando Pergaminhos..." description="Buscando os contratos de invocação..." />
                 <Loader2 className="h-8 w-8 animate-spin mt-6 text-orange-500" />
             </div>
@@ -388,9 +442,9 @@ export default function SummonsPage() {
      
     if (!userProfile) {
         return (
-            <div className="min-h-screen bg-gradient-to-b from-black via-gray-900 to-orange-950 flex flex-col items-center justify-center text-center px-4">
+            <div className="flex flex-col items-center justify-center text-center px-4">
                 <PageHeader title="Crie um Personagem" description="Você precisa de um personagem para formar um contrato de invocação." />
-                <Button asChild className="mt-6 bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 shadow-lg shadow-orange-500/50">
+                <Button asChild className="mt-6">
                     <Link href="/create-character">Criar Personagem</Link>
                 </Button>
             </div>
@@ -400,7 +454,7 @@ export default function SummonsPage() {
     const currentSummonId = userProfile.summon_id;
 
     return (
-        <div className="min-h-screen bg-gradient-to-b from-black via-gray-900 to-orange-950 pb-12">
+        <div className="pb-12">
             <div className="container mx-auto px-4 py-8">
                 <PageHeader
                     title="Animais de Invocação"
@@ -408,18 +462,18 @@ export default function SummonsPage() {
                 />
                 
                 <div className="my-8 flex justify-center">
-                    <Card className='p-6 text-center bg-gradient-to-br from-gray-900 to-gray-800 border-orange-500/30'>
-                        <CardTitle className="text-orange-400 mb-4">Seus Recursos</CardTitle>
+                    <Card className='p-6 text-center bg-white border-2 border-[#ffcc00]'>
+                        <CardTitle className="text-[#664400] mb-4">Seus Recursos</CardTitle>
                         <div className='flex gap-6 justify-center'>
                             <div className="flex flex-col items-center">
                                 <Coins className="h-5 w-5 text-yellow-500 mb-1" />
-                                <p className="text-sm text-gray-400">Ryo</p>
-                                <p className="text-xl font-bold text-orange-400">{userProfile.ryo?.toLocaleString() || 0}</p>
+                                <p className="text-sm text-[#888855]">Ryo</p>
+                                <p className="text-xl font-bold text-[#664400]">{userProfile.ryo?.toLocaleString() || 0}</p>
                             </div>
                             <div className="flex flex-col items-center">
                                 <Footprints className="h-5 w-5 text-blue-500 mb-1" />
-                                <p className="text-sm text-gray-400">Nível</p>
-                                <p className="text-xl font-bold text-orange-400">{userProfile.level}</p>
+                                <p className="text-sm text-[#888855]">Nível</p>
+                                <p className="text-xl font-bold text-[#664400]">{userProfile.level}</p>
                             </div>
                         </div>
                     </Card>

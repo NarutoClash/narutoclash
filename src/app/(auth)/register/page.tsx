@@ -217,7 +217,7 @@ function RegisterForm() {
             </Button>
           </CardContent>
           <CardFooter>
-            <Button asChild className="w-full bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 shadow-lg shadow-orange-500/50">
+            <Button asChild className="w-full">
               <Link href="/login">Ir para o Login</Link>
             </Button>
           </CardFooter>
@@ -320,7 +320,7 @@ function RegisterForm() {
               <Button 
                 type="submit" 
                 disabled={isSubmitting} 
-                className="w-full bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 shadow-lg shadow-orange-500/50"
+                className="w-full"
               >
                 {isSubmitting && <Loader2 className="animate-spin mr-2" />}
                 {!isSubmitting && 'Cadastrar'}

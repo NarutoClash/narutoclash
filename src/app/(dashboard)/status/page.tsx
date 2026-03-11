@@ -38,6 +38,7 @@ import { doujutsuImages } from '@/lib/dojutsu-images';
 import { ShieldQuestion } from 'lucide-react';
 import { ichirakuMenu, IchirakuItem } from '@/lib/ichiraku-data';
 import { weaponsData, type Weapon } from '@/lib/weapons-data';
+import { ItemPassivasDisplay } from '@/components/item-passivas-display';
 import { summonsData, type Summon, TRAINING_BONUS_PER_LEVEL } from '@/lib/summons-data';
 import { equipmentsData, type Equipment } from '@/lib/equipments-data';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -281,7 +282,7 @@ const StatItem = ({
             )}
         </div>
         {isUpgradeable && (
-          <Button size="icon" variant="outline" className="h-6 w-6 shrink-0 mt-1" onClick={onIncrement} disabled={isDistributionDisabled}>
+          <Button variant="outline" className="h-8 w-8 shrink-0 mt-1 p-0" onClick={onIncrement} disabled={isDistributionDisabled}>
             <Plus className="h-4 w-4" />
           </Button>
         )}
@@ -632,29 +633,11 @@ const premiumPassData = hasPremiumPass ? activePremiumPass[0] : null;
 
 // 🔍 DEBUG - Ver o que está retornando
 useEffect(() => {
-  console.log('🔍 Premium Pass Query Result:', {
-    activePremiumPass,
-    hasPremiumPass,
-    premiumPassData,
-    item_data: premiumPassData?.item_data
-  });
 }, [activePremiumPass, hasPremiumPass, premiumPassData]);
 
 useEffect(() => {
-  console.log('=== DEBUG PREMIUM COMPLETO ===');
-  console.log('User ID:', user?.id);
-  console.log('Premium Pass:', activePremiumPass);
-  console.log('Active Boosts:', activeBoosts);
-  console.log('Active Potions:', activePotions);
-  console.log('Has Premium Pass:', hasPremiumPass);
   
   if (hasPremiumPass && premiumPassData) {
-    console.log('📦 Premium Pass Data:', {
-      name: premiumPassData.item_data?.name,
-      expires_at: premiumPassData.expires_at,
-      created_at: premiumPassData.created_at,
-      benefits: premiumPassData.item_data?.benefits,
-    });
   }
 }, [activePremiumPass, activeBoosts, activePotions, user]);
 
@@ -1334,7 +1317,6 @@ useEffect(() => {
   const checkPendingBattleReport = async () => {
     if (userProfile.pending_battle_report) {
       const report = userProfile.pending_battle_report;
-      console.log('📋 Relatório de Batalha:', report);
       
       setBattleReport(report);
       setShowBattleReport(true);
@@ -2286,8 +2268,7 @@ const BattleReportModal = () => {
 
         <CardFooter>
           <Button 
-            className="w-full" 
-            size="lg"
+            className="w-full"
             onClick={handleCloseBattleReport}
           >
             Fechar e Recuperar
@@ -2740,6 +2721,9 @@ const BattleReportModal = () => {
                            {Object.entries(item.buffs).map(([key, value]) => (
                                value !== 0 && <StatBuffDisplay key={key} label={key} value={value} />
                            ))}
+                           {item.passivas && item.passivas.length > 0 && (
+                             <ItemPassivasDisplay passivas={item.passivas} mode="compact" className="mt-2" />
+                           )}
                        </CardContent>
                    </Card>
                );
@@ -2868,6 +2852,11 @@ const BattleReportModal = () => {
           ))}
         </CardContent>
         {/* ✅ ADICIONAR ESTE BOTÃO */}
+        {equippedWeapon.passivas && equippedWeapon.passivas.length > 0 && (
+          <div className="w-full mt-2">
+            <ItemPassivasDisplay passivas={equippedWeapon.passivas} mode="full" />
+          </div>
+        )}
         <Button asChild className="w-full mt-4" variant="outline">
           <Link href="/weapons">
             Gerenciar Arma
@@ -2880,7 +2869,7 @@ const BattleReportModal = () => {
         <p className="text-center text-muted-foreground mb-4">
           Nenhuma arma equipada.
         </p>
-        <Button asChild className="mt-4" size="sm">
+        <Button asChild className="mt-4">
           <Link href="/weapons">
             Equipar Arma
           </Link>
@@ -2962,7 +2951,7 @@ const BattleReportModal = () => {
         <p className="text-center text-muted-foreground mb-4">
           Nenhuma invocação contratada.
         </p>
-        <Button asChild className="mt-4" size="sm">
+        <Button asChild className="mt-4">
           <Link href="/summons">
             Formar Contrato
           </Link>
@@ -3022,7 +3011,7 @@ const BattleReportModal = () => {
         <p className="text-center text-muted-foreground">
           Nenhum Dōjutsu despertado.
         </p>
-        <Button asChild className="mt-4" size="sm">
+        <Button asChild className="mt-4">
           <Link href="/doujutsu">
             Despertar Poder
           </Link>
@@ -3112,7 +3101,7 @@ const BattleReportModal = () => {
         <p className="text-center text-muted-foreground mb-4">
           Nenhum selo amaldiçoado obtido.
         </p>
-        <Button asChild className="mt-4" size="sm">
+        <Button asChild className="mt-4">
           <Link href="/cursed-seal">
             Buscar Poder
           </Link>
@@ -3249,8 +3238,7 @@ const BattleReportModal = () => {
               </div>
               
               <Button 
-                className="w-full" 
-                size="sm"
+                className="w-full"
                 disabled={!canUse}
                 onClick={() => handleUsePremiumItem(item, premiumItem)}
               >
@@ -3480,7 +3468,6 @@ const BattleReportModal = () => {
               <CardFooter>
                 <Button
                   className="w-full"
-                  size="sm"
                   onClick={() => handleUseBossItem(item)}
                 >
                   Usar

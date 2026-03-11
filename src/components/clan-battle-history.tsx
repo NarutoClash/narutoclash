@@ -316,7 +316,6 @@ export function ClanBattleHistory({ clanId, clanName, supabase }: ClanBattleHist
                     </Badge>
                     <Button
                       variant="ghost"
-                      size="sm"
                       onClick={() => toggleBattleDetails(battle.id)}
                       disabled={isLoadingThisReport}
                     >

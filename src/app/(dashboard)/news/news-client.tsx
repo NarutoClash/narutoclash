@@ -250,7 +250,6 @@ export function NewsClient() {
               </div>
             </div>
             <Button 
-              size="sm" 
               onClick={() => window.location.href = '/messages'}
               className="bg-blue-500 hover:bg-blue-600"
             >
@@ -270,7 +269,6 @@ export function NewsClient() {
             </span>
           </div>
           <Button 
-            size="sm" 
             variant="ghost"
             onClick={markAllAsRead}
             className="text-orange-400 hover:text-orange-300"

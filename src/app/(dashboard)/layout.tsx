@@ -217,28 +217,32 @@ export default function DashboardLayout({
   });
 
   // 🔝 ITENS DO MENU SUPERIOR (Menos Acessados)
-const topMenuItems = [
-  { 
-    href: '/news', 
-    label: 'News', 
-    icon: Newspaper, 
-    notification: unreadNewsCount > 0,
-    badge: unreadNewsCount
-  },
-  { 
-    href: '/messages', 
-    label: 'Mensagens', 
-    icon: Mail, 
-    notification: unreadCount > 0 || unreadReportsCount > 0,
-    badge: (unreadCount || 0) + (unreadReportsCount || 0)
-  },
-  { href: '/ranking', label: 'Ranking', icon: Trophy, notification: false },
-  { href: '/chat', label: 'Chat Global', icon: MessageCircle, notification: false },
-  { href: '/manual-ninja', label: 'Manual Ninja', icon: BookOpen, notification: false },
-  { href: '/mercado-premium', label: 'Mercado Premium', icon: Database, notification: false },
-  { href: '/buy', label: 'Comprar CP', icon: ShoppingCart, notification: false },
-  { href: '/suporte', label: 'Suporte', icon: MessageCircleQuestion, notification: false }, // 🆕 SUPORTE
-];
+  const topMenuItems = [
+    { 
+      href: '/news', 
+      label: 'News', 
+      icon: Newspaper, 
+      notification: unreadNewsCount > 0,
+      badge: unreadNewsCount
+    },
+    { 
+      href: '/messages', 
+      label: 'Mensagens', 
+      icon: Mail, 
+      notification: unreadCount > 0 || unreadReportsCount > 0,
+      badge: (unreadCount || 0) + (unreadReportsCount || 0)
+    },
+    { href: '/ranking', label: 'Ranking', icon: Trophy, notification: false },
+    { href: '/chat', label: 'Chat Global', icon: MessageCircle, notification: false },
+  
+    // ✅ NOVO BOTÃO BATALHAR (ADICIONE AQUI)
+    { href: '/batalhar', label: 'Batalhar', icon: Swords, notification: false },
+  
+    { href: '/manual-ninja', label: 'Manual Ninja', icon: BookOpen, notification: false },
+    { href: '/mercado-premium', label: 'Mercado Premium', icon: Database, notification: false },
+    { href: '/buy', label: 'Comprar CP', icon: ShoppingCart, notification: false },
+    { href: '/suporte', label: 'Suporte', icon: MessageCircleQuestion, notification: false },
+  ];
 
 // 📱 ITENS DA SIDEBAR (Mais Acessados)
 const sidebarItems = [
@@ -253,6 +257,7 @@ const sidebarItems = [
   { href: '/summons', label: 'Invocação', icon: Footprints, notification: showSummonNotification },
   { href: '/equipamentos', label: 'Equipamentos', icon: Grip, notification: false },
   { href: '/clan', label: 'Clã', icon: Users, notification: false },
+  { href: '/guerra', label: 'Guerra de Clãs', icon: Swords, notification: false },
   { href: '/clan-ranking', label: 'Ranking Clãs', icon: Trophy, notification: false }, // 🆕 NOVO
   { href: '/ichiraku', label: 'Ichiraku', icon: Utensils, notification: false },
 ];
@@ -273,12 +278,22 @@ const sidebarItems = [
     <SidebarProvider>
       {/* Sidebar Lateral */}
       <Sidebar>
-        <SidebarHeader className="border-b border-sidebar-border p-0 overflow-hidden">
-          <Link href="/status" className="block hover:opacity-80 transition-opacity">
-            <img 
-              src="https://i.ibb.co/SXgtP2F7/Naruto-Clash.png" 
+        <SidebarHeader className="border-b-2 border-[#ffcc00] p-0 overflow-hidden bg-[#ede8e0]" style={{ height: '59px' }}>
+          <Link href="/status" className="flex items-center justify-center hover:opacity-80 transition-opacity h-full w-full">
+            <img
+              src="https://i.ibb.co/sdYFN1KF/Gemini-Generated-Image-4oiuyp4oiuyp4oiu.png"
               alt="Naruto Clash"
-              className="w-full h-20 object-cover scale-110"
+              style={{
+                width: '100%',
+                height: '100%',
+                objectFit: 'cover',
+                objectPosition: 'center',
+                paddingTop: '0px',
+                paddingBottom: '0px',
+                paddingLeft: '0px',
+                paddingRight: '0px',
+                transform: 'scale(0.95) translateY(1px)',
+              }}
             />
           </Link>
         </SidebarHeader>
@@ -307,6 +322,31 @@ const sidebarItems = [
           </SidebarGroup>
         </SidebarContent>
 
+        {/* Extra items for mobile - top menu items shown in sidebar */}
+        <div className="md:hidden border-t border-[#ffcc00]/40 p-2">
+          <SidebarGroup>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {topMenuItems.map((item) => (
+                  <SidebarMenuItem key={item.href + '-mobile'}>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={pathname.startsWith(item.href)}
+                      tooltip={item.label}
+                    >
+                      <Link href={item.href}>
+                        <item.icon className="h-4 w-4" />
+                        <span>{item.label}</span>
+                        {item.notification && <SidebarMenuBadge />}
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        </div>
+
         <SidebarFooter className="border-t border-sidebar-border p-2">
           <SidebarMenu>
             <SidebarMenuItem>
@@ -333,9 +373,9 @@ const sidebarItems = [
 
       <SidebarInset>
         {/* Header Superior com Menu Horizontal */}
-        <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-          <div className="flex h-14 items-center gap-2 px-4">
-            <SidebarTrigger className="md:hidden" />
+        <header className="sticky top-0 z-50 w-full border-b-2 border-[#ffcc00] bg-[#ede8e0]">
+          <div className="flex h-[57px] items-center gap-2 px-4">
+            <SidebarTrigger className="md:hidden" data-sidebar="trigger" />
             
             {/* Menu Superior - Itens Secundários */}
             <nav className="hidden md:flex items-center gap-1 flex-1">
@@ -344,8 +384,8 @@ const sidebarItems = [
                   key={item.href}
                   href={item.href}
                   className={cn(
-                    "relative flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md transition-colors hover:bg-accent hover:text-accent-foreground",
-                    pathname.startsWith(item.href) && "bg-accent text-accent-foreground"
+                    "relative flex items-center gap-2 px-3 py-1.5 text-sm font-semibold rounded-lg border-2 border-transparent transition-all text-[#1a1a1a] hover:bg-[#ff8c0022] hover:border-[#ff8c00]",
+                    pathname.startsWith(item.href) && "bg-[#ff8c0022] text-[#0d0d0d] border-[#ff8c00]"
                   )}
                 >
                   <item.icon className="h-4 w-4" />
@@ -377,14 +417,14 @@ const sidebarItems = [
                 )}
                 
                 <div className="hidden lg:flex flex-col items-end">
-                  <span className="text-sm font-semibold">{userProfile.name}</span>
-                  <span className="text-xs text-muted-foreground">Nível {userProfile.level}</span>
+                  <span className="text-sm font-semibold text-[#1a1a1a]">{userProfile.name}</span>
+                  <span className="text-xs text-[#4d4d4d]">Nível {userProfile.level}</span>
                 </div>
                 
                 <Link href={`/profile/${user.id}`}>
-                  <Avatar className="h-9 w-9 cursor-pointer ring-2 ring-orange-500/20 hover:ring-orange-500/50 transition-all">
+                  <Avatar className="h-9 w-9 cursor-pointer ring-2 ring-[#ffcc00]/60 hover:ring-[#ffcc00] transition-all">
                     <AvatarImage src={userProfile.avatar_url} alt={userProfile.name} />
-                    <AvatarFallback className="bg-gradient-to-br from-orange-500 to-red-600 text-white">
+                    <AvatarFallback className="bg-[#ffcc00] text-[#1a1a1a] font-bold">
                       {userProfile.name?.charAt(0)}
                     </AvatarFallback>
                   </Avatar>
@@ -394,11 +434,54 @@ const sidebarItems = [
           </div>
         </header>
 
-        <main className="flex-1 p-4 md:p-6">
+        <main className="flex-1 p-4 md:p-6 pb-20 md:pb-6">
           <div className="mx-auto max-w-4xl">
             {children}
           </div>
         </main>
+        {/* ── Barra de Navegação Inferior (Mobile) ── */}
+        <nav className="fixed bottom-0 left-0 right-0 z-50 flex md:hidden border-t-2 border-[#ffcc00] bg-[#ede8e0]">
+          {/* Sidebar trigger - abre o menu lateral */}
+          <button
+            onClick={() => {
+              const trigger = document.querySelector('[data-sidebar="trigger"]') as HTMLElement;
+              if (trigger) trigger.click();
+            }}
+            className="flex flex-col items-center justify-center gap-0.5 flex-1 py-2 text-[#664400] hover:bg-[#ffcc00]/20 transition-colors"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="18" y2="18"/></svg>
+            <span className="text-[9px] font-semibold">Menu</span>
+          </button>
+
+          {/* Itens principais do top menu no mobile */}
+          {[
+            topMenuItems.find(i => i.href === '/news'),
+            topMenuItems.find(i => i.href === '/messages'),
+            topMenuItems.find(i => i.href === '/batalhar'),
+            topMenuItems.find(i => i.href === '/ranking'),
+            topMenuItems.find(i => i.href === '/chat'),
+          ].filter(Boolean).map((item) => item && (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={cn(
+                "relative flex flex-col items-center justify-center gap-0.5 flex-1 py-2 text-[#664400] hover:bg-[#ffcc00]/20 transition-colors",
+                pathname.startsWith(item.href) && "text-[#ff8c00] bg-[#ffcc00]/20"
+              )}
+            >
+              <item.icon className="h-5 w-5" />
+              <span className="text-[9px] font-semibold leading-none">{item.label}</span>
+              {item.notification && (
+                <span className="absolute top-1 right-[20%] h-2 w-2 rounded-full bg-orange-500 animate-pulse" />
+              )}
+              {(item as any).badge > 0 && (
+                <span className="absolute top-0.5 right-[10%] bg-red-500 text-white text-[8px] font-bold rounded-full min-w-[14px] h-[14px] flex items-center justify-center px-0.5">
+                  {(item as any).badge}
+                </span>
+              )}
+            </Link>
+          ))}
+        </nav>
       </SidebarInset>
     </SidebarProvider>
   );

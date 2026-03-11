@@ -1,6 +1,6 @@
 /**
  * Sistema de Batalha - Exports Centralizados
- * VERSÃO ATUALIZADA - Com validações, equipamentos e dōjutsus
+ * VERSÃO 2.0 - Com builds, passivas, elementos e relatórios ricos
  */
 
 // ========== TYPES ==========
@@ -18,6 +18,9 @@ export type {
   BattleTurn,
   ValidationError,
   CursedSealActivationResult,
+  BuildEffect,
+  BuildEffectType,
+  RichBattleLogEntry,
 } from './types';
 
 // ========== CONSTANTS ==========
@@ -82,3 +85,10 @@ export {
   evolveDoujutsu,
   getDoujutsuInfo,
 } from './doujutsu-loader';
+
+// ========== BUILD SYSTEM v2.0 ==========
+export type { BuildType, BuildInfo, BuildPassive, FighterBattleState } from './build-detector';
+export { detectBuild, getBuildInfo, emptyBattleState } from './build-detector';
+
+// ========== RICH BATTLE LOG ==========
+export { buildLogEntry, calcLogStats } from './battle-log-builder';

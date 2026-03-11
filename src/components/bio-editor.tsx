@@ -181,7 +181,7 @@ export function BioEditor({ profileId, initialContent = '', isOwner }: BioEditor
     <Card>
       {isOwner && !isEditing && (
         <CardHeader className="flex flex-row items-center justify-end pb-2 pt-4 px-6">
-          <Button size="sm" variant="outline" onClick={() => setIsEditing(true)}>
+          <Button variant="outline" onClick={() => setIsEditing(true)}>
             <Edit className="h-4 w-4 mr-2" />
             Editar
           </Button>
@@ -194,7 +194,7 @@ export function BioEditor({ profileId, initialContent = '', isOwner }: BioEditor
             <div className="space-y-2">
               <div className="flex items-center justify-between mb-2">
                 <label htmlFor="bio-content" className="text-sm font-medium">Descrição</label>
-                <Button type="button" variant="outline" size="sm"
+                <Button type="button" variant="outline"
                   onClick={() => setShowPreview(!showPreview)}>
                   <Eye className="h-4 w-4 mr-2" />
                   {showPreview ? 'Ocultar' : 'Preview'}
@@ -203,21 +203,21 @@ export function BioEditor({ profileId, initialContent = '', isOwner }: BioEditor
 
               {/* Toolbar */}
               <div className="flex flex-wrap gap-2 p-2 bg-muted/30 rounded-md border">
-                <Button type="button" variant="ghost" size="sm"
+                <Button type="button" variant="ghost"
                   onClick={() => insert('[b]texto em negrito[/b]')} title="Negrito">
                   <Bold className="h-4 w-4" />
                 </Button>
-                <Button type="button" variant="ghost" size="sm"
+                <Button type="button" variant="ghost"
                   onClick={() => insert('[i]texto em itálico[/i]')} title="Itálico">
                   <Italic className="h-4 w-4" />
                 </Button>
-                <Button type="button" variant="ghost" size="sm"
+                <Button type="button" variant="ghost"
                   onClick={() => insert('[u]texto sublinhado[/u]')} title="Sublinhado">
                   <Underline className="h-4 w-4" />
                 </Button>
 
                 <div className="relative">
-                  <Button type="button" variant="ghost" size="sm"
+                  <Button type="button" variant="ghost"
                     onClick={() => setShowColorMenu(!showColorMenu)} title="Cor">
                     <Palette className="h-4 w-4" />
                   </Button>
@@ -238,7 +238,7 @@ export function BioEditor({ profileId, initialContent = '', isOwner }: BioEditor
 
                 <div className="border-l mx-1" />
 
-                <Button type="button" variant="ghost" size="sm"
+                <Button type="button" variant="ghost"
                   onClick={() => insert('[img]URL_DA_IMAGEM[/img]')}
                   title="Inserir Imagem">
                   <ImageIcon className="h-4 w-4" />

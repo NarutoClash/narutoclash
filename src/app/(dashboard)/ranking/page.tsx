@@ -201,7 +201,6 @@ export default function RankingPage() {
               <Button
                 key={village.value}
                 variant={villageFilter === village.value ? 'default' : 'outline'}
-                size="sm"
                 onClick={() => handleVillageChange(village.value)}
                 className={cn(
                   'transition-all',
@@ -419,7 +418,6 @@ export default function RankingPage() {
             <div className="flex items-center gap-2">
               <Button
                 variant="outline"
-                size="sm"
                 onClick={handlePreviousPage}
                 disabled={currentPage === 1}
               >
@@ -444,7 +442,6 @@ export default function RankingPage() {
                     <Button
                       key={pageNum}
                       variant={currentPage === pageNum ? 'default' : 'outline'}
-                      size="sm"
                       onClick={() => {
                         setCurrentPage(pageNum);
                         window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -459,7 +456,6 @@ export default function RankingPage() {
 
               <Button
                 variant="outline"
-                size="sm"
                 onClick={handleNextPage}
                 disabled={currentPage === totalPages}
               >

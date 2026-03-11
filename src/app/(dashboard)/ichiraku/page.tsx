@@ -70,7 +70,6 @@ const ItemCard = ({ item, onBuy, userProfile }: { item: IchirakuItem; onBuy: (it
                     <div className="flex items-center gap-2">
                         <Button 
                             variant="outline" 
-                            size="sm" 
                             onClick={() => setQuantity(Math.max(1, quantity - 1))}
                             disabled={quantity <= 1}
                         >
@@ -79,7 +78,6 @@ const ItemCard = ({ item, onBuy, userProfile }: { item: IchirakuItem; onBuy: (it
                         <span className="w-12 text-center font-bold">{quantity}</span>
                         <Button 
                             variant="outline" 
-                            size="sm" 
                             onClick={() => setQuantity(Math.min(10, quantity + 1))}
                             disabled={quantity >= 10}
                         >

@@ -68,14 +68,12 @@ function validateMercadoPagoSignature(
 }
 
 export async function POST(request: NextRequest) {
-  console.log('🔔 ===== WEBHOOK MERCADO PAGO INICIADO =====');
   
   try {
     // 1️⃣ Ler o body
     let body;
     try {
       body = await request.json();
-      console.log('📦 Body recebido:', JSON.stringify(body, null, 2));
     } catch (parseError) {
       console.error('❌ Erro ao fazer parse do JSON:', parseError);
       return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
@@ -90,15 +88,12 @@ export async function POST(request: NextRequest) {
     const type = body.type || body.topic || body.action;
     let dataId = body.data?.id || body.resource || body.id;
     
-    console.log('🔍 Valores extraídos:', { type, dataId });
     
     if (!type) {
-      console.log('⚠️ Tipo não identificado - aceitando mesmo assim');
       return NextResponse.json({ received: true, warning: 'Unknown type' });
     }
     
     if (!dataId) {
-      console.log('⚠️ ID não encontrado - aceitando mesmo assim');
       return NextResponse.json({ received: true, warning: 'No ID' });
     }
 
@@ -117,12 +112,10 @@ export async function POST(request: NextRequest) {
 
     // 4️⃣ Só processar notificações de pagamento
     if (type !== 'payment') {
-      console.log('ℹ️ Tipo ignorado:', type);
       return NextResponse.json({ received: true, ignored: type });
     }
 
     const paymentId = dataId;
-    console.log('💳 Processando pagamento ID:', paymentId);
 
     // 5️⃣ Buscar dados do pagamento no Mercado Pago
     const paymentResponse = await fetch(
@@ -145,13 +138,6 @@ export async function POST(request: NextRequest) {
 
     const paymentData = await paymentResponse.json();
     
-    console.log('📊 Dados do pagamento:', {
-      id: paymentData.id,
-      status: paymentData.status,
-      status_detail: paymentData.status_detail,
-      external_reference: paymentData.external_reference,
-      transaction_amount: paymentData.transaction_amount,
-    });
 
     const status = paymentData.status;
     const externalReference = paymentData.external_reference;
@@ -162,7 +148,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'External reference ausente' }, { status: 400 });
     }
 
-    console.log('🔗 External Reference (ID do banco):', externalReference);
 
     // 6️⃣ Atualizar registro no banco
     const { error: updateError } = await supabase
@@ -183,11 +168,9 @@ export async function POST(request: NextRequest) {
       }, { status: 500 });
     }
 
-    console.log('✅ Pagamento atualizado no banco');
 
     // 7️⃣ Se aprovado, creditar CP
     if (status === 'approved') {
-      console.log('💰 Pagamento APROVADO! Iniciando crédito de CP...');
 
       // Verificar se já foi creditado
       const { data: pagamento, error: checkError } = await supabase
@@ -205,7 +188,6 @@ export async function POST(request: NextRequest) {
       const totalCP = pagamento.cp_amount + (pagamento.bonus_cp || 0);
 
       if (pagamento.status === 'completed') {
-        console.log('⚠️ CP já creditado anteriormente - pulando');
         return NextResponse.json({ 
           received: true, 
           status: 'already_credited',
@@ -220,7 +202,6 @@ export async function POST(request: NextRequest) {
 
       // Se a função RPC não funcionar, fazer update direto
       if (creditError) {
-        console.log('⚠️ RPC falhou, tentando crédito direto...');
         
         const { data: currentProfile } = await supabase
           .from('profiles')
@@ -268,17 +249,12 @@ export async function POST(request: NextRequest) {
         })
         .eq('id', externalReference);
 
-      console.log(`✅ ${totalCP} CP creditados com sucesso! (${pagamento.cp_amount} base + ${pagamento.bonus_cp || 0} bônus)`);
       
     } else if (status === 'rejected') {
-      console.log(`❌ Pagamento REJEITADO: ${paymentData.status_detail}`);
     } else if (status === 'pending') {
-      console.log(`⏳ Pagamento PENDENTE: ${paymentData.status_detail}`);
     } else {
-      console.log(`ℹ️ Status: ${status}`);
     }
 
-    console.log('🔔 ===== WEBHOOK FINALIZADO COM SUCESSO =====');
     
     return NextResponse.json({ 
       received: true, 

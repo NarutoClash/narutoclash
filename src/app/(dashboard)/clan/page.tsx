@@ -37,9 +37,8 @@ import { Trophy, Target, Gift, Clock, CheckCircle, Timer } from 'lucide-react';
 import { ClanChat } from '../(authenticated)/clan/clanchat';
 import { ClanTechnologies } from '@/components/clan-technologies';
 import { ClanDonation } from '@/components/clan-donation';
-import { ClanBattleHistory } from '@/components/clan-battle-history';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ClanBattleSearch } from '@/components/clan-battle-search';
+import Link from 'next/link';
 
 
 // Função para calcular limite de membros baseado no nível do clã
@@ -1016,7 +1015,7 @@ export default function ClanPage() {
                             {isLeader && (
                               <AlertDialog>
                                 <AlertDialogTrigger asChild>
-                                  <Button size="icon" variant="outline" disabled={isSubmitting}>
+                                  <Button variant="outline" disabled={isSubmitting}>
                                     <Shield className="h-4 w-4 text-yellow-600" />
                                   </Button>
                                 </AlertDialogTrigger>
@@ -1042,7 +1041,7 @@ export default function ClanPage() {
 
                             <AlertDialog>
                               <AlertDialogTrigger asChild>
-                                <Button size="icon" variant="destructive" disabled={isSubmitting}>
+                                <Button variant="destructive" disabled={isSubmitting}>
                                   <UserX className="h-4 w-4" />
                                 </Button>
                               </AlertDialogTrigger>
@@ -1077,14 +1076,6 @@ export default function ClanPage() {
                 userId={user.id}
                 userName={userProfile.name}
                 supabase={supabase}
-              />
-            )}
-
-            {user && userProfile && (
-              <ClanBattleSearch
-                userProfile={userProfile}
-                supabase={supabase}
-                userId={user.id}
               />
             )}
 
@@ -1147,8 +1138,8 @@ export default function ClanPage() {
                               <p className="text-xs text-muted-foreground">Nível: {req.user_level}</p>
                             </div>
                             <div className="flex gap-2">
-                              <Button size="sm" variant="outline" className="text-red-500 border-red-500 hover:bg-red-500/10" onClick={() => handleManageRequest(req as WithId<JoinRequest & { clan_id: string }>, false)} disabled={isSubmitting}><UserX /></Button>
-                              <Button size="sm" className="bg-green-600 hover:bg-green-700" onClick={() => handleManageRequest(req as WithId<JoinRequest & { clan_id: string }>, true)} disabled={isSubmitting}><UserCheck /></Button>
+                              <Button variant="destructive" onClick={() => handleManageRequest(req as WithId<JoinRequest & { clan_id: string }>, false)} disabled={isSubmitting}><UserX /></Button>
+                              <Button  onClick={() => handleManageRequest(req as WithId<JoinRequest & { clan_id: string }>, true)} disabled={isSubmitting}><UserCheck /></Button>
                             </div>
                           </div>
                         ))}
@@ -1330,7 +1321,7 @@ export default function ClanPage() {
                     Tecnologias do Clã
                   </TabsTrigger>
                   <TabsTrigger value="battles">
-                    Histórico de Batalhas
+                    Guerra de Clãs
                   </TabsTrigger>
                 </TabsList>
               </CardHeader>
@@ -1353,11 +1344,17 @@ export default function ClanPage() {
                 </TabsContent>
 
                 <TabsContent value="battles" className="mt-0">
-                  <ClanBattleHistory
-                    clanId={clanData.id}
-                    clanName={clanData.name}
-                    supabase={supabase}
-                  />
+                  <div className="flex flex-col items-center gap-4 py-8 text-center">
+                    <p className="text-sm text-muted-foreground">
+                      As batalhas entre clãs agora acontecem na página de Guerra de Clãs.<br />
+                      Líderes podem abrir salas, convidar membros e desafiar outros clãs.
+                    </p>
+                    <Link href="/guerra">
+                      <button className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-red-600 hover:bg-red-500 text-white font-bold text-sm transition-colors">
+                        ⚔️ Ir para Guerra de Clãs
+                      </button>
+                    </Link>
+                  </div>
                 </TabsContent>
               </CardContent>
             </Tabs>
@@ -1415,7 +1412,7 @@ export default function ClanPage() {
                   <div className="space-y-1">
                     <p className="font-bold">{clan.name} [{clan.tag}]</p>
                   </div>
-                  <Button size="sm" onClick={() => handleJoinRequest(clan)} disabled={isSubmitting || !!localPendingClan}>
+                  <Button onClick={() => handleJoinRequest(clan)} disabled={isSubmitting || !!localPendingClan}>
                     <Send className="mr-2 h-3 w-3"/>
                     {localPendingClan === clan.id ? 'Pendente' : 'Solicitar'}
                   </Button>

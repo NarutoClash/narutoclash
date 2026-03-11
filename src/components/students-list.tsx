@@ -242,7 +242,6 @@ export function StudentsList({
 
                       {reward.isAvailable && !reward.isClaimed && (
                         <Button
-                          size="sm"
                           className="w-full"
                           onClick={() => handleClaimReward(student.id, reward)}
                           disabled={isClaiming}

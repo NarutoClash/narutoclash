@@ -18,6 +18,8 @@ import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import { BattleReport, BattleResult } from '@/components/battle-report';
+import { calcLogStats } from '@/lib/battle-system';
 
 // 🆕 Hook para buscar relatórios de batalha
 const useBattleReports = (supabase: any, userId: string | undefined) => {
@@ -306,7 +308,6 @@ export default function MessagesPage() {
                     <span className="text-sm">{receiverName}</span>
                     <Button
                       variant="ghost"
-                      size="sm"
                       onClick={() => {
                         setReceiverId('');
                         setReceiverName('');
@@ -513,7 +514,6 @@ export default function MessagesPage() {
                       </div>
                       <Button
                         variant="destructive"
-                        size="sm"
                         onClick={() => handleDeleteMessage(selectedMessage.id)}
                       >
                         <Trash2 className="h-4 w-4" />
@@ -600,7 +600,6 @@ export default function MessagesPage() {
                             </div>
                             <Button
                               variant="ghost"
-                              size="sm"
                               onClick={() => handleDeleteMessage(message.id)}
                               className="text-red-500 hover:text-red-600 hover:bg-red-500/10"
                             >
@@ -742,7 +741,6 @@ export default function MessagesPage() {
                       </div>
                       <Button
                         variant="destructive"
-                        size="sm"
                         onClick={() => handleDeleteReport(selectedReport.id)}
                       >
                         <Trash2 className="h-4 w-4" />
@@ -802,8 +800,35 @@ export default function MessagesPage() {
                       </CardContent>
                     </Card>
 
-                    {/* Rounds da Batalha */}
-                    {selectedReport.rounds && selectedReport.rounds.length > 0 && (
+                    {/* Relatório Visual da Batalha */}
+                    {selectedReport.rich_log && selectedReport.rich_log.length > 0 ? (
+                      <>
+                        <BattleReport
+                          log={selectedReport.rich_log}
+                          playerName="Você"
+                          opponentName={selectedReport.opponent?.name || 'Oponente'}
+                          context="hunt"
+                          playerLevel={undefined}
+                          opponentLevel={selectedReport.opponent?.level}
+                        />
+                        {(() => {
+                          const stats = calcLogStats(selectedReport.rich_log, 'player');
+                          return (
+                            <BattleResult
+                              winner={selectedReport.is_victory ? 'Você' : selectedReport.opponent?.name || 'Oponente'}
+                              totalTurns={stats.totalTurns}
+                              totalDamageDealt={stats.totalDamageDealt}
+                              totalDamageTaken={stats.totalDamageTaken}
+                              critCount={stats.critCount}
+                              passiveCount={stats.passiveCount}
+                              ryoGained={selectedReport.is_victory ? selectedReport.ryo_gained : undefined}
+                              xpGained={selectedReport.is_victory ? selectedReport.xp_gained : undefined}
+                              context="hunt"
+                            />
+                          );
+                        })()}
+                      </>
+                    ) : selectedReport.rounds && selectedReport.rounds.length > 0 ? (
                       <div className="space-y-3">
                         <h4 className="font-semibold text-sm">Rounds da Batalha</h4>
                         <ScrollArea className="h-[300px] pr-4">
@@ -816,7 +841,6 @@ export default function MessagesPage() {
                                     {round.winner === user?.id ? "Vitória" : "Derrota"}
                                   </Badge>
                                 </div>
-                                
                                 <div className="grid grid-cols-2 gap-2 text-xs">
                                   <div>
                                     <p className="text-muted-foreground">Seu Ataque</p>
@@ -838,7 +862,7 @@ export default function MessagesPage() {
                           </div>
                         </ScrollArea>
                       </div>
-                    )}
+                    ) : null}
 
                     {/* Informações de Expiração */}
                     <div className="flex items-center gap-2 text-xs text-muted-foreground p-3 rounded-md bg-muted/20">

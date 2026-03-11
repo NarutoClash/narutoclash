@@ -24,10 +24,19 @@ import { bossesData, type BossData } from '@/lib/bosses-data';
 import { 
   calculateDamage,
   getRandomAttackType,
+  calculateDynamicStats,
+  detectBuild,
+  getBuildInfo,
+  emptyBattleState,
+  buildLogEntry,
+  calcLogStats,
   JUTSU_GIFS
 } from '@/lib/battle-system';
+import type { RichBattleLogEntry, BuildEffect } from '@/lib/battle-system';
 import { EQUIPMENT_DATA } from '@/lib/battle-system/equipment-data';
+import { applyItemPassives } from '@/lib/battle-system/calculator';
 import { calculateFinalStats } from '@/lib/stats-calculator';
+import { BattleReport, BattleResult } from '@/components/battle-report';
 
 // ✅ CONSTANTES DO BOSS
 const BOSS_DOC_ID = 'current_boss';
@@ -278,16 +287,7 @@ const formatTime = (ms: number) => {
 };
 
 // ✅ TIPO DE BATTLE LOG
-type BattleLogEntry = string | {
-  turn: number;
-  attacker: 'player' | 'boss';
-  attackType?: string;
-  jutsuName: string;
-  jutsuGif: string | null;
-  damageLog: string;
-  damage: number;
-  playerHealth?: string;
-};
+type BattleLogEntry = RichBattleLogEntry;
 
 export default function InvasionPage() {
   const { user, supabase, isUserLoading: isAuthLoading } = useSupabase();
@@ -297,6 +297,7 @@ export default function InvasionPage() {
   const [isAttacking, setIsAttacking] = useState(false);
   const [lastBattleLog, setLastBattleLog] = useState<BattleLogEntry[]>([]);
   const [lastDrops, setLastDrops] = useState<any[]>([]);
+  const [lastBattlePlayerDied, setLastBattlePlayerDied] = useState(false);
   const [timeUntilAttack, setTimeUntilAttack] = useState(0);
   const [timeUntilRespawn, setTimeUntilRespawn] = useState(0);
   const [isPageReady, setIsPageReady] = useState(false);
@@ -360,13 +361,19 @@ export default function InvasionPage() {
       .upsert(newBossData);
     
     // ✅ RESETAR DANO E MILESTONES DE TODOS OS JOGADORES
-await supabase
-.from('profiles')
-.update({ 
-  boss_damage_dealt: 0,
-  boss_damage_milestones_claimed: []
-})
-.neq('id', '00000000-0000-0000-0000-000000000000'); // Atualiza todos
+    // Nota: O Supabase pode bloquear updates em massa via Client SDK por segurança (RLS).
+    // O ideal é usar uma RPC (Stored Procedure) para isso.
+    try {
+      await supabase
+        .from('profiles')
+        .update({ 
+          boss_damage_dealt: 0,
+          boss_damage_milestones_claimed: []
+        })
+        .neq('id', '00000000-0000-0000-0000-000000000000');
+    } catch (err) {
+      console.error("Erro ao resetar perfis globalmente:", err);
+    }
     
     // ✅ RESETAR DANO NO PERFIL LOCAL TAMBÉM
     if (setUserProfile) {
@@ -394,19 +401,41 @@ await supabase
       
       const now = Date.now();
       
-  
       if (error || !bossData) {
           await setupNewBoss(bossRef, setBossData);
-      } else if (bossData.current_health <= 0 && bossData.respawn_at && now >= bossData.respawn_at) {
+      } else if (bossData.status === 'defeated' && bossData.respawn_at && now >= bossData.respawn_at) {
+          // Só reseta se o status for 'defeated' E o tempo de respawn passou
           await setupNewBoss(bossRef, setBossData);
-      } else if (bossData.expires_at && bossData.current_health > 0 && now >= bossData.expires_at) {
+      } else if (bossData.status === 'active' && bossData.expires_at && now >= bossData.expires_at) {
+          // Só reseta por expiração se o boss ainda estiver ativo
           await setupNewBoss(bossRef, setBossData);
+      } else if (bossData && userProfile) {
+          // ✅ GARANTIR RESET LOCAL: Se o ID do boss mudou mas o dano do player não resetou
+          // Isso resolve o problema de jogadores que ficaram com dano acumulado de bosses anteriores
+          const currentBossInProfile = userProfile.boss_damage_milestones?.current_boss_id;
+          const actualBossId = bossData.boss_id;
+
+          if (currentBossInProfile && currentBossInProfile !== actualBossId) {
+            const resetData = {
+              boss_damage_dealt: 0,
+              boss_damage_milestones_claimed: [],
+              boss_damage_milestones: {
+                ...userProfile.boss_damage_milestones,
+                current_boss_id: actualBossId,
+                total_damage: 0,
+                claimed: []
+              }
+            };
+
+            await supabase.from('profiles').update(resetData).eq('id', user.id);
+            if (setUserProfile) setUserProfile((prev: any) => ({ ...prev, ...resetData }));
+          }
       }
     }
   
     checkAndSetupBoss();
     
-  }, [isBossLoading, isAuthLoading, user, supabase, bossRef, setBossData]);
+  }, [isBossLoading, isAuthLoading, user, supabase, bossRef, setBossData, userProfile, setUserProfile]);
 
 
   useEffect(() => {
@@ -473,7 +502,6 @@ await supabase
   useEffect(() => {
     if (!supabase || !user) return;
 
-    console.log('🔌 Iniciando subscription do perfil do usuário...');
 
     const channel = supabase
       .channel('user-profile-changes')
@@ -486,15 +514,12 @@ await supabase
           filter: `id=eq.${user.id}`
         },
         (payload) => {
-          console.log('👤 Perfil atualizado via subscription:', payload.new);
         }
       )
       .subscribe((status) => {
-        console.log('📡 Status da subscription do perfil:', status);
       });
 
     return () => {
-      console.log('🔌 Desconectando subscription do perfil...');
       supabase.removeChannel(channel);
     };
   }, [supabase, user]);
@@ -505,7 +530,6 @@ useEffect(() => {
   if (debugInfo) {
     try {
       const parsed = JSON.parse(debugInfo);
-      console.log('🎯 ÚLTIMO ATAQUE DEBUG:', parsed);
       
       // Manter por 10 segundos antes de limpar
       setTimeout(() => {
@@ -524,154 +548,233 @@ useEffect(() => {
 
   const handleAttack = async () => {
     if (isAttacking || !isPageReady) {
-      console.log('⚠️ Página ainda não está pronta, ignorando clique');
       return;
     }
     
     if (!canAttack || !userProfile || !bossRef || !supabase || !userProfileRef || !boss || isBossRespawning) return;
     
     // ✅ ADICIONE ESTES LOGS AQUI
-    console.log('🔍 ===== USER PROFILE COMPLETO =====');
-    console.log('userProfile:', userProfile);
-    console.log('Campos importantes:', {
-      id: userProfile.id,
-      name: userProfile.name,
-      vitality: userProfile.vitality,
-      taijutsu: userProfile.taijutsu,
-      ninjutsu: userProfile.ninjutsu,
-      genjutsu: userProfile.genjutsu,
-      selo: userProfile.selo,
-      intelligence: userProfile.intelligence,
-      elementLevels: userProfile.elementLevels,
-      element_levels: userProfile.element_levels,
-      jutsus: userProfile.jutsus,
-      weapon_id: userProfile.weapon_id,
-      weaponId: userProfile.weaponId,
-    });
-    console.log('====================================');
     
     setIsAttacking(true);
     setLastBattleLog([]);
   
     const playerStats = calculateFinalStats(userProfile);
-    console.log('📊 PLAYER STATS CALCULADOS:', playerStats);
     const bossLevel = boss?.boss_level || 100;
     const bossMaxHealth = boss?.max_health || 2000000;
     
     // ===== STATS DO BOSS (50% mais forte que o player) =====
     const bossStatsMultiplier = 1.5;
-    
+    const playerFighter = {
+      ...userProfile,
+      elementLevels: userProfile.element_levels || {},
+      jutsus: userProfile.jutsus || {},
+      // Mapear snake_case → camelCase para o sistema de passivas
+      weaponId: userProfile.weapon_id,
+      chestId:  userProfile.chest_id,
+      legsId:   userProfile.legs_id,
+      feetId:   userProfile.feet_id,
+      handsId:  userProfile.hands_id,
+    };
     const bossAttacker = {
-      vitality: (playerStats?.finalVitality || 0) * bossStatsMultiplier,
-      taijutsu: (playerStats?.finalTaijutsu || 0) * bossStatsMultiplier,
-      ninjutsu: (playerStats?.finalNinjutsu || 0) * bossStatsMultiplier,
-      genjutsu: (playerStats?.finalGenjutsu || 0) * bossStatsMultiplier,
-      intelligence: (playerStats?.finalIntelligence || 0) * bossStatsMultiplier,
-      selo: (playerStats?.finalSelo || 0) * bossStatsMultiplier,
-      elementLevels: userProfile.element_levels || {},  // ✅ CORRETO
+      vitality:     (playerStats?.finalVitality    || 0) * bossStatsMultiplier,
+      taijutsu:     (playerStats?.finalTaijutsu    || 0) * bossStatsMultiplier,
+      ninjutsu:     (playerStats?.finalNinjutsu    || 0) * bossStatsMultiplier,
+      genjutsu:     (playerStats?.finalGenjutsu    || 0) * bossStatsMultiplier,
+      intelligence: (playerStats?.finalIntelligence|| 0) * bossStatsMultiplier,
+      selo:         (playerStats?.finalSelo        || 0) * bossStatsMultiplier,
+      elementLevels: userProfile.element_levels || {},
       jutsus: userProfile.jutsus || {},
       name: boss?.name || 'Boss',
       level: bossLevel,
     };
-    
+
+    // ===== BUILD DO PLAYER =====
+    const playerBuild = detectBuild(playerStats!);
+    const playerBuildInfo = getBuildInfo(playerBuild);
+    const playerState = emptyBattleState();
+    const bossState = emptyBattleState(); // boss não usa passivas ofensivas
+
+    // Passivas de build que afetam HP máximo
+    let playerMaxHealth = playerBuild === 'protetor'
+      ? 100 + (playerStats?.finalVitality||0) * 15 + (playerStats?.finalIntelligence||0) * 8
+      : playerStats?.maxHealth || 100;
+    if (playerBuild === 'imortal') playerMaxHealth *= 1.25;
+
+    // Regen
+    if (playerBuild === 'guardiao') playerState.regenPercent = 0.03;
+    const suitonLv = (playerFighter.elementLevels?.['Suiton'] || 0);
+    if (suitonLv >= 10) playerState.regenPercent = Math.max(playerState.regenPercent, 0.05);
+
     // ===== MULTIPLICADOR DE DANO =====
-    const PLAYER_DAMAGE_MULTIPLIER = Math.floor(bossLevel / 10);
-    
+    const PLAYER_DAMAGE_MULTIPLIER = Math.max(1, Math.floor(bossLevel / 10));
+
     // ===== VARIÁVEIS DE BATALHA =====
-    let playerHealth = playerStats?.maxHealth || 100;
+    // Começa com a vida atual do perfil (salva após cada batalha)
+    const savedHp    = (userProfile as any)?.current_health ?? null;
+    let playerHealth = savedHp != null
+      ? Math.max(1, Math.min(playerMaxHealth, Math.floor(savedHp)))
+      : playerMaxHealth;
     let totalPlayerDamage = 0;
-    
+    let playerDied = false;
+
     const battleLog: BattleLogEntry[] = [];
-    battleLog.push(`Batalha iniciada! Você (${playerHealth.toFixed(0)} HP) vs ${boss.name} (Nível ${bossLevel}).`);
-    battleLog.push(`[Boss: ${(bossMaxHealth / 1000000).toFixed(1)}M HP | Multiplicador: x${PLAYER_DAMAGE_MULTIPLIER}]`);
-    
-// ===== LOOP DE BATALHA =====
-// ✅ CRIAR OBJETO playerFighter ANTES DO LOOP
-const playerFighter = {
-  ...userProfile,
-  elementLevels: userProfile.element_levels || {},  // ✅ Converter snake_case → camelCase
-  jutsus: userProfile.jutsus || {},
-};
+    battleLog.push(`⚔️ INVASÃO — ${boss.name} (Nível ${bossLevel}) | Build: ${playerBuildInfo.emoji} ${playerBuildInfo.name}`);
+    battleLog.push(`[Boss: ${(bossMaxHealth / 1000000).toFixed(1)}M HP | Multiplicador: ×${PLAYER_DAMAGE_MULTIPLIER}]`);
 
-let turn = 1;
-while (playerHealth > 0) {
-// ===== TURNO DO PLAYER =====
-const playerAttackType = getRandomAttackType(playerFighter);
+    let turn = 1;
+    while (playerHealth > 0) {
 
-if (playerAttackType) {
-  const { damage, log, jutsuUsed, jutsuGif } = calculateDamage(playerFighter, bossAttacker, playerAttackType, {
-    equipmentData: EQUIPMENT_DATA,
-    isBoss: true,
-  });
-   // ✅ SALVAR DEBUG NO LOCALSTORAGE
-   const debugInfo = {
-    attackType: playerAttackType,
-    jutsuUsed,
-    jutsuGif,
-    log,
-    damage
-  };
-  localStorage.setItem('lastAttackDebug', JSON.stringify(debugInfo));
-  
-  const finalDamage = damage * PLAYER_DAMAGE_MULTIPLIER;
-  totalPlayerDamage += finalDamage;
-  
-  // ✅ NOVO FORMATO: objeto com informações do jutsu
-  battleLog.push({
-    turn,
-    attacker: 'player',
-    attackType: playerAttackType,
-    jutsuName: jutsuUsed || (playerAttackType === 'taijutsu' ? 'Taijutsu' : playerAttackType === 'genjutsu' ? 'Genjutsu' : 'Ataque'),
-    jutsuGif: jutsuGif || null,
-    damageLog: log,
-    damage: Math.round(finalDamage)
-  });
-} else {
-  battleLog.push(`Turno ${turn} (Você): Você não conseguiu atacar.`);
-}
+      // ── Promover barreira pending → ativa ──
+      if (playerState.barrierPending) {
+        playerState.barrierActiveThisTurn = true;
+        playerState.barrierPending = false;
+      } else {
+        playerState.barrierActiveThisTurn = false;
+      }
 
-if (boss.current_health - totalPlayerDamage <= 0) {
-  break;
-}
+      // ── Passivas inicio_turno (regen de item, etc) ──
+      const playerHpPct = playerHealth / playerMaxHealth;
+      const dummyInvResult = { damage: 0, log: '', isCritical: false, buildEffects: [] } as any;
+      applyItemPassives(playerFighter, 'inicio_turno', dummyInvResult, bossState, playerState, playerHpPct, 1.0, 999999);
 
-// ===== TURNO DO BOSS =====
-const bossAttackType = getRandomAttackType(bossAttacker);
+      // Regen no início do turno
+      let invPlayerRegen = 0;
+      if (playerState.regenPercent > 0) {
+        invPlayerRegen = playerMaxHealth * playerState.regenPercent;
+        playerHealth = Math.min(playerMaxHealth, playerHealth + invPlayerRegen);
+      }
 
-if (bossAttackType) {
-  const { damage, log, jutsuUsed, jutsuGif } = calculateDamage(bossAttacker, playerFighter, bossAttackType, {
-    equipmentData: EQUIPMENT_DATA,
-    isBoss: true,
-  });
-  
-  playerHealth -= damage;
-  
-  // ✅ NOVO FORMATO: objeto com informações do jutsu
-  battleLog.push({
-    turn,
-    attacker: 'boss',
-    attackType: bossAttackType,
-    jutsuName: jutsuUsed || (bossAttackType === 'taijutsu' ? 'Taijutsu' : bossAttackType === 'genjutsu' ? 'Genjutsu' : 'Ataque do Boss'),
-    jutsuGif: jutsuGif || null,
-    damageLog: `${boss.name} ${log}`,
-    damage: Math.round(damage),
-    playerHealth: Math.max(0, playerHealth).toFixed(0)
-  });
-} else {
-  battleLog.push(`Turno ${turn} (Chefe): ${boss.name} não conseguiu atacar.`);
-}
+      // Lifesteal do turno anterior
+      if (playerState.lifestealHealed > 0) {
+        playerHealth = Math.min(playerMaxHealth, playerHealth + playerState.lifestealHealed);
+        invPlayerRegen += playerState.lifestealHealed;
+        playerState.lifestealHealed = 0;
+      }
 
-if (playerHealth <= 0) {
-  battleLog.push("Você foi derrotado!");
-  break;
-}
+      // Queimadura + Veneno
+      let invPlayerBurn = 0;
+      if (playerState.burnDamage > 0) {
+        invPlayerBurn += playerState.burnDamage;
+        playerHealth -= playerState.burnDamage;
+        playerState.burnDamage = 0;
+      }
+      if (playerState.poisonDamage > 0) {
+        invPlayerBurn += playerState.poisonDamage;
+        playerHealth -= playerState.poisonDamage;
+        playerState.poisonDamage = 0;
+      }
 
-turn++;
+      // ===== TURNO DO PLAYER =====
+      const playerAttackType = getRandomAttackType(playerFighter, playerStats ?? undefined);
 
-if (turn > 100) {
-  battleLog.push("A batalha foi longa demais e terminou. Você sobreviveu!");
-  break;
-}
-}  // ✅ FECHAR O WHILE AQUI!
+      if (playerAttackType) {
+        const result = calculateDamage(playerFighter, bossAttacker, playerAttackType, {
+          equipmentData: EQUIPMENT_DATA,
+          isBoss: true,
+          attackerBuild: playerBuild,
+          attackerState: playerState,
+          defenderState: bossState,
+          isFirstTurn: turn === 1,
+          attackerHpPct: playerHealth / playerMaxHealth,
+          defenderHpPct: 1.0,
+          defenderMaxHealth: bossMaxHealth,
+        });
+
+        const finalDamage = (result.damage + (result.secondHitDamage || 0)) * PLAYER_DAMAGE_MULTIPLIER;
+        totalPlayerDamage += finalDamage;
+
+        battleLog.push(buildLogEntry({
+          turn,
+          attacker: 'player',
+          attackType: playerAttackType,
+          result: { ...result, damage: result.damage * PLAYER_DAMAGE_MULTIPLIER, secondHitDamage: result.secondHitDamage ? result.secondHitDamage * PLAYER_DAMAGE_MULTIPLIER : undefined },
+          playerHealth,
+          playerMaxHealth,
+          opponentHealth: Math.max(0, boss.current_health - totalPlayerDamage),
+          opponentMaxHealth: bossMaxHealth,
+          attackerBuild: playerBuild,
+          regenApplied: invPlayerRegen,
+          burnDamageApplied: invPlayerBurn,
+        }));
+      } else {
+        battleLog.push(`Turno ${turn} (Você): Você não conseguiu atacar.`);
+      }
+
+      if (boss.current_health - totalPlayerDamage <= 0) break;
+
+      // ===== TURNO DO BOSS =====
+      const bossAttackType = getRandomAttackType(bossAttacker);
+
+      if (bossAttackType) {
+        const bossResult = calculateDamage(bossAttacker, playerFighter, bossAttackType, {
+          equipmentData: EQUIPMENT_DATA,
+          isBoss: true,
+          defenderBuild: playerBuild,
+          defenderState: playerState,
+        });
+
+        let bossDmg = bossResult.damage;
+
+        // Passivas ao_receber_dano do player na invasion
+        const recvInvResult = { damage: bossDmg, log: '', isCritical: false, buildEffects: [] } as any;
+        applyItemPassives(playerFighter, 'ao_receber_dano', recvInvResult, bossState, playerState,
+          playerHealth / playerMaxHealth, 1.0, bossMaxHealth);
+        const invReactions: BuildEffect[] = [...(recvInvResult.buildEffects || [])];
+
+        // Barreira de item do player
+        if (playerState.barrierActiveThisTurn) {
+          invReactions.push({ type: 'item_barreira_absorveu', label: '🛡️ Barreira absorveu o ataque!', color: '#38bdf8' });
+          bossDmg = 0;
+          playerState.barrierActiveThisTurn = false;
+        }
+
+        // Daikabe: -20% dano recebido
+        if (playerBuild === 'tanque') bossDmg *= 0.80;
+        // Shirogane: -15%
+        if (playerBuild === 'protetor') bossDmg *= 0.85;
+        // Doton lv10: barreira
+        if (!playerState.barrierUsed && (playerFighter.elementLevels?.['Doton'] || 0) >= 10) {
+          bossDmg *= 0.5;
+          playerState.barrierUsed = true;
+          invReactions.push({ type: 'barrier_blocked', label: '🪨 Barreira Doton absorveu 50%!', color: '#78716c' });
+        }
+
+        playerHealth -= bossDmg;
+
+        // Kairai: sobreviver à morte (1x por batalha)
+        if (playerBuild === 'imortal' && playerHealth <= 0 && !playerState.survivedDeathUsed && Math.random() < 0.2) {
+          playerHealth = 1;
+          playerState.survivedDeathUsed = true;
+          invReactions.push({ type: 'survived_death', label: '💀 Vontade de Ferro! Sobreviveu com 1 HP!', color: '#64748b' });
+        }
+
+        battleLog.push(buildLogEntry({
+          turn,
+          attacker: 'boss',
+          attackType: bossAttackType,
+          result: { ...bossResult, damage: bossDmg },
+          playerHealth: Math.max(0, playerHealth),
+          playerMaxHealth,
+          opponentHealth: Math.max(0, boss.current_health - totalPlayerDamage),
+          opponentMaxHealth: bossMaxHealth,
+          reactionEffects: invReactions,
+        }));
+      } else {
+        battleLog.push(`Turno ${turn} (Chefe): ${boss.name} não conseguiu atacar.`);
+      }
+
+      if (playerHealth <= 0) {
+        battleLog.push('💀 Você foi derrotado!');
+        playerDied = true;
+        break;
+      }
+
+      turn++;
+      if (turn > 100) {
+        battleLog.push('A batalha foi longa demais. Você sobreviveu!');
+        break;
+      }
+    }
 
 const finalDamageDealt = Math.max(0, Math.round(totalPlayerDamage));
     
@@ -709,10 +812,16 @@ try {
   const isBossDefeated = newBossHealth < 10;
   
   // 🆕 CRIAR profileUpdate AQUI (ANTES DE USAR)
+  const finalPlayerHealth = Math.max(0, Math.round(playerHealth));
   const profileUpdate: any = {
     last_boss_attack: Date.now(),
-    current_health: playerStats?.maxHealth || 100,
+    current_health: finalPlayerHealth,
     boss_damage_dealt: newPlayerDamage,
+    boss_damage_milestones: {
+      ...userProfile.boss_damage_milestones,
+      current_boss_id: boss.boss_id,
+      total_damage: newPlayerDamage
+    }
   };
   
   if (totalRyoReward > 0) {
@@ -721,11 +830,11 @@ try {
   }
   
   // ✅ PROCESSAR DERROTA DO BOSS (DEPOIS DE CRIAR profileUpdate)
-  if (isBossDefeated) {
-    bossUpdate.status = 'defeated';
-    bossUpdate.last_defeated_at = Date.now();
-    bossUpdate.last_defeated_by = userProfile.character_name;
-    bossUpdate.respawn_at = Date.now() + BOSS_RESPAWN_TIME;
+    if (isBossDefeated) {
+      bossUpdate.status = 'defeated';
+      bossUpdate.last_defeated_at = Date.now();
+      bossUpdate.last_defeated_by = userProfile.name; // Alterado de character_name para name
+      bossUpdate.respawn_at = Date.now() + BOSS_RESPAWN_TIME;
     
     battleLog.push(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
     battleLog.push(`🎉 VITÓRIA! VOCÊ DERROTOU ${boss?.name?.toUpperCase()}! 🎉`);
@@ -775,6 +884,7 @@ if (setUserProfile) {
 }
 
 setLastBattleLog(battleLog);
+setLastBattlePlayerDied(playerDied);
 localStorage.setItem('lastBattleLog', JSON.stringify(battleLog));
 
 // ✅ FORÇAR RELOAD DO STATUS AO NAVEGAR
@@ -1048,44 +1158,30 @@ sessionStorage.removeItem('status-last-reload'); // ← ADICIONAR ESTA LINHA
   </Alert>
 )}
             {lastBattleLog.length > 0 && (
-    <Alert variant="default">
-        <Swords className="h-4 w-4" />
-        <AlertTitle>Último Relatório de Batalha</AlertTitle>
-        <AlertDescription className="space-y-3 mt-2 max-h-96 overflow-y-auto">
-            {lastBattleLog.map((log, index) => {
-                // Se for string (logs antigos ou mensagens gerais)
-                if (typeof log === 'string') {
-                    return <p key={index} className="font-mono text-xs">{log}</p>;
-                }
-                
-                // Se for objeto (novo formato com jutsu e gif)
-                return (
-                    <div key={index} className="border-b border-border pb-3 mb-3 last:border-0">
-                        <p className="font-mono text-xs font-semibold mb-2">
-                            Turno {log.turn} ({log.attacker === 'player' ? 'Você' : 'Chefe'}): 
-                            <span className="text-primary ml-1">{log.jutsuName}</span>
-                        </p>
-                        
-                        {log.jutsuGif && (
-                            <div className="flex justify-center my-2">
-                                <img 
-                                    src={log.jutsuGif} 
-                                    alt={log.jutsuName}
-                                    className="w-full max-w-[200px] rounded-lg border-2 border-primary shadow-lg"
-                                />
-                            </div>
-                        )}
-                        
-                        <p className="font-mono text-xs text-muted-foreground">{log.damageLog}</p>
-                        <p className="font-mono text-xs text-amber-400 font-bold mt-1">
-                            [{log.damage.toLocaleString()} de dano]
-                        </p>
-                    </div>
-                );
-            })}
-        </AlertDescription>
-    </Alert>
-)}
+      <BattleReport
+        log={lastBattleLog}
+        playerName={userProfile?.name || 'Você'}
+        opponentName={boss?.name || 'Boss'}
+        context="invasion"
+        playerLevel={userProfile?.level}
+        opponentLevel={boss?.level}
+      />
+    )}
+    {lastBattleLog.length > 0 && (() => {
+      const stats = calcLogStats(lastBattleLog, 'player');
+      const bossDefeated = stats.totalDamageDealt > 0 && !lastBattlePlayerDied;
+      return (
+        <BattleResult
+          winner={bossDefeated ? 'Você' : boss?.name || 'Boss'}
+          totalTurns={stats.totalTurns}
+          totalDamageDealt={stats.totalDamageDealt}
+          totalDamageTaken={stats.totalDamageTaken}
+          critCount={stats.critCount}
+          passiveCount={stats.passiveCount}
+          context="invasion"
+        />
+      );
+    })()}
           </CardContent>
           <CardFooter className="flex-col gap-4">
           <Button 
@@ -1124,7 +1220,6 @@ sessionStorage.removeItem('status-last-reload'); // ← ADICIONAR ESTA LINHA
   }
 </p>
             
-            <p className="text-xs text-muted-foreground">Você pode atacar o chefe a cada 10 minutos.</p>
           </CardFooter>
         </Card>
       </div>

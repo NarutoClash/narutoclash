@@ -135,7 +135,6 @@ export default function LandingPage() {
             <div className="flex gap-4 justify-center flex-wrap">
               <Link href="/register">
                 <Button 
-                  size="lg" 
                   className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-lg px-8 py-6 shadow-lg shadow-orange-500/50 hover:shadow-orange-500/70 transition-all"
                 >
                   <Zap className="mr-2 h-5 w-5" />
@@ -143,7 +142,6 @@ export default function LandingPage() {
                 </Button>
               </Link>
               <Button 
-                size="lg" 
                 variant="outline" 
                 onClick={() => document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })}
                 className="border-orange-500/50 hover:bg-orange-500/10 text-lg px-8 py-6"
@@ -212,7 +210,6 @@ export default function LandingPage() {
               </p>
               <Link href="/register">
                 <Button 
-                  size="lg" 
                   className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-lg px-12 py-6 shadow-xl shadow-orange-500/50"
                 >
                   <Flame className="mr-2 h-5 w-5" />

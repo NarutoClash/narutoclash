@@ -46,7 +46,6 @@ export function InviteSection({ inviteCode }: { inviteCode: string }) {
             <Button 
               onClick={copyToClipboard}
               variant="outline"
-              size="icon"
             >
               {copied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
             </Button>
@@ -64,7 +63,6 @@ export function InviteSection({ inviteCode }: { inviteCode: string }) {
             <Button 
               onClick={copyToClipboard}
               variant="outline"
-              size="icon"
             >
               {copied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
             </Button>

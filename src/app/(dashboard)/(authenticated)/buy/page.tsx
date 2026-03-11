@@ -470,8 +470,7 @@ export default function ComprarCPPage() {
 
                     <CardFooter>
                       <Button 
-                        className="w-full bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 shadow-lg shadow-orange-500/50" 
-                        size="lg"
+                        className="w-full bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 shadow-lg shadow-orange-500/50"
                         onClick={() => handleClickComprar(pacote)}
                         disabled={isLoading || !systemReady}
                       >

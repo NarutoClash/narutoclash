@@ -21,6 +21,7 @@ import {
 import { useSupabase, useMemoSupabase } from '@/supabase';
 import { useDoc } from '@/supabase/hooks/use-doc';
 import { Loader2, Search, Timer, Swords, ScrollText, CheckCircle, Users } from 'lucide-react';
+import { BattleReport, BattleResult } from '@/components/battle-report';
 import Link from 'next/link';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
@@ -29,22 +30,18 @@ import {
   calculateDamage, 
   calculateDynamicStats, 
   getRandomAttackType,
+  detectBuild,
+  getBuildInfo,
+  emptyBattleState,
+  buildLogEntry,
+  calcLogStats,
 } from '@/lib/battle-system';
-
+import { applyItemPassives } from '@/lib/battle-system/calculator';
+import type { RichBattleLogEntry, FighterBattleState, BuildEffect } from '@/lib/battle-system';
 import { EQUIPMENT_DATA } from '@/lib/battle-system/equipment-data';
 import { useCollection } from '@/supabase';
 
-type BattleLogEntry = string | {
-  turn: number;
-  attacker: 'player' | 'opponent';
-  attackType?: string;
-  jutsuName: string;
-  jutsuGif: string | null;
-  damageLog: string;
-  damage: number;
-  playerHealth?: string;
-  opponentHealth?: string;
-};
+type BattleLogEntry = RichBattleLogEntry;
 
 const DAILY_HUNT_LIMIT_SECONDS = 3600; // 1 hour (base)
 const DAILY_HUNT_LIMIT_SECONDS_VIP = 7200; // 2 hours (VIP)
@@ -89,19 +86,17 @@ const hasPremiumPass = activePremiumPass && activePremiumPass.length > 0;
   const [opponent, setOpponent] = useState<any | null>(null);
   const [battleLog, setBattleLog] = useState<BattleLogEntry[]>([]);
   const [winner, setWinner] = useState<string | null>(null);
-  const [showDebug, setShowDebug] = useState(false);
-  const [debugData, setDebugData] = useState<any>(null);
+
   
   // useEffect para recuperar dados da batalha após reload
 useEffect(() => {
   const savedBattleData = localStorage.getItem('lastBattleReport');
   if (savedBattleData) {
     try {
-      const { battleLog, winner, opponent, debugData } = JSON.parse(savedBattleData);
+      const { battleLog, winner, opponent } = JSON.parse(savedBattleData);
       setBattleLog(battleLog);
       setWinner(winner);
       setOpponent(opponent);
-      setDebugData(debugData);
       
       // Inicia o cooldown automaticamente quando carregar o relatório de batalha
       setSearchCooldown(SEARCH_COOLDOWN_SECONDS);
@@ -201,67 +196,74 @@ useEffect(() => {
       ...userProfile,
       elementLevels: userProfile.element_levels || {},
       jutsus: userProfile.jutsus || {},
+      // Mapear snake_case → camelCase para o sistema de passivas
+      weaponId: userProfile.weapon_id,
+      chestId:  userProfile.chest_id,
+      legsId:   userProfile.legs_id,
+      feetId:   userProfile.feet_id,
+      handsId:  userProfile.hands_id,
     };
     
     const opponentFighter = {
       ...opponent,
       elementLevels: opponent.element_levels || {},
       jutsus: opponent.jutsus || {},
+      weaponId: opponent.weapon_id,
+      chestId:  opponent.chest_id,
+      legsId:   opponent.legs_id,
+      feetId:   opponent.feet_id,
+      handsId:  opponent.hands_id,
     };
   
     const playerStats = calculateDynamicStats(playerFighter, EQUIPMENT_DATA);
     const opponentStats = calculateDynamicStats(opponentFighter, EQUIPMENT_DATA);
-  
-    const debugInfo = {
-      player: {
-        name: playerFighter.name,
-        level: playerFighter.level,
-        baseStats: {
-          vitality: playerFighter.vitality,
-          taijutsu: playerFighter.taijutsu,
-          ninjutsu: playerFighter.ninjutsu,
-          genjutsu: playerFighter.genjutsu,
-          intelligence: playerFighter.intelligence,
-        },
-        calculatedStats: playerStats,
-        elementLevels: playerFighter.elementLevels,
-        jutsus: playerFighter.jutsus,
-      },
-      opponent: {
-        name: opponentFighter.name,
-        level: opponentFighter.level,
-        baseStats: {
-          vitality: opponentFighter.vitality,
-          taijutsu: opponentFighter.taijutsu,
-          ninjutsu: opponentFighter.ninjutsu,
-          genjutsu: opponentFighter.genjutsu,
-          intelligence: opponentFighter.intelligence,
-        },
-        calculatedStats: opponentStats,
-        elementLevels: opponentFighter.elementLevels,
-        jutsus: opponentFighter.jutsus,
-      },
-      turns: [],
-    };
-  
-    let playerHealth = userProfile.current_health ?? playerStats.maxHealth;
-    let opponentHealth = opponent.current_health ?? opponentStats.maxHealth;
+
+    // Detectar builds
+    const playerBuild = detectBuild(playerStats);
+    const opponentBuild = detectBuild(opponentStats);
+    const playerBuildInfo = getBuildInfo(playerBuild);
+    const opponentBuildInfo = getBuildInfo(opponentBuild);
+
+    // Estados de batalha (passivas, burns, etc)
+    const playerState = emptyBattleState();
+    const opponentState = emptyBattleState();
+
+    // Shirogane: HP máximo aumentado
+    let playerMaxHealth = playerBuild === 'protetor'
+      ? 100 + playerStats.finalVitality * 15 + playerStats.finalIntelligence * 8
+      : playerStats.maxHealth;
+    let opponentMaxHealth = opponentBuild === 'protetor'
+      ? 100 + opponentStats.finalVitality * 15 + opponentStats.finalIntelligence * 8
+      : opponentStats.maxHealth;
+
+    // Kairai: +25% HP máximo
+    if (playerBuild === 'imortal') playerMaxHealth *= 1.25;
+    if (opponentBuild === 'imortal') opponentMaxHealth *= 1.25;
+
+    // Regen: Shugosha e Suiton lv10
+    if (playerBuild === 'guardiao') playerState.regenPercent = 0.03;
+    if (opponentBuild === 'guardiao') opponentState.regenPercent = 0.03;
+    const playerSuitonLv = (playerFighter.elementLevels?.['Suiton'] || 0);
+    const opponentSuitonLv = (opponentFighter.elementLevels?.['Suiton'] || 0);
+    if (playerSuitonLv >= 10) playerState.regenPercent = Math.max(playerState.regenPercent, 0.05);
+    if (opponentSuitonLv >= 10) opponentState.regenPercent = Math.max(opponentState.regenPercent, 0.05);
+
+    // Doton lv10: barreira inicial
+    if ((playerFighter.elementLevels?.['Doton'] || 0) >= 10) playerState.barrierUsed = false;
+    if ((opponentFighter.elementLevels?.['Doton'] || 0) >= 10) opponentState.barrierUsed = false;
+
+    let playerHealth = userProfile.current_health ?? playerMaxHealth;
+    let opponentHealth = opponent.current_health ?? opponentMaxHealth;
   
     const log: BattleLogEntry[] = [];
-    log.push(`Batalha iniciada! ${playerFighter.name} (${playerHealth.toFixed(0)} HP) vs ${opponentFighter.name} (${opponentHealth.toFixed(0)} HP).`);
+    log.push(`⚔️ ${playerFighter.name} [${playerBuildInfo.emoji} ${playerBuildInfo.name}] vs ${opponentFighter.name} [${opponentBuildInfo.emoji} ${opponentBuildInfo.name}]`);
     
     let turn = 1;
     let battleWinner = null;
-    
     const roundsForDB: any[] = [];
+    const isFirstTurn = true;
   
     while (playerHealth > 0 && opponentHealth > 0 && turn < 50) {
-      const turnData: any = {
-        turnNumber: turn,
-        playerAction: null,
-        opponentAction: null,
-      };
-      
       const roundData: any = {
         round_number: turn,
         player_damage: 0,
@@ -270,42 +272,141 @@ useEffect(() => {
         opponent_jutsu: null,
         winner: null,
       };
+
+      // ── Promover barreira pending → ativa (ativada no turno anterior) ──
+      if (playerState.barrierPending) {
+        playerState.barrierActiveThisTurn = true;
+        playerState.barrierPending = false;
+      } else {
+        playerState.barrierActiveThisTurn = false;
+      }
+      if (opponentState.barrierPending) {
+        opponentState.barrierActiveThisTurn = true;
+        opponentState.barrierPending = false;
+      } else {
+        opponentState.barrierActiveThisTurn = false;
+      }
+
+      // ── Passivas de início de turno ──
+      const playerHpPct = playerHealth / playerMaxHealth;
+      const oppHpPct = opponentHealth / opponentMaxHealth;
+
+      // Gatilho inicio_turno para ambos (regen de item, etc)
+      const dummyResultP = { damage: 0, log: '', isCritical: false, buildEffects: [] } as any;
+      applyItemPassives(playerFighter, 'inicio_turno', dummyResultP, opponentState, playerState, playerHpPct, oppHpPct, opponentMaxHealth);
+      const dummyResultO = { damage: 0, log: '', isCritical: false, buildEffects: [] } as any;
+      applyItemPassives(opponentFighter, 'inicio_turno', dummyResultO, playerState, opponentState, oppHpPct, playerHpPct, playerMaxHealth);
+
+      // Regen no início do turno
+      let playerRegen = 0;
+      let opponentRegen = 0;
+      if (playerState.regenPercent > 0) {
+        playerRegen = playerMaxHealth * playerState.regenPercent;
+        playerHealth = Math.min(playerMaxHealth, playerHealth + playerRegen);
+      }
+      if (opponentState.regenPercent > 0) {
+        opponentRegen = opponentMaxHealth * opponentState.regenPercent;
+        opponentHealth = Math.min(opponentMaxHealth, opponentHealth + opponentRegen);
+      }
+
+      // Lifesteal do turno anterior → curar
+      if (playerState.lifestealHealed > 0) {
+        playerHealth = Math.min(playerMaxHealth, playerHealth + playerState.lifestealHealed);
+        playerRegen += playerState.lifestealHealed;
+        playerState.lifestealHealed = 0;
+      }
+      if (opponentState.lifestealHealed > 0) {
+        opponentHealth = Math.min(opponentMaxHealth, opponentHealth + opponentState.lifestealHealed);
+        opponentRegen += opponentState.lifestealHealed;
+        opponentState.lifestealHealed = 0;
+      }
+
+      // Queimadura + Veneno no início do turno
+      let playerBurnThisTurn = 0;
+      let opponentBurnThisTurn = 0;
+      if (playerState.burnDamage > 0) {
+        playerBurnThisTurn = playerState.burnDamage;
+        playerHealth -= playerBurnThisTurn;
+        playerState.burnDamage = 0;
+      }
+      if (playerState.poisonDamage > 0) {
+        playerBurnThisTurn += playerState.poisonDamage;
+        playerHealth -= playerState.poisonDamage;
+        playerState.poisonDamage = 0;
+      }
+      if (opponentState.burnDamage > 0) {
+        opponentBurnThisTurn = opponentState.burnDamage;
+        opponentHealth -= opponentBurnThisTurn;
+        opponentState.burnDamage = 0;
+      }
+      if (opponentState.poisonDamage > 0) {
+        opponentBurnThisTurn += opponentState.poisonDamage;
+        opponentHealth -= opponentState.poisonDamage;
+        opponentState.poisonDamage = 0;
+      }
   
       // ===== TURNO DO PLAYER =====
-      const playerAttackType = getRandomAttackType(playerFighter);
+      const playerAttackType = getRandomAttackType(playerFighter, playerStats);
       
       if (playerAttackType) {
-        const { damage, log: damageLog, jutsuUsed, jutsuGif } = calculateDamage(playerFighter, opponentFighter, playerAttackType, {
+        const result = calculateDamage(playerFighter, opponentFighter, playerAttackType, {
           equipmentData: EQUIPMENT_DATA,
+          attackerBuild: playerBuild,
+          defenderBuild: opponentBuild,
+          attackerState: playerState,
+          defenderState: opponentState,
+          isFirstTurn: turn === 1,
+          attackerHpPct: playerHealth / playerMaxHealth,
+          defenderHpPct: opponentHealth / opponentMaxHealth,
+          defenderMaxHealth: opponentMaxHealth,
         });
-  
-        turnData.playerAction = {
-          attackType: playerAttackType,
-          damage: damage,
-          jutsuUsed: jutsuUsed,
-          opponentHealthBefore: opponentHealth,
-          opponentHealthAfter: Math.max(0, opponentHealth - damage),
-        };
+
+        // Passivas ao_receber_dano do oponente (barreira de item, refletir)
+        const recvResultOpp = { damage: result.damage, log: '', isCritical: false, buildEffects: [] } as any;
+        applyItemPassives(opponentFighter, 'ao_receber_dano', recvResultOpp, playerState, opponentState,
+          opponentHealth / opponentMaxHealth, playerHealth / playerMaxHealth, playerMaxHealth);
+        // NÃO misturar no buildEffects — vão para reactionEffects separado
+        const playerTurnReactions: BuildEffect[] = [...(recvResultOpp.buildEffects || [])];
+
+        // Refletir: dano devolvido ao player
+        if (opponentState.reflectDamage > 0) {
+          const reflected = opponentState.reflectDamage;
+          opponentState.reflectDamage = 0;
+          playerHealth = Math.max(0, playerHealth - reflected);
+          playerTurnReactions.push({ type: 'item_refletir', label: `💥 Refletiu ${reflected.toFixed(0)} de dano de volta!`, color: '#f0abfc', value: reflected });
+        }
+
+        // Barreira de item do oponente (absorve ataque inteiro)
+        let actualDamage = result.damage + (result.secondHitDamage || 0);
+        if (opponentState.barrierActiveThisTurn) {
+          playerTurnReactions.push({ type: 'item_barreira_absorveu', label: '🛡️ Barreira absorveu o ataque!', color: '#38bdf8' });
+          actualDamage = 0;
+          opponentState.barrierActiveThisTurn = false;
+        }
+        // Doton lv10: barreira absorve 50% do primeiro dano
+        if (!opponentState.barrierUsed && (opponentFighter.elementLevels?.['Doton'] || 0) >= 10) {
+          actualDamage *= 0.5;
+          opponentState.barrierUsed = true;
+          playerTurnReactions.push({ type: 'barrier_blocked', label: '🪨 Passiva Doton! Barreira absorveu 50% do dano', color: '#78716c' });
+        }
         
-        roundData.player_damage = Math.round(damage);
-        roundData.player_jutsu = jutsuUsed;
+        roundData.player_damage = Math.round(actualDamage);
+        roundData.player_jutsu = result.jutsuUsed;
+
+        result.damage = actualDamage;
+        result.secondHitDamage = undefined;
         
-        opponentHealth -= damage;
+        opponentHealth -= actualDamage;
         opponentHealth = Math.max(0, opponentHealth);
         
-        log.push({
-          turn: turn,
-          attacker: 'player',
-          attackType: playerAttackType,
-          jutsuName: jutsuUsed || 'Ataque básico',
-          jutsuGif: jutsuGif || null,
-          damageLog: damageLog,
-          damage: damage,
-          opponentHealth: `${opponentHealth.toFixed(0)} HP`
-        });
+        log.push(buildLogEntry({
+          turn, attacker: 'player', attackType: playerAttackType, result,
+          playerHealth, playerMaxHealth, opponentHealth, opponentMaxHealth,
+          attackerBuild: playerBuild, regenApplied: playerRegen, burnDamageApplied: playerBurnThisTurn,
+          reactionEffects: playerTurnReactions,
+        }));
       } else {
         log.push(`Turno ${turn} (Você): Você não conseguiu atacar.`);
-        turnData.playerAction = { failed: true };
       }
       
       if (opponentHealth <= 0) {
@@ -315,7 +416,6 @@ useEffect(() => {
         const xpWon = 20;
         log.push(`${playerFighter.name} venceu a batalha e ganhou ${ryoWon} Ryo e ${xpWon} XP!`);
         
-        debugInfo.turns.push(turnData);
         roundsForDB.push(roundData);
         
         const newExperience = (userProfile.experience || 0) + xpWon;
@@ -356,6 +456,8 @@ useEffect(() => {
             ryo_lost: 0,
             final_health: playerFinalHealth,
             rounds: roundsForDB,
+            rich_log: log,
+            viewed: false,
           });
         
         await supabase
@@ -376,6 +478,8 @@ useEffect(() => {
               opponent_jutsu: r.player_jutsu,
               winner: r.winner === user.id ? opponent.id : user.id,
             })),
+            rich_log: log,
+            viewed: false,
           });
   
         await supabase
@@ -390,43 +494,75 @@ useEffect(() => {
       }
   
       // ===== TURNO DO OPONENTE =====
-      const opponentAttackType = getRandomAttackType(opponentFighter);
+      const opponentAttackType = getRandomAttackType(opponentFighter, opponentStats);
       
       if (opponentAttackType) {
-        const { damage, log: damageLog, jutsuUsed, jutsuGif } = calculateDamage(opponentFighter, playerFighter, opponentAttackType, {
+        const resultOpp = calculateDamage(opponentFighter, playerFighter, opponentAttackType, {
           equipmentData: EQUIPMENT_DATA,
+          attackerBuild: opponentBuild,
+          defenderBuild: playerBuild,
+          attackerState: opponentState,
+          defenderState: playerState,
+          isFirstTurn: turn === 1,
+          attackerHpPct: opponentHealth / opponentMaxHealth,
+          defenderHpPct: playerHealth / playerMaxHealth,
+          defenderMaxHealth: playerMaxHealth,
         });
-  
-        turnData.opponentAction = {
-          attackType: opponentAttackType,
-          damage: damage,
-          jutsuUsed: jutsuUsed,
-          playerHealthBefore: playerHealth,
-          playerHealthAfter: Math.max(0, playerHealth - damage),
-        };
+
+        // Passivas ao_receber_dano do player (barreira de item, refletir)
+        const recvResultP = { damage: resultOpp.damage, log: '', isCritical: false, buildEffects: [] } as any;
+        applyItemPassives(playerFighter, 'ao_receber_dano', recvResultP, opponentState, playerState,
+          playerHealth / playerMaxHealth, opponentHealth / opponentMaxHealth, opponentMaxHealth);
+        // NÃO misturar no buildEffects — vão para reactionEffects separado
+        const oppTurnReactions: BuildEffect[] = [...(recvResultP.buildEffects || [])];
+
+        // Refletir: dano devolvido ao oponente
+        if (playerState.reflectDamage > 0) {
+          const reflected = playerState.reflectDamage;
+          playerState.reflectDamage = 0;
+          opponentHealth = Math.max(0, opponentHealth - reflected);
+          oppTurnReactions.push({ type: 'item_refletir', label: `💥 Refletiu ${reflected.toFixed(0)} de dano de volta!`, color: '#f0abfc', value: reflected });
+        }
+
+        // Barreira de item do player
+        let actualDmgOpp = resultOpp.damage + (resultOpp.secondHitDamage || 0);
+        if (playerState.barrierActiveThisTurn) {
+          oppTurnReactions.push({ type: 'item_barreira_absorveu', label: '🛡️ Barreira absorveu o ataque!', color: '#38bdf8' });
+          actualDmgOpp = 0;
+          playerState.barrierActiveThisTurn = false;
+        }
+        // Doton lv10: barreira player
+        if (!playerState.barrierUsed && (playerFighter.elementLevels?.['Doton'] || 0) >= 10) {
+          actualDmgOpp *= 0.5;
+          playerState.barrierUsed = true;
+          oppTurnReactions.push({ type: 'barrier_blocked', label: '🪨 Passiva Doton! Barreira absorveu 50% do dano', color: '#78716c' });
+        }
         
-        roundData.opponent_damage = Math.round(damage);
-        roundData.opponent_jutsu = jutsuUsed;
+        roundData.opponent_damage = Math.round(actualDmgOpp);
+        roundData.opponent_jutsu = resultOpp.jutsuUsed;
+
+        resultOpp.damage = actualDmgOpp;
+        resultOpp.secondHitDamage = undefined;
         
-        playerHealth -= damage;
+        playerHealth -= actualDmgOpp;
         playerHealth = Math.max(0, playerHealth);
+
+        // Kairai: sobreviver à morte
+        if (playerBuild === 'imortal' && playerHealth <= 0 && !playerState.survivedDeathUsed && Math.random() < 0.2) {
+          playerHealth = 1;
+          playerState.survivedDeathUsed = true;
+          oppTurnReactions.push({ type: 'survived_death', label: '💀 Vontade de Ferro! Sobreviveu com 1 HP!', color: '#64748b' });
+        }
         
-        log.push({
-          turn: turn,
-          attacker: 'opponent',
-          attackType: opponentAttackType,
-          jutsuName: jutsuUsed || 'Ataque básico',
-          jutsuGif: jutsuGif || null,
-          damageLog: damageLog,
-          damage: damage,
-          playerHealth: `${playerHealth.toFixed(0)} HP`
-        });
+        log.push(buildLogEntry({
+          turn, attacker: 'opponent', attackType: opponentAttackType, result: resultOpp,
+          playerHealth, playerMaxHealth, opponentHealth, opponentMaxHealth,
+          attackerBuild: opponentBuild, regenApplied: opponentRegen, burnDamageApplied: opponentBurnThisTurn,
+          reactionEffects: oppTurnReactions,
+        }));
       } else {
         log.push(`Turno ${turn} (Oponente): ${opponentFighter.name} não conseguiu atacar.`);
-        turnData.opponentAction = { failed: true };
       }
-  
-      debugInfo.turns.push(turnData);
       
       if (roundData.player_damage > roundData.opponent_damage) {
         roundData.winner = user.id;
@@ -456,6 +592,8 @@ useEffect(() => {
             ryo_lost: ryoLost,
             final_health: 0,
             rounds: roundsForDB,
+            rich_log: log,
+            viewed: false,
           });
         
         await supabase
@@ -476,6 +614,8 @@ useEffect(() => {
               opponent_jutsu: r.player_jutsu,
               winner: r.winner === user.id ? opponent.id : r.winner === opponent.id ? user.id : null,
             })),
+            rich_log: log,
+            viewed: false,
           });
   
         await supabase
@@ -512,17 +652,16 @@ useEffect(() => {
       battleLog: log,
       winner: battleWinner === 'player' ? playerFighter.name : battleWinner === 'opponent' ? opponentFighter.name : "Empate",
       opponent: opponent,
-      debugData: debugInfo,
     };
     
     localStorage.setItem('lastBattleReport', JSON.stringify(battleReport));
-    
+
     // Inicia cooldown após batalha
     setSearchCooldown(SEARCH_COOLDOWN_SECONDS);
-    
+
     window.location.reload();
   };
-  
+
   const handleStartHunt = async () => {
     if (!userProfileRef || !supabase || !userProfile || userProfile.active_mission) return;
 
@@ -621,12 +760,6 @@ useEffect(() => {
       // ✅ DESCONTAR 50 CHAKRA
       const newChakra = Math.max(0, currentChakra - 50);
       
-      console.log('🔍 DEBUG - Desconto de Chakra:', {
-        userId: user.id,
-        chakraAntes: currentChakra,
-        chakraDepois: newChakra
-      });
-      
       const { data: updateData, error: updateError } = await supabase
         .from('profiles')
         .update({
@@ -634,11 +767,6 @@ useEffect(() => {
         })
         .eq('id', user.id)
         .select();
-      
-      console.log('📝 Resultado da atualização:', { 
-        data: updateData, 
-        error: updateError 
-      });
       
       if (updateError) {
         console.error('❌ Erro ao atualizar chakra:', updateError);
@@ -661,8 +789,6 @@ useEffect(() => {
         setIsSearching(false);
         return;
       }
-      
-      console.log('✅ Chakra descontado com sucesso:', updateData[0]);
       
       toast({
         title: 'Oponente Encontrado!',
@@ -794,6 +920,7 @@ const remainingHuntTime = Math.max(0, huntLimit - dailyHuntTimeUsed);
         title="Caçadas"
         description="Cace outros ninjas para ganhar recompensas e provar seu valor."
       />
+
       <div className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-8">
         <Card>
           <CardHeader>
@@ -824,58 +951,31 @@ const remainingHuntTime = Math.max(0, huntLimit - dailyHuntTimeUsed);
               </Card>
             )}
 
-            {battleLog.length > 0 && (
-              <Alert variant="default" className="max-h-96 overflow-y-auto">
-                <ScrollText className="h-4 w-4" />
-                <AlertTitle>Relatório de Batalha</AlertTitle>
-                <AlertDescription className="font-mono text-xs space-y-3 mt-2">
-                  {battleLog.map((log, index) => {
-                    if (typeof log === 'string') {
-                      return <p key={index} className="text-muted-foreground">{log}</p>;
-                    }
-                    
-                    return (
-                      <div key={index} className="space-y-2 pb-2 border-b border-border/50">
-                        <p className="font-semibold">
-                          Turno {log.turn} - {log.attacker === 'player' ? '⚔️ Você' : '🤖 Oponente'}
-                        </p>
-                        
-                        {log.jutsuGif && (
-                          <div className="flex justify-center my-2">
-                            <img 
-                              src={log.jutsuGif} 
-                              alt={log.jutsuName}
-                              className="w-32 h-32 rounded-md object-cover border-2 border-primary/20"
-                            />
-                          </div>
-                        )}
-                        
-                        <p className="text-primary font-medium">
-                          {log.jutsuName}
-                        </p>
-                        
-                        <p className={log.attacker === 'player' ? 'text-blue-600' : 'text-red-600'}>
-                          {log.damageLog}
-                        </p>
-                        
-                        <p className="text-xs text-muted-foreground">
-                          {log.attacker === 'player' 
-                            ? `Vida do oponente: ${log.opponentHealth}`
-                            : `Sua vida: ${log.playerHealth}`
-                          }
-                        </p>
-                      </div>
-                    );
-                  })}
-                </AlertDescription>
-              </Alert>
+            {battleLog.length > 0 && opponent && (
+              <BattleReport
+                log={battleLog}
+                playerName={userProfile?.name || 'Você'}
+                opponentName={opponent.name || 'Oponente'}
+                context="hunt"
+                playerLevel={userProfile?.level}
+                opponentLevel={opponent?.level}
+              />
             )}
             
-            {winner && (
-              <div className="p-3 rounded-md bg-accent text-accent-foreground text-center font-bold text-lg">
-                <p>🏆 Vencedor: {winner} 🏆</p>
-              </div>
-            )}
+            {winner && battleLog.length > 0 && (() => {
+              const stats = calcLogStats(battleLog, 'player');
+              return (
+                <BattleResult
+                  winner={winner}
+                  totalTurns={stats.totalTurns}
+                  totalDamageDealt={stats.totalDamageDealt}
+                  totalDamageTaken={stats.totalDamageTaken}
+                  critCount={stats.critCount}
+                  passiveCount={stats.passiveCount}
+                  context="hunt"
+                />
+              );
+            })()}
           </CardContent>  {/* ← Fechar CardContent aqui */}
           <CardFooter>  {/* ← CardFooter fora de CardContent */}
   {!opponent || winner ? (

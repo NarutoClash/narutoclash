@@ -379,7 +379,6 @@ function CreateCharacterContent() {
                                 key={village}
                                 type="button"
                                 variant={field.value === village ? 'default' : 'outline'}
-                                size="sm"
                                 onClick={() => field.onChange(village)}
                                 className={cn(
                                   'transition-all',

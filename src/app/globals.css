@@ -1,67 +1,67 @@
+@import url('https://fonts.googleapis.com/css2?family=Permanent+Marker&family=Outfit:wght@300;400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+
 body {
-  font-family: 'Space Grotesk', sans-serif;
+  font-family: 'Outfit', sans-serif;
 }
 
 @layer base {
   :root {
-    /* Fundo alterado para #130d16 (convertido para HSL: 284 17% 7%) */
-    --background: 284 17% 7%; 
-    --foreground: 0 0% 98%;
+    /* ── Navbar A Yellow Theme ── */
+    --background: 36 20% 90%;        /* #ede8e0 areia */
+    --foreground: 0 0% 8%;           /* #141414 quase preto */
 
-    --card: 284 17% 9%; /* Um tom levemente mais claro que o fundo para os cards */
-    --card-foreground: 0 0% 98%;
+    --card: 36 30% 96%;              /* #f8f4ec cards creme claro */
+    --card-foreground: 0 0% 8%;
 
-    --popover: 284 17% 8%;
-    --popover-foreground: 0 0% 98%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 8%;
 
-    /* Amarelo/Laranja Brilhante (Chakra/Destaque) */
-    --primary: 24 95% 53%; 
-    --primary-foreground: 0 0% 100%;
+    --primary: 48 100% 50%;          /* #ffcc00 amarelo vivid */
+    --primary-foreground: 0 0% 10%;
 
-    /* Laranja Avermelhado (Ação/Botões) */
-    --secondary: 10 85% 50%;
-    --secondary-foreground: 0 0% 100%;
+    --secondary: 54 100% 90%;        /* amarelo bem claro */
+    --secondary-foreground: 40 60% 20%;
 
-    --muted: 284 10% 15%;
-    --muted-foreground: 284 10% 65%;
+    --muted: 54 60% 92%;
+    --muted-foreground: 0 0% 30%;    /* #4d4d4d cinza escuro */
 
-    --accent: 24 95% 15%;
-    --accent-foreground: 24 95% 53%;
+    --accent: 33 100% 50%;
+    --accent-foreground: 30 100% 24%;
 
     --destructive: 0 84% 60%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive-foreground: 0 0% 100%;
 
-    /* Bordas ajustadas para combinar com o fundo arroxeado escuro */
-    --border: 284 20% 15%;
-    --input: 284 20% 15%;
-    --ring: 24 95% 53%;
+    --border: 48 100% 50%;           /* #ffcc00 bordas amarelas */
+    --input: 48 60% 88%;
+    --ring: 48 100% 50%;
 
     --radius: 0.5rem;
-    
+
     --hp-color: 0 72% 51%;
     --chakra-color: 217 91% 60%;
-    
-    --chart-1: 24 95% 53%;
-    --chart-2: 10 85% 50%;
 
-    /* Sidebar acompanhando o novo fundo */
-    --sidebar-background: 284 17% 8%;
-    --sidebar-foreground: 0 0% 90%;
-    --sidebar-primary: 24 95% 53%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 284 15% 12%;
-    --sidebar-accent-foreground: 24 95% 53%;
-    --sidebar-border: 284 20% 12%;
-    --sidebar-ring: 24 95% 53%;
+    --chart-1: 48 100% 50%;
+    --chart-2: 40 60% 40%;
+
+    /* ── Sidebar ── */
+    --sidebar-background: 54 100% 97%;   /* sidebar mais clara que o fundo */
+    --sidebar-foreground: 0 0% 10%;        /* #1a1a1a preto forte */
+    --sidebar-primary: 48 100% 50%;
+    --sidebar-primary-foreground: 0 0% 10%;
+    --sidebar-accent: 33 100% 50%;         /* #ff8c00 laranja */
+    --sidebar-accent-foreground: 0 0% 5%;      /* #0d0d0d preto */
+    --sidebar-border: 48 100% 50%;
+    --sidebar-ring: 48 100% 50%;
   }
 
   .dark {
-    --background: 284 17% 7%;
-    --foreground: 0 0% 98%;
+    --background: 54 100% 97%;
+    --foreground: 0 0% 8%;
   }
 }
 
@@ -71,17 +71,10 @@ body {
   }
   body {
     @apply bg-background text-foreground;
-    background-color: #130d16; /* Garantia da cor sólida */
-    background-image: 
-      radial-gradient(ellipse at top, rgba(249, 115, 22, 0.08) 0%, transparent 50%),
-      radial-gradient(ellipse at bottom, rgba(147, 51, 234, 0.05) 0%, transparent 50%), /* Toque roxo no fundo */
-      repeating-linear-gradient(
-        45deg,
-        transparent,
-        transparent 100px,
-        rgba(249, 115, 22, 0.01) 100px,
-        rgba(249, 115, 22, 0.01) 200px
-      );
+    background-color: #ede8e0;
+    background-image:
+      radial-gradient(ellipse at top, rgba(255, 204, 0, 0.08) 0%, transparent 50%),
+      radial-gradient(ellipse at bottom, rgba(255, 204, 0, 0.04) 0%, transparent 50%);
     background-attachment: fixed;
   }
 }

@@ -437,7 +437,7 @@ export default function CursedSealPage() {
                       <CardFooter>
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
-                            <Button variant="secondary" className="w-full bg-purple-600 hover:bg-purple-700 text-white" disabled={isSealActive}>
+                            <Button variant="secondary" className="w-full" disabled={isSealActive}>
                               <Sparkles className="mr-2 h-4 w-4" />
                               {isSealActive ? 'Desative o selo para evoluir' : 'Forçar Evolução (25% chance)'}
                             </Button>

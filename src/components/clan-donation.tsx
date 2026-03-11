@@ -147,7 +147,6 @@ export function ClanDonation({ clanId, userRyo, userId, userName, supabase }: Cl
             <Button
               key={value}
               variant="outline"
-              size="sm"
               onClick={() => setAmount(value.toString())}
               disabled={value > userRyo}
             >
