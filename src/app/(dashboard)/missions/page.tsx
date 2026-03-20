@@ -410,6 +410,7 @@ useEffect(() => {
 useEffect(() => {
     if (!userProfile || !userProfileRef) return;
 
+    const runReset = async () => {
         const now = new Date();
         const nowUTC = now.getTime();
         const brtOffset = -3 * 60 * 60 * 1000;
@@ -430,12 +431,31 @@ useEffect(() => {
         let currentMissions = userProfile.daily_mission_state?.missions || [];
 
         if (shouldReset) {
+            if (!supabase) return;
+
+            // Anti-duplo-reset: busca o estado atual do banco antes de escrever.
+            // Se outra aba já resetou (nextReset > now), usa o estado dela sem sobrescrever.
+            const { data: freshProfile } = await supabase
+                .from('profiles')
+                .select('daily_mission_state')
+                .eq('id', userProfileRef.id)
+                .single();
+
+            const freshNextReset = freshProfile?.daily_mission_state?.nextReset || 0;
+            if (freshNextReset > now.getTime()) {
+                // Outra aba já resetou — só atualiza a UI local com o estado do banco
+                const freshMissions = (freshProfile?.daily_mission_state?.missions || [])
+                    .map((m: {id: string}) => missionsData.find(md => md.id === m.id))
+                    .filter(Boolean) as Mission[];
+                setDailyMissions(freshMissions);
+                return;
+            }
+
             const newMissions = generateNewMissions(nextResetTimestamp.toString());
             
             const activeDailyMission = userProfile.active_mission ? userProfile.daily_mission_state?.missions.find((m: {id: string}) => m.id === userProfile.active_mission?.missionId) : undefined;
             const finalMissions = activeDailyMission ? [activeDailyMission, ...newMissions.filter(nm => nm.id !== activeDailyMission.id)].slice(0, 15) : newMissions;
 
-            if (!supabase) return;
             updateDocumentNonBlocking(userProfileRef, {
                 daily_mission_state: {
                     nextReset: nextResetTimestamp,
@@ -451,7 +471,9 @@ useEffect(() => {
             .map((m: {id: string}) => missionsData.find(md => md.id === m.id))
             .filter(Boolean) as Mission[];
         setDailyMissions(missions);
+    };
 
+    runReset();
     }, [userProfile, userProfileRef, supabase]);
 
     const handleAcceptMission = async (mission: Mission) => {

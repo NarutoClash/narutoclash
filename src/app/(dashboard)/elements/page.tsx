@@ -91,6 +91,7 @@ export default function ElementsPage() {
   const { user, supabase } = useSupabase();
   const { toast } = useToast();
   const { isActive: isPremium } = usePremiumStatus(supabase, user?.id);
+  const [isLearning, setIsLearning] = useState(false);
 
   const userProfileRef = useMemoSupabase(() => {
     if (!user) return null;
@@ -121,11 +122,13 @@ export default function ElementsPage() {
   const jutsuExperience = userProfile?.jutsu_experience || {};
 
   const handleLearnJutsu = async (jutsuName: string, element: string) => {
-    if (!userProfileRef || !supabase) return;
+    if (!userProfileRef || !supabase || isLearning) return;
     
     const currentJutsuLevel = userProfile?.jutsus?.[jutsuName] || 0;
   
     if (currentJutsuLevel !== 0) return;
+
+    setIsLearning(true);
     
     const elementJutsus = Object.entries(userProfile?.jutsus || {})
       .filter(([name, level]) => {
@@ -179,6 +182,8 @@ export default function ElementsPage() {
       }
     } catch (error) {
       console.error('🔴 Erro:', error);
+    } finally {
+      setIsLearning(false);
     }
   };
 
@@ -360,7 +365,7 @@ export default function ElementsPage() {
                             </div>
                           )
                         ) : (
-                          <Button onClick={() => handleLearnJutsu(jutsu.name, jutsu.element)} className="w-full">
+                          <Button onClick={() => handleLearnJutsu(jutsu.name, jutsu.element)} className="w-full" disabled={isLearning}>
                             <GraduationCap className="mr-2 h-4 w-4" />
                             Aprender
                           </Button>

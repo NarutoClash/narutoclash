@@ -151,8 +151,8 @@ function TurnCard({
         </div>
       )}
 
-      {/* GIF do jutsu */}
-      {entry.jutsuGif && (
+      {/* GIF do jutsu - apenas para o jogador */}
+      {entry.jutsuGif && isPlayer && (
         <div className="flex justify-center my-2">
           <img
             src={entry.jutsuGif}
@@ -163,9 +163,9 @@ function TurnCard({
         </div>
       )}
 
-      {/* Nome do jutsu */}
+      {/* Nome do jutsu - apenas para o jogador */}
       <p className="text-sm font-bold mb-1" style={{ color: borderColor }}>
-        {entry.jutsuName}
+        {isPlayer ? entry.jutsuName : '???'}
       </p>
 
       {/* Log de dano */}
@@ -188,7 +188,7 @@ function TurnCard({
       {/* Segundo hit */}
       {entry.secondHit && (
         <div className="text-xs font-semibold text-emerald-400 mb-1">
-          ➕ {entry.secondHit.jutsuName}: +{entry.secondHit.damage.toFixed(0)} de dano
+          ➕ {isPlayer ? entry.secondHit.jutsuName : '???'}: +{entry.secondHit.damage.toFixed(0)} de dano
         </div>
       )}
 

@@ -12,6 +12,12 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@capacitor/android": "^8.2.0",
+    "@capacitor/cli": "^8.2.0",
+    "@capacitor/core": "^8.2.0",
+    "@capacitor/haptics": "^8.0.1",
+    "@capacitor/local-notifications": "^8.0.2",
+    "@capacitor/push-notifications": "^8.0.2",
     "@genkit-ai/google-genai": "^1.20.0",
     "@genkit-ai/next": "^1.20.0",
     "@hookform/resolvers": "^4.1.3",

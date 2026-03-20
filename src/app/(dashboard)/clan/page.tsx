@@ -26,6 +26,7 @@ import { Input } from '@/components/ui/input';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Loader2, Users, Shield, LogOut, Send, UserCheck, UserX } from 'lucide-react';
+import { Edit, Image as ImageIcon, Bold, Italic, Underline, Palette, X as XIcon, Save, Eye } from 'lucide-react';
 import { useSupabase, useMemoSupabase, useDoc, useCollection, WithId } from '@/supabase';
 import { useToast } from '@/hooks/use-toast';
 import { Separator } from '@/components/ui/separator';
@@ -50,7 +51,7 @@ const getClanMemberLimit = (clanLevel: number): number => {
 const createClanSchema = z.object({
   name: z.string().min(3, 'O nome deve ter pelo menos 3 caracteres.').max(20, 'O nome deve ter no máximo 20 caracteres.'),
   tag: z.string().min(2, 'A tag deve ter 2-4 caracteres.').max(4, 'A tag deve ter 2-4 caracteres.'),
-  description: z.string().min(10, 'A descrição deve ter pelo menos 10 caracteres.').max(100, 'A descrição deve ter no máximo 100 caracteres.'),
+  description: z.string().min(10, 'A descrição deve ter pelo menos 10 caracteres.').max(1000, 'A descrição deve ter no máximo 1000 caracteres.'),
 });
 
 type CreateClanValues = z.infer<typeof createClanSchema>;
@@ -119,6 +120,67 @@ type MissionCompletion = {
   user_id: string;
 };
 
+// ─── BBCode helpers para descrição do clã ────────────────────────────────────
+const processClanBio = (text: string) => {
+  let p = text.replace(/\[b\]([\s\S]*?)\[\/b\]/g, '<strong>$1</strong>');
+  p = p.replace(/\[i\]([\s\S]*?)\[\/i\]/g, '<em>$1</em>');
+  p = p.replace(/\[u\]([\s\S]*?)\[\/u\]/g, '<u>$1</u>');
+  const colorMap: Record<string, string> = {
+    red:'#ef4444',blue:'#3b82f6',green:'#22c55e',yellow:'#eab308',
+    purple:'#a855f7',pink:'#ec4899',orange:'#f97316',cyan:'#06b6d4',
+    white:'#ffffff',gold:'#fbbf24',
+  };
+  Object.entries(colorMap).forEach(([name, hex]) => {
+    p = p.replace(new RegExp(`\\[${name}\\]([\\s\\S]*?)\\[\\/${name}\\]`,'g'), `<span style="color:${hex}">$1</span>`);
+  });
+  return p;
+};
+
+type BioPart = { type: 'text'; content: string } | { type: 'image'; url: string };
+const parseClanBio = (content: string): BioPart[] => {
+  const parts: BioPart[] = [];
+  let lastIndex = 0;
+  const re = /\[img(?:=[^\]]*)?]([\s\S]*?)\[\/img\]/g;
+  let match: RegExpExecArray | null;
+  while ((match = re.exec(content)) !== null) {
+    if (match.index > lastIndex) parts.push({ type: 'text', content: content.substring(lastIndex, match.index) });
+    parts.push({ type: 'image', url: match[1].trim() });
+    lastIndex = re.lastIndex;
+  }
+  if (lastIndex < content.length) parts.push({ type: 'text', content: content.substring(lastIndex) });
+  return parts;
+};
+
+const renderClanBio = (parts: BioPart[]) => {
+  const result: React.ReactNode[] = [];
+  let i = 0;
+  while (i < parts.length) {
+    const part = parts[i];
+    if (part.type === 'image') {
+      const images: string[] = [];
+      while (i < parts.length && parts[i].type === 'image') {
+        images.push((parts[i] as { type: 'image'; url: string }).url);
+        i++;
+      }
+      result.push(
+        <div key={`imgs-${i}`} style={{ fontSize: 0, lineHeight: 0, display: 'block' }}>
+          {images.map((url, idx) => (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img key={idx} src={url} alt="" style={{ maxWidth: '100%', display: 'inline-block', verticalAlign: 'top' }} />
+          ))}
+        </div>
+      );
+    } else {
+      result.push(
+        <div key={`text-${i}`} className="px-4 py-2 text-sm whitespace-pre-wrap"
+          dangerouslySetInnerHTML={{ __html: processClanBio(part.content) }} />
+      );
+      i++;
+    }
+  }
+  return <>{result}</>;
+};
+
 export default function ClanPage() {
   const { user, supabase } = useSupabase();
   const { toast } = useToast();
@@ -131,6 +193,13 @@ export default function ClanPage() {
   } | null>(null);
   const [dailyMissionsResetTimer, setDailyMissionsResetTimer] = useState('');
 
+  // ✅ Estados para edição da descrição do clã
+  const [isEditingDesc, setIsEditingDesc] = useState(false);
+  const [editDescContent, setEditDescContent] = useState('');
+  const [isSavingDesc, setIsSavingDesc] = useState(false);
+  const [showDescPreview, setShowDescPreview] = useState(false);
+  const [showDescColorMenu, setShowDescColorMenu] = useState(false);
+
   // ✅ FIX BUG 2: Timer que força re-render a cada segundo para atualizar isMissionComplete
   const [tick, setTick] = useState(0);
   useEffect(() => {
@@ -142,7 +211,7 @@ export default function ClanPage() {
   const { data: userProfile, isLoading: isUserLoading } = useDoc(userProfileRef);
 
   const clanRef = useMemoSupabase(() => userProfile?.clan_id ? { table: 'clans', id: userProfile.clan_id } : null, [userProfile]);
-  const { data: clanData, isLoading: isClanLoading } = useDoc<ClanData>(clanRef, {
+  const { data: clanData, isLoading: isClanLoading, setData: setClanData } = useDoc<ClanData>(clanRef, {
     subscribe: true,
   });
   
@@ -711,6 +780,9 @@ export default function ClanPage() {
   
       if (memberError) throw memberError;
   
+      // ✅ Atualiza clanData localmente imediatamente (XP / level up)
+      setClanData({ ...clanData, ...updateData });
+
       // ✅ Limpa estado local imediatamente após coleta bem-sucedida
       setActiveMission(null);
 
@@ -718,11 +790,6 @@ export default function ClanPage() {
         title: '✅ Recompensa Coletada!',
         description: `Você ganhou ${mission.xp_reward} XP para o clã!`,
       });
-  
-      // ✅ Reload após coleta (aqui é seguro pois a missão já foi removida do banco)
-      setTimeout(() => {
-        window.location.reload();
-      }, 1000);
     } catch (error: any) {
       toast({
         variant: 'destructive',
@@ -731,6 +798,29 @@ export default function ClanPage() {
       });
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  // ✅ Salvar descrição do clã (com BBCode e imagens)
+  const handleSaveClanDescription = async () => {
+    if (!supabase || !clanRef || !clanData) return;
+    setIsSavingDesc(true);
+    const newDesc = editDescContent.trim().slice(0, 1000);
+    try {
+      const { error } = await supabase
+        .from('clans')
+        .update({ description: newDesc })
+        .eq('id', clanRef.id);
+      if (error) throw error;
+      // ✅ Atualiza estado local imediatamente, sem precisar recarregar
+      setClanData({ ...clanData, description: newDesc });
+      toast({ title: '✅ Descrição atualizada!' });
+      setIsEditingDesc(false);
+      setShowDescPreview(false);
+    } catch (error: any) {
+      toast({ variant: 'destructive', title: 'Erro ao salvar', description: error?.message });
+    } finally {
+      setIsSavingDesc(false);
     }
   };
 
@@ -908,7 +998,135 @@ export default function ClanPage() {
 
     return (
       <div>
-        <PageHeader title={clanData.name} description={`[${clanData.tag}] - ${clanData.description}`} />
+        {/* Cabeçalho do clã com descrição editável */}
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex-1">
+            <h1 className="font-headline text-3xl font-bold tracking-tight text-foreground md:text-4xl">
+              {clanData.name}
+            </h1>
+            {!isEditingDesc && (
+              <div className="mt-2">
+                {clanData.description ? (
+                  <div className="text-muted-foreground">
+                    {renderClanBio(parseClanBio(clanData.description))}
+                  </div>
+                ) : (
+                  <p className="text-muted-foreground">[{clanData.tag}]</p>
+                )}
+              </div>
+            )}
+          </div>
+          {isManager && !isEditingDesc && (
+            <Button variant="outline" size="sm" className="flex-shrink-0 mt-1" onClick={() => {
+              setEditDescContent(clanData.description || '');
+              setIsEditingDesc(true);
+            }}>
+              <Edit className="h-4 w-4 mr-2" />
+              Editar Descrição
+            </Button>
+          )}
+        </div>
+
+        {/* Editor de descrição inline */}
+        {isEditingDesc && (
+          <div className="mt-4 p-4 border rounded-lg bg-muted/20 space-y-3">
+            <div className="flex items-center justify-between">
+              <label className="text-sm font-medium">Descrição do Clã (BBCode + imagens)</label>
+              <Button type="button" variant="outline" size="sm" onClick={() => setShowDescPreview(!showDescPreview)}>
+                <Eye className="h-4 w-4 mr-2" />
+                {showDescPreview ? 'Ocultar Preview' : 'Preview'}
+              </Button>
+            </div>
+
+            {/* Toolbar */}
+            <div className="flex flex-wrap gap-1 p-2 bg-muted/30 rounded-md border">
+              {[
+                { label: <Bold className="h-4 w-4"/>, snippet: '[b]texto[/b]', title: 'Negrito' },
+                { label: <Italic className="h-4 w-4"/>, snippet: '[i]texto[/i]', title: 'Itálico' },
+                { label: <Underline className="h-4 w-4"/>, snippet: '[u]texto[/u]', title: 'Sublinhado' },
+              ].map(({ label, snippet, title }) => (
+                <Button key={title} type="button" variant="ghost" size="sm" title={title}
+                  onClick={() => {
+                    const ta = document.getElementById('clan-desc-content') as HTMLTextAreaElement;
+                    const pos = ta?.selectionStart ?? editDescContent.length;
+                    setEditDescContent(editDescContent.slice(0, pos) + snippet + editDescContent.slice(pos));
+                  }}>
+                  {label}
+                </Button>
+              ))}
+              <div className="relative">
+                <Button type="button" variant="ghost" size="sm" title="Cor" onClick={() => setShowDescColorMenu(!showDescColorMenu)}>
+                  <Palette className="h-4 w-4" />
+                </Button>
+                {showDescColorMenu && (
+                  <div className="absolute top-full left-0 mt-1 p-2 bg-popover border rounded-md shadow-lg z-10 grid grid-cols-4 gap-1 min-w-[200px]">
+                    {[
+                      { name:'red', label:'Vermelho', color:'#ef4444' },
+                      { name:'blue', label:'Azul', color:'#3b82f6' },
+                      { name:'green', label:'Verde', color:'#22c55e' },
+                      { name:'yellow', label:'Amarelo', color:'#eab308' },
+                      { name:'purple', label:'Roxo', color:'#a855f7' },
+                      { name:'orange', label:'Laranja', color:'#f97316' },
+                      { name:'cyan', label:'Ciano', color:'#06b6d4' },
+                      { name:'gold', label:'Dourado', color:'#fbbf24' },
+                    ].map(c => (
+                      <button key={c.name} type="button"
+                        onClick={() => {
+                          const ta = document.getElementById('clan-desc-content') as HTMLTextAreaElement;
+                          const pos = ta?.selectionStart ?? editDescContent.length;
+                          setEditDescContent(editDescContent.slice(0, pos) + `[${c.name}]texto[/${c.name}]` + editDescContent.slice(pos));
+                          setShowDescColorMenu(false);
+                        }}
+                        className="p-1.5 rounded hover:bg-muted flex flex-col items-center gap-0.5">
+                        <div className="w-5 h-5 rounded border" style={{ backgroundColor: c.color }} />
+                        <span className="text-[10px]">{c.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <div className="border-l mx-1" />
+              <Button type="button" variant="ghost" size="sm" title="Inserir Imagem"
+                onClick={() => {
+                  const ta = document.getElementById('clan-desc-content') as HTMLTextAreaElement;
+                  const pos = ta?.selectionStart ?? editDescContent.length;
+                  setEditDescContent(editDescContent.slice(0, pos) + '[img]URL_DA_IMAGEM[/img]' + editDescContent.slice(pos));
+                }}>
+                <ImageIcon className="h-4 w-4" />
+              </Button>
+            </div>
+
+            <Textarea
+              id="clan-desc-content"
+              placeholder="Descreva o seu clã... Use [b]negrito[/b], [img]url[/img] para imagens, etc."
+              value={editDescContent}
+              onChange={(e) => setEditDescContent(e.target.value.slice(0, 1000))}
+              rows={6}
+              className="resize-none font-mono text-sm"
+            />
+            <div className="flex items-center justify-between text-xs text-muted-foreground">
+              <span>BBCode: [b]negrito[/b] [i]itálico[/i] [img]url[/img]</span>
+              <span className={editDescContent.length >= 950 ? 'text-orange-400 font-bold' : ''}>{editDescContent.length}/1000</span>
+            </div>
+
+            {showDescPreview && editDescContent && (
+              <div className="rounded-lg border overflow-hidden bg-muted/20 min-h-[60px]">
+                {renderClanBio(parseClanBio(editDescContent))}
+              </div>
+            )}
+
+            <div className="flex gap-2">
+              <Button onClick={handleSaveClanDescription} disabled={isSavingDesc} className="flex-1">
+                <Save className="h-4 w-4 mr-2" />
+                {isSavingDesc ? 'Salvando...' : 'Salvar'}
+              </Button>
+              <Button variant="outline" onClick={() => { setIsEditingDesc(false); setShowDescPreview(false); }} disabled={isSavingDesc}>
+                <XIcon className="h-4 w-4 mr-2" />
+                Cancelar
+              </Button>
+            </div>
+          </div>
+        )}
         
         <Card className="mt-6">
           <CardHeader>
@@ -1169,6 +1387,73 @@ export default function ClanPage() {
               </div>
             ) : missionsWithStatus && missionsWithStatus.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 items-stretch">
+                {/* ✅ FIX BUG: Missão órfã - o jogador iniciou uma missão mas o reset trocou as missões ativas.
+                    Se o membro tem uma missão ativa que não está mais na lista atual (missão órfã),
+                    mostramos um card especial para que ele possa coletar a recompensa. */}
+                {(() => {
+                  if (!activeMission) return null;
+                  const isOrphanMission = !missionsWithStatus.some(
+                    ({ assignedTo }) => assignedTo?.userId === user?.id && assignedTo?.endTime === activeMission.endTime
+                  );
+                  if (!isOrphanMission) return null;
+                  const orphanMissionData = clanMissions?.find(m => m.id === activeMission.missionId);
+                  // tick garante re-render a cada segundo para atualizar timer e botão
+                  const isComplete = tick >= 0 && Date.now() >= activeMission.endTime;
+                  const orphanTimeRemaining = Math.max(0, activeMission.endTime - Date.now());
+                  const orphanHours = Math.floor(orphanTimeRemaining / (1000 * 60 * 60));
+                  const orphanMinutes = Math.floor((orphanTimeRemaining % (1000 * 60 * 60)) / (1000 * 60));
+                  const orphanSeconds = Math.floor((orphanTimeRemaining % (1000 * 60)) / 1000);
+                  // Sempre mostra — em andamento OU pronta para coletar
+                  return (
+                    <Card key="orphan-mission" className={cn(
+                      "border-2 flex flex-col h-full",
+                      isComplete
+                        ? "border-green-500/50 bg-green-500/5"
+                        : "border-yellow-500/50 bg-yellow-500/5"
+                    )}>
+                      <CardHeader>
+                        <div className="flex justify-between items-start">
+                          <CardTitle className="text-lg">{orphanMissionData?.title || 'Missão em Andamento'}</CardTitle>
+                          {isComplete
+                            ? <Badge variant="default" className="bg-green-500">Pronta!</Badge>
+                            : <Badge variant="outline" className="border-yellow-500 text-yellow-600">Em andamento</Badge>
+                          }
+                        </div>
+                        <CardDescription>
+                          {orphanMissionData?.description || 'Missão iniciada antes do último reset diário.'}
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        {isComplete ? (
+                          <div className="p-3 bg-green-500/10 border border-green-500/30 rounded-md text-sm">
+                            <CheckCircle className="h-4 w-4 text-green-500 inline mr-2" />
+                            Missão completa! Colete sua recompensa.
+                          </div>
+                        ) : (
+                          <div className="p-3 bg-yellow-500/10 border border-yellow-500/30 rounded-md text-sm space-y-2">
+                            <div className="flex items-center gap-2 text-yellow-700 dark:text-yellow-400">
+                              <Timer className="h-4 w-4" />
+                              <span>Tempo restante: {orphanHours}h {orphanMinutes}m {orphanSeconds}s</span>
+                            </div>
+                            <p className="text-xs text-muted-foreground">
+                              Esta missão foi iniciada antes do reset diário e continuará até ser concluída.
+                            </p>
+                          </div>
+                        )}
+                      </CardContent>
+                      <CardFooter className="mt-auto">
+                        <Button
+                          className="w-full"
+                          onClick={handleCollectMissionReward}
+                          disabled={isSubmitting || !isComplete}
+                        >
+                          <CheckCircle className="mr-2 h-4 w-4" />
+                          {isComplete ? 'Coletar Recompensa' : 'Aguardando conclusão...'}
+                        </Button>
+                      </CardFooter>
+                    </Card>
+                  );
+                })()}
                 {missionsWithStatus.map(({ mission, assignedTo }) => {
                   const isMyMission = assignedTo?.userId === user?.id;
                   const isOccupied = !!assignedTo;

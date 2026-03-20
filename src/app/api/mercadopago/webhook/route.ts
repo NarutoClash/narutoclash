@@ -26,8 +26,8 @@ function validateMercadoPagoSignature(
     const secret = process.env.MERCADOPAGO_WEBHOOK_SECRET;
     
     if (!secret) {
-      console.warn('⚠️ MERCADOPAGO_WEBHOOK_SECRET não configurado - pulando validação');
-      return true;
+      console.error('❌ MERCADOPAGO_WEBHOOK_SECRET não configurado — rejeitando webhook por segurança');
+      return false;
     }
 
     const parts = xSignature.split(',');
@@ -149,73 +149,66 @@ export async function POST(request: NextRequest) {
     }
 
 
-    // 6️⃣ Atualizar registro no banco
-    const { error: updateError } = await supabase
+    // 6️⃣ Atualizar método de pagamento (informativo, sem impacto em idempotência)
+    await supabase
       .from('payment_transactions')
       .update({
-        external_payment_id: paymentId.toString(),
-        status: status,
-        payment_method: paymentMethod,
         webhook_received_at: new Date().toISOString(),
       })
-      .eq('id', externalReference);
-
-    if (updateError) {
-      console.error('❌ Erro ao atualizar no banco:', updateError);
-      return NextResponse.json({ 
-        error: 'Erro ao atualizar registro',
-        details: updateError.message,
-      }, { status: 500 });
-    }
+      .eq('id', externalReference)
+      .neq('status', 'completed'); // não sobrescrever se já completado
 
 
     // 7️⃣ Se aprovado, creditar CP
     if (status === 'approved') {
 
-      // Verificar se já foi creditado
-      const { data: pagamento, error: checkError } = await supabase
+      // ── Proteção atômica contra duplo crédito ────────────────────────
+      // UPDATE só executa se status ainda não for 'completed'.
+      // Se dois webhooks chegarem ao mesmo tempo, apenas um vai encontrar
+      // status != 'completed' e prosseguir — o outro recebe 0 linhas afetadas.
+      const { data: claimedRows, error: claimError } = await supabase
         .from('payment_transactions')
-        .select('user_id, cp_amount, bonus_cp, status')
+        .update({
+          status: 'completed',
+          paid_at: new Date().toISOString(),
+          external_payment_id: paymentId.toString(),
+          payment_method: paymentMethod,
+        })
         .eq('id', externalReference)
-        .single();
+        .neq('status', 'completed')
+        .select('user_id, cp_amount, bonus_cp');
 
-      if (checkError) {
-        console.error('❌ Erro ao verificar pagamento:', checkError);
-        return NextResponse.json({ error: 'Erro ao verificar status' }, { status: 500 });
+      if (claimError) {
+        console.error('❌ Erro ao tentar reservar pagamento:', claimError);
+        return NextResponse.json({ error: 'Erro ao processar pagamento' }, { status: 500 });
       }
 
-      // Calcular CP total UMA VEZ
+      // Nenhuma linha afetada = já foi creditado por outro webhook
+      if (!claimedRows || claimedRows.length === 0) {
+        return NextResponse.json({ received: true, status: 'already_credited' });
+      }
+
+      const pagamento = claimedRows[0];
       const totalCP = pagamento.cp_amount + (pagamento.bonus_cp || 0);
 
-      if (pagamento.status === 'completed') {
-        return NextResponse.json({ 
-          received: true, 
-          status: 'already_credited',
-        });
-      }
-
-      // Creditar CP no profile
+      // Creditar CP no profile via RPC
       const { error: creditError } = await supabase.rpc('increment_clash_points', {
         user_id: pagamento.user_id,
         amount: totalCP,
       });
 
-      // Se a função RPC não funcionar, fazer update direto
+      // Fallback: se a RPC não existir, fazer update direto
       if (creditError) {
-        
         const { data: currentProfile } = await supabase
           .from('profiles')
           .select('clash_points')
           .eq('id', pagamento.user_id)
           .single();
 
-        const currentCP = currentProfile?.clash_points || 0;
-        const newCP = currentCP + totalCP;
-
         const { error: directCreditError } = await supabase
           .from('profiles')
           .update({
-            clash_points: newCP,
+            clash_points: (currentProfile?.clash_points || 0) + totalCP,
             updated_at: new Date().toISOString(),
           })
           .eq('id', pagamento.user_id);
@@ -239,20 +232,6 @@ export async function POST(request: NextRequest) {
           description: `Compra via Mercado Pago - Pagamento #${paymentId}`,
           created_at: new Date().toISOString(),
         });
-
-      // Marcar como creditado
-      await supabase
-        .from('payment_transactions')
-        .update({ 
-          status: 'completed',
-          paid_at: new Date().toISOString(),
-        })
-        .eq('id', externalReference);
-
-      
-    } else if (status === 'rejected') {
-    } else if (status === 'pending') {
-    } else {
     }
 
     

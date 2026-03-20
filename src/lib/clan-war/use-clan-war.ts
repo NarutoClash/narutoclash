@@ -178,7 +178,10 @@ export function useActiveClanWar(supabase: any, warId: string | null) {
       try {
         await fetch('/api/clan-war/resolve', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            'x-internal-secret': process.env.NEXT_PUBLIC_CLAN_WAR_INTERNAL_SECRET || '',
+          },
           body: JSON.stringify({ war_id: warIdParam, turn }),
         });
       } catch (e) {

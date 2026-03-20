@@ -104,17 +104,32 @@ export default function LandingPage() {
         
         {/* Header Fixo */}
         <header className="border-b border-orange-500/20 backdrop-blur-sm bg-black/50 fixed top-0 left-0 lg:left-64 xl:left-80 right-0 lg:right-64 xl:right-80 z-50">
-          <div className="px-2 py-4 flex justify-center">
+          <div className="px-2 py-4 flex items-center justify-between gap-2">
             <img 
               src="https://i.ibb.co/HL5XbjTV/nome-site.png"
               alt="Naruto Clash"
-              className="h-32 md:h-40 lg:h-48 w-auto object-contain"
+              className="h-20 md:h-32 lg:h-40 w-auto object-contain flex-1"
             />
+            {/* Botões visíveis em mobile - ficam no header */}
+            <div className="flex lg:hidden items-center gap-2 flex-shrink-0">
+              <Link href="/login">
+                <Button variant="outline" size="sm" className="border-orange-500/50 hover:bg-orange-500/10 text-gray-300 hover:text-orange-400 text-xs px-3">
+                  <Users className="mr-1 h-3 w-3" />
+                  Entrar
+                </Button>
+              </Link>
+              <Link href="/register">
+                <Button size="sm" className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-xs px-3">
+                  <Zap className="mr-1 h-3 w-3" />
+                  Cadastrar
+                </Button>
+              </Link>
+            </div>
           </div>
         </header>
 
         {/* Conteúdo com padding-top para compensar o header fixo */}
-        <div className="pt-32 md:pt-40 lg:pt-48">
+        <div className="pt-20 md:pt-32 lg:pt-40">
           {/* Hero Section */}
           <section className="px-4 py-20 text-center relative">
             <div className="absolute inset-0 overflow-hidden pointer-events-none">

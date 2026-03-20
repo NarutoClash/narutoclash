@@ -1,12 +1,17 @@
+'use client';
+
 import type { Metadata } from 'next';
 import Script from 'next/script';
 import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 import { SupabaseClientProvider } from '@/supabase';
+import { useSetupPushNotifications } from '@/hooks/use-notifications';
 
-export const metadata: Metadata = {
-  title: 'Naruto Clash',
-};
+// Componente separado para usar o hook (layout precisa ser client component)
+function AppProviders({ children }: { children: React.ReactNode }) {
+  useSetupPushNotifications(); // inicializa notificações push no Android
+  return <>{children}</>;
+}
 
 export const viewport = {
   width: 'device-width',
@@ -32,11 +37,13 @@ export default function RootLayout({
       </head>
       <body className="font-body antialiased">
         <SupabaseClientProvider>
-          {children}
-          <Toaster />
+          <AppProviders>
+            {children}
+            <Toaster />
+          </AppProviders>
         </SupabaseClientProvider>
 
-        {/* ✅ SDK do Mercado Pago - Device ID Anti-Fraude */}
+        {/* SDK do Mercado Pago - Device ID Anti-Fraude */}
         <Script
           src="https://sdk.mercadopago.com/js/v2"
           strategy="lazyOnload"

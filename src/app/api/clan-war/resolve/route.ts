@@ -82,6 +82,15 @@ async function upsertLeaguePoints(
 // ── Route Handler ────────────────────────────────────────────────────────
 export async function POST(req: NextRequest) {
   try {
+    // Validar internal secret para evitar chamadas externas não autorizadas
+    const internalSecret = process.env.CLAN_WAR_INTERNAL_SECRET;
+    if (internalSecret) {
+      const providedSecret = req.headers.get('x-internal-secret');
+      if (providedSecret !== internalSecret) {
+        return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
+      }
+    }
+
     const { war_id, turn } = await req.json();
     if (!war_id || !turn) {
       return NextResponse.json({ error: 'war_id e turn são obrigatórios' }, { status: 400 });

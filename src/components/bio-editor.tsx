@@ -180,10 +180,13 @@ export function BioEditor({ profileId, initialContent = '', isOwner }: BioEditor
   return (
     <Card>
       {isOwner && !isEditing && (
-        <CardHeader className="flex flex-row items-center justify-end pb-2 pt-4 px-6">
-          <Button variant="outline" onClick={() => setIsEditing(true)}>
+        <CardHeader className="flex flex-row items-center justify-between pb-2 pt-4 px-6">
+          <div className="text-sm text-muted-foreground">
+            {bioContent ? 'Descrição do perfil' : 'Nenhuma descrição ainda'}
+          </div>
+          <Button variant="outline" size="sm" onClick={() => setIsEditing(true)}>
             <Edit className="h-4 w-4 mr-2" />
-            Editar
+            Editar Perfil
           </Button>
         </CardHeader>
       )}
@@ -247,15 +250,15 @@ export function BioEditor({ profileId, initialContent = '', isOwner }: BioEditor
 
               <Textarea
                 id="bio-content"
-                placeholder="Escreva sobre você... Use as ferramentas acima para formatar"
+                placeholder="Escreva sobre você... Use as ferramentas acima para formatar. Você pode inserir imagens com [img]URL[/img]"
                 value={bioContent}
-                onChange={(e) => setBioContent(e.target.value.slice(0, 2000))}
+                onChange={(e) => setBioContent(e.target.value.slice(0, 1000))}
                 rows={10}
                 className="resize-none font-mono text-sm"
               />
               <div className="flex items-center justify-between text-xs text-muted-foreground">
                 <span>BBCode: [b]negrito[/b] [i]itálico[/i] [img]url[/img]</span>
-                <span>{bioContent.length}/2000</span>
+                <span className={bioContent.length >= 950 ? 'text-orange-400 font-bold' : ''}>{bioContent.length}/1000</span>
               </div>
             </div>
 

@@ -496,7 +496,9 @@ export default function PVPBattlePage() {
               {!battleFinished && !waitingForBoth && (
                 <div className="text-[10px] font-semibold">
                   {pending
-                    ? <span className="text-green-400">✅ {ACTION_LABELS[pending as PVPActionType] || pending}</span>
+                    ? label === 'Você'
+                      ? <span className="text-green-400">✅ {ACTION_LABELS[pending as PVPActionType] || pending}</span>
+                      : <span className="text-green-400">✅ Pronto</span>
                     : <span className="text-amber-400 animate-pulse">⏳ Escolhendo...</span>}
                 </div>
               )}

@@ -1,7 +1,11 @@
 import type {NextConfig} from 'next';
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  // IMPORTANTE: necessário para o Capacitor empacotar o app
+  // Comente essa linha quando fizer deploy na Vercel normalmente
+  // Descomente quando for gerar o APK
+  // output: 'export',
+
   typescript: {
     ignoreBuildErrors: true,
   },
@@ -9,6 +13,8 @@ const nextConfig: NextConfig = {
     ignoreDuringBuilds: true,
   },
   images: {
+    // Para export estático, desabilite a otimização de imagens do Next.js
+    // unoptimized: true, // descomente junto com output: 'export'
     remotePatterns: [
       {
         protocol: 'https',

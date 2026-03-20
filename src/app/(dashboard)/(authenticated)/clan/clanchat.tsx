@@ -37,6 +37,34 @@ export function ClanChat({ clanId, userId, userName, supabase }: ClanChatProps) 
     loadMessages();
   }, [clanId]);
 
+  // ✅ Auto-limpar mensagens com mais de 30 minutos — banco + estado local
+  useEffect(() => {
+    const clearOldMessages = async () => {
+      try {
+        const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000).toISOString();
+
+        // Remove do banco (apenas um cliente precisa fazer isso — sem problema se vários tentarem)
+        await supabase
+          .from('clan_chat_messages')
+          .delete()
+          .eq('clan_id', clanId)
+          .lt('created_at', thirtyMinutesAgo);
+
+        // Remove do estado local imediatamente, sem depender do realtime DELETE
+        setMessages((prev) =>
+          prev.filter((msg) => new Date(msg.created_at).getTime() > Date.now() - 30 * 60 * 1000)
+        );
+      } catch (error) {
+        // Silencioso - limpeza não é crítica
+      }
+    };
+
+    // Executa imediatamente ao montar e depois a cada 30 minutos
+    clearOldMessages();
+    const intervalId = setInterval(clearOldMessages, 30 * 60 * 1000);
+    return () => clearInterval(intervalId);
+  }, [clanId, supabase]);
+
   // Subscription em tempo real
   useEffect(() => {
     const channel = supabase
@@ -79,10 +107,12 @@ export function ClanChat({ clanId, userId, userName, supabase }: ClanChatProps) 
   const loadMessages = async () => {
     setIsLoading(true);
     try {
+      const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000).toISOString();
       const { data, error } = await supabase
         .from('clan_chat_messages')
         .select('*')
         .eq('clan_id', clanId)
+        .gte('created_at', thirtyMinutesAgo)
         .order('created_at', { ascending: true })
         .limit(100);
 
@@ -193,7 +223,7 @@ setNewMessage('');
           Chat do Clã
         </CardTitle>
         <p className="text-xs text-muted-foreground">
-          Mensagens são deletadas após 24 horas • Máximo 60 caracteres
+          Mensagens são deletadas após 30 minutos • Máximo 60 caracteres
         </p>
       </CardHeader>
       <CardContent className="space-y-4">

@@ -2571,6 +2571,57 @@ const BattleReportModal = () => {
                     </div>
                 )}
             </div>
+
+            {/* ✅ FIX: Build atual + Bônus do Clã */}
+            {(() => {
+              const { detectBuild, getBuildInfo } = require('@/lib/battle-system/build-detector');
+              const { calculateWarPointsBonus } = require('@/lib/clan-bonus-calculator');
+              const build = calculatedStats ? detectBuild(calculatedStats) : 'generico';
+              const buildInfo = getBuildInfo(build);
+              const clanBonus = calculateWarPointsBonus(clanWarPoints);
+
+              return (
+                <div className="mb-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* Build atual */}
+                  <div className="flex items-center gap-3 p-3 rounded-lg border bg-muted/20">
+                    <span className="text-2xl">{buildInfo.emoji}</span>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Build Atual</p>
+                      <p className="font-bold" style={{ color: buildInfo.color }}>{buildInfo.name}</p>
+                      <p className="text-xs text-muted-foreground">{buildInfo.description}</p>
+                    </div>
+                  </div>
+                  {/* Bônus do Clã */}
+                  {userProfile.clan_id ? (
+                    <div className="flex items-center gap-3 p-3 rounded-lg border bg-muted/20">
+                      <span className="text-2xl">🏯</span>
+                      <div className="flex-1">
+                        <p className="text-xs text-muted-foreground">Bônus do Clã</p>
+                        {clanBonus > 0 ? (
+                          <>
+                            <p className="font-bold text-green-400">+{clanBonus} em todos stats</p>
+                            <p className="text-xs text-muted-foreground">{clanWarPoints} pontos de guerra</p>
+                          </>
+                        ) : (
+                          <p className="text-sm text-muted-foreground">Ganhe pontos de guerra para bônus</p>
+                        )}
+                        {clanChakraBonus > 0 && (
+                          <p className="text-xs text-blue-400">+{clanChakraBonus}% regen de chakra</p>
+                        )}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-3 p-3 rounded-lg border border-dashed bg-muted/10">
+                      <span className="text-2xl opacity-40">🏯</span>
+                      <div>
+                        <p className="text-xs text-muted-foreground">Bônus do Clã</p>
+                        <p className="text-sm text-muted-foreground">Entre em um clã para ganhar bônus</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
             
             <TooltipProvider delayDuration={200}>
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2">

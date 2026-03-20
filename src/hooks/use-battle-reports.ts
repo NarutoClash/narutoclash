@@ -1,6 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
 
-// 🆕 Hook para buscar relatórios de batalha COM APLICAÇÃO AUTOMÁTICA DE VIDA
 export const useBattleReports = (supabase: any, userId: string | undefined) => {
   const [reports, setReports] = useState<any[]>([]);
   const [unreadReportsCount, setUnreadReportsCount] = useState(0);
@@ -23,25 +22,6 @@ export const useBattleReports = (supabase: any, userId: string | undefined) => {
 
       setReports(data || []);
       setUnreadReportsCount((data || []).filter((r: any) => !r.viewed).length);
-      
-      // 🆕 APLICAR VIDA AUTOMATICAMENTE DE RELATÓRIOS NÃO VISUALIZADOS
-      const unviewedReports = (data || []).filter((r: any) => !r.viewed);
-      
-      if (unviewedReports.length > 0) {
-        // Pegar o relatório mais recente não visualizado
-        const latestReport = unviewedReports[0];
-        
-        // 🆕 Atualizar vida do jogador baseado no relatório
-        if (latestReport.final_health !== null && latestReport.final_health !== undefined) {
-          await supabase
-            .from('profiles')
-            .update({
-              current_health: latestReport.final_health,
-              is_recovering: latestReport.final_health === 0, // Se vida = 0, marcar como em recuperação
-            })
-            .eq('id', userId);
-        }
-      }
     } catch (error) {
       console.error('Erro ao buscar relatórios:', error);
     } finally {
@@ -52,6 +32,22 @@ export const useBattleReports = (supabase: any, userId: string | undefined) => {
   useEffect(() => {
     fetchReports();
   }, [fetchReports]);
+
+  // Aplica a vida final de um relatório no perfil do jogador.
+  // Deve ser chamada EXPLICITAMENTE pelo componente após o usuário
+  // visualizar o relatório — não automaticamente ao buscar.
+  const applyHealthFromReport = useCallback(async (report: any) => {
+    if (!supabase || !userId) return;
+    if (report.final_health === null || report.final_health === undefined) return;
+
+    await supabase
+      .from('profiles')
+      .update({
+        current_health: report.final_health,
+        is_recovering: report.final_health === 0,
+      })
+      .eq('id', userId);
+  }, [supabase, userId]);
 
   const markAsViewed = async (reportId: string) => {
     if (!supabase) return;
@@ -90,5 +86,6 @@ export const useBattleReports = (supabase: any, userId: string | undefined) => {
     markAsViewed,
     deleteReport,
     refreshReports: fetchReports,
+    applyHealthFromReport,
   };
 };
